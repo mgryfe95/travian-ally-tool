@@ -1,0 +1,50 @@
+{
+  "name": "travian-ally-tool",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx server.ts",
+    "build": "next build",
+    "start": "NODE_ENV=production tsx server.ts",
+    "worker": "tsx worker/index.ts",
+    "lint": "next lint --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "ci": "npm run lint && npm run typecheck && npm run test",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:seed": "tsx prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "next": "^15.5.27",
+    "node-cron": "^3.0.3",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "socket.io": "^4.8.4",
+    "tsx": "^4.23.15",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/node-cron": "^3.0.11",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "autoprefixer": "^10.6.1",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^15.5.27",
+    "postcss": "^8.5.30",
+    "prisma": "^6.19.3",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^6.0.3",
+    "vitest": "^2.1.9"
+  }
+}
