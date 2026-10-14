@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { env } from "./env";
+import { parseIdList } from "./ids";
 
 /** Admin-UI-Overrides (Tabelle Setting) schlagen die ENV-Defaults. */
 export async function getInactiveDays(db: PrismaClient): Promise<number> {
@@ -8,8 +9,9 @@ export async function getInactiveDays(db: PrismaClient): Promise<number> {
   return Number.isInteger(n) && n > 0 ? n : env().INACTIVE_DAYS;
 }
 
-export async function getAllianceId(db: PrismaClient): Promise<number | undefined> {
+/** Konfigurierte Haupt-Allianzen: Setting `allianceId` (Admin) schlägt ENV; beide kommagetrennt. */
+export async function getAllianceIds(db: PrismaClient): Promise<number[]> {
   const row = await db.setting.findUnique({ where: { key: "allianceId" } });
-  const n = row ? Number(row.value) : NaN;
-  return Number.isInteger(n) && n > 0 ? n : env().TRAVIAN_ALLIANCE_ID;
+  const fromSetting = parseIdList(row?.value);
+  return fromSetting.length > 0 ? fromSetting : env().TRAVIAN_ALLIANCE_IDS;
 }

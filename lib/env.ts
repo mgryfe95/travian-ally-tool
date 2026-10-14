@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseIdList } from "./ids";
 
 const emptyToUndefined = (v: unknown) => (v === "" ? undefined : v);
 
@@ -8,7 +9,8 @@ const schema = z.object({
   AUTH_SECRET: z.string().min(1),
   SYSTEMADMIN_EMAILS: z.string().default(""),
   TRAVIAN_SERVER_URL: z.string().url(),
-  TRAVIAN_ALLIANCE_ID: z.preprocess(emptyToUndefined, z.coerce.number().int().positive().optional()),
+  /** Eine oder mehrere Allianz-IDs, kommagetrennt (z. B. `36,7`). Alle gelten implizit als „Eigene Allianz“; weitere pflegt der Admin im UI. */
+  TRAVIAN_ALLIANCE_ID: z.string().default(""),
   IMPORT_CRON: z.string().default("15 * * * *"),
   INACTIVE_DAYS: z.coerce.number().int().positive().default(3),
   /** Code, der zum Registrieren eines SYSTEMADMIN_EMAILS-Kontos nötig ist (Default: AUTH_SECRET). Verhindert, dass Fremde die Admin-Adresse vorab belegen. */
@@ -30,12 +32,13 @@ const schema = z.object({
   ANTHROPIC_MODEL: z.string().optional(),
 });
 
-export type Env = Omit<z.infer<typeof schema>, "SYSTEMADMIN_EMAILS"> & { SYSTEMADMIN_EMAILS: string[] };
+export type Env = Omit<z.infer<typeof schema>, "SYSTEMADMIN_EMAILS" | "TRAVIAN_ALLIANCE_ID"> & { SYSTEMADMIN_EMAILS: string[]; TRAVIAN_ALLIANCE_IDS: number[] };
 
 export function parseEnv(source: Record<string, string | undefined>): Env {
   const parsed = schema.parse(source);
   return {
     ...parsed,
+    TRAVIAN_ALLIANCE_IDS: parseIdList(parsed.TRAVIAN_ALLIANCE_ID),
     TRAVIAN_SERVER_URL: parsed.TRAVIAN_SERVER_URL.replace(/\/+$/, ""),
     SYSTEMADMIN_EMAILS: parsed.SYSTEMADMIN_EMAILS.split(",")
       .map((e) => e.trim().toLowerCase())

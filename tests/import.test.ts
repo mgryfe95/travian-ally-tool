@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { PrismaClient } from "@prisma/client";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { importMapSql } from "@/lib/import/importer";
+import { importMapSql, pruneVillageSnapshots } from "@/lib/import/importer";
 
 const db = new PrismaClient({ datasources: { db: { url: process.env.TEST_DATABASE_URL! } } });
 const fixture = readFileSync(new URL("./fixtures/map.sample.sql", import.meta.url), "utf8");
@@ -59,5 +59,17 @@ describe("importMapSql", () => {
     expect(types.slice(0, 2)).toEqual(["village_new", "alliance_change"]);
     expect(types.slice(2).sort()).toEqual(["village_conquered", "village_lost"]);
     expect(await db.playerDailyStat.count({ where: { playerId: 2 } })).toBe(4);
+  });
+
+  it("Pruning: nur die letzten 3 Snapshots behalten Dorfzeilen; Verlauf und Ereignisse bleiben", async () => {
+    for (let i = 0; i < 5; i++) await importMapSql(db, sql([[1, 1, 100 + i, 5], [2, 2, 50, 5], ...(i >= 2 ? ([[3 + i, 3, 10]] as V[]) : [])]), { inactiveDays: 3, now: day(i) });
+    const events = await db.event.count();
+    expect(await pruneVillageSnapshots(db, 3)).toBeGreaterThan(0);
+    const snaps = await db.villageSnapshot.groupBy({ by: ["snapshotId"] });
+    expect(snaps.map((s) => s.snapshotId).sort()).toEqual([3, 4, 5]);
+    expect(await db.snapshot.count()).toBe(5);
+    expect(await db.event.count()).toBe(events);
+    expect(await db.playerDailyStat.count({ where: { playerId: 1 } })).toBe(5);
+    expect(await pruneVillageSnapshots(db, 3)).toBe(0);
   });
 });

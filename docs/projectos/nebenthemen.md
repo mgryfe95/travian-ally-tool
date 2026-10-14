@@ -45,3 +45,6 @@ Punkte, die Projekt, Aufbau oder andere Bereiche betreffen, aber nicht direkt zu
 - **Mockup „Dörferstatistik-Upload“** auf der Übersicht ist ein generischer Screenshot-Upload ohne Dorfbezug (`villageId` leer); die Zuordnung der Dörfer aus dem Bild folgt mit der echten Pipeline.
 - **Spieldaten-Seite ist für alle mit `map.view` sichtbar** (nur lesen); Bearbeiten (`gamedata.edit`) hat noch keine Oberfläche, weil es noch keine Daten gibt.
 - **Produktion/h in der Dörfertabelle** zeigt „–“, bis Ressourcen-Screenshots ausgewertet werden.
+- **Scraper für Spieldaten (halbjährlich):** vom Nutzer gewünscht; weicht vom Auftrag ab („kein fortlaufendes Scraping“). Voraussetzungen: Erlaubnis/Klärung mit Travian Games (To-do Max), Datenstruktur aus `probe-knowledgebase.ts`; dann Cron im Worker (`GAMEDATA_REFRESH_CRON`, standardmäßig aus), höflich (robots.txt, Pausen, Kennung) und mit Diff-Bericht statt automatischem Überschreiben.
+- **Session-Report:** statt in `projectos-reporter` (nicht im Session-Scope) unter `docs/reports/` abgelegt. Bei Bedarf manuell ins Report-Repo kopieren (Frontmatter nach CLAUDE.md ergänzen).
+- **Docker-Build** konnte hier nicht ausgeführt werden (kein Docker-Daemon); die Build-Env-Korrektur wurde per `next build` ohne `.env` verifiziert. Erster echter `docker compose build` bitte aufmerksam beobachten.

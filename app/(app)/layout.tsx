@@ -7,6 +7,7 @@ import { env } from "@/lib/env";
 import { hasPermission, type Permission } from "@/lib/permissions";
 import { serverLabel, ownAllianceTag } from "@/lib/serverinfo";
 import { loadMatrix } from "@/lib/services/context";
+import { getWorldStatus } from "@/lib/services/world";
 import { requireUser } from "@/lib/session";
 
 const ROLE_LABEL: Record<string, string> = { SYSTEMADMIN: "Systemadmin", ADMIN: "Admin", MODERATOR: "Moderator", MEMBER: "Member", GUEST: "Gast" };
@@ -26,6 +27,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   if (ADMIN_PERMS.some(can)) items.push({ href: "/admin", label: "Admin", sepBefore: true });
   items.push({ href: "/gamedata", label: "Spieldaten", sepBefore: !ADMIN_PERMS.some(can) });
   const tag = await ownAllianceTag(db);
+  const world = await getWorldStatus(db);
   return (
     <div className="shell">
       <nav className="side" aria-label="Hauptnavigation">
@@ -40,7 +42,15 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </nav>
-      <main className="main">{children}</main>
+      <main className="main">
+        {world.status === "ended" && (
+          <section className="card warn" role="status">
+            <strong style={{ color: "var(--warn)" }}>Die Spielwelt scheint beendet.</strong>{" "}
+            <span className="sub">Die Kartendaten sind seit {world.lastSuccessAt ? world.lastSuccessAt.toLocaleDateString("de-DE") : "längerem"} nicht mehr abrufbar. Der Stand bleibt als Archiv sichtbar, der Chat funktioniert weiter. Ein Admin kann eine neue Welt starten (docs/DEPLOY.md).</span>
+          </section>
+        )}
+        {children}
+      </main>
       <TabBar />
     </div>
   );

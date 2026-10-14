@@ -7,9 +7,12 @@ describe("Allianz-Gruppe", () => {
     expect(["NAP", "NEUTRAL", "ENEMY"].some((r) => isOwnGroup(r as "NAP"))).toBe(false);
     expect(isOwnGroup(undefined)).toBe(false);
   });
+  it("mehrere konfigurierte Haupt-Allianzen sind alle implizit OWN", () => {
+    expect(ownGroupIds(effectiveRelations([], [36, 12, 5]))).toEqual(new Set([36, 12, 5]));
+  });
   it("konfigurierte Haupt-Allianz ist implizit OWN, expliziter Eintrag gewinnt", () => {
-    expect(ownGroupIds(effectiveRelations([{ allianceId: 7, relation: "ALLIED" }, { allianceId: 8, relation: "ENEMY" }], 36))).toEqual(new Set([36, 7]));
-    expect(ownGroupIds(effectiveRelations([{ allianceId: 36, relation: "ENEMY" }], 36)).size).toBe(0);
+    expect(ownGroupIds(effectiveRelations([{ allianceId: 7, relation: "ALLIED" }, { allianceId: 8, relation: "ENEMY" }], [36]))).toEqual(new Set([36, 7]));
+    expect(ownGroupIds(effectiveRelations([{ allianceId: 36, relation: "ENEMY" }], [36])).size).toBe(0);
   });
 });
 

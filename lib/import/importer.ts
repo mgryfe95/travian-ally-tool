@@ -151,3 +151,15 @@ export async function importMapSql(
     { timeout: 300_000, maxWait: 30_000 },
   );
 }
+
+/**
+ * Nur die letzten `keep` Snapshots behalten ihre Dorf-Rohzeilen (für den Diff reicht der Vorgänger). Verlauf steckt in
+ * `PlayerDailyStat`, Ereignisse bleiben erhalten. Hält die Datenbank bei ~24k Dörfern pro Tag klein.
+ */
+export async function pruneVillageSnapshots(db: PrismaClient, keep = 3): Promise<number> {
+  const recent = await db.snapshot.findMany({ orderBy: { id: "desc" }, take: keep, select: { id: true } });
+  if (recent.length < keep) return 0;
+  const cutoff = recent[recent.length - 1]!.id;
+  const res = await db.villageSnapshot.deleteMany({ where: { snapshotId: { lt: cutoff } } });
+  return res.count;
+}

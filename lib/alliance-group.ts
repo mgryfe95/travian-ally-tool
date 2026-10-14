@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import { getAllianceId } from "./settings";
+import { getAllianceIds } from "./settings";
 
 export const RELATIONS = ["OWN", "ALLIED", "NAP", "NEUTRAL", "ENEMY"] as const;
 export type Relation = (typeof RELATIONS)[number];
@@ -14,9 +14,9 @@ export const RELATION_LABEL: Record<Relation, string> = {
 export const isOwnGroup = (r: Relation | undefined) => r !== undefined && OWN_GROUP_RELATIONS.includes(r);
 
 /** Explizite Einträge schlagen die konfigurierte Haupt-Allianz (ENV/Setting), die sonst implizit OWN ist. */
-export function effectiveRelations(rows: { allianceId: number; relation: Relation }[], configuredOwnId?: number): Map<number, Relation> {
+export function effectiveRelations(rows: { allianceId: number; relation: Relation }[], configuredOwnIds: readonly number[] = []): Map<number, Relation> {
   const map = new Map<number, Relation>();
-  if (configuredOwnId) map.set(configuredOwnId, "OWN");
+  for (const id of configuredOwnIds) map.set(id, "OWN");
   for (const r of rows) map.set(r.allianceId, r.relation);
   return map;
 }
@@ -60,7 +60,7 @@ export function compareMembers(groupPlayers: GroupPlayer[], links: LinkRow[]): M
 
 export async function loadRelations(db: PrismaClient): Promise<Map<number, Relation>> {
   const rows = await db.allianceClassification.findMany();
-  return effectiveRelations(rows, await getAllianceId(db));
+  return effectiveRelations(rows, await getAllianceIds(db));
 }
 
 export async function loadGroupPlayers(db: PrismaClient, relations?: Map<number, Relation>): Promise<GroupPlayer[]> {
