@@ -21,3 +21,6 @@ Punkte, die Projekt, Aufbau oder andere Bereiche betreffen, aber nicht direkt zu
 - **Session-Row:** CLAUDE.md verbietet Notion-Schreiben für Claude Code; Session-Row entsteht über den Reporter. Das Session-Start-Ritual (Schritt „Session-Row anlegen“) ist hier nicht ausgeführt.
 - **Lens-Gating weiter offen** (siehe Eintrag oben).
 - **`next lint` ist in Next 16 entfernt:** später auf ESLint-CLI migrieren.
+- **`main` zeigt auf M1-Stand** (Branch-Kopie), daher enthält der erste PR M1+M2 (Diff nur ab Commit nach `main`). Sauberer Start mit leerem Root-Commit wurde blockiert.
+- **Tribe-Mapping Natars:** auf dem Server ist `tribe=5` Natars; 4 (Natur) kommt in den Daten nicht vor.
+- **Fixture enthält echte Spielernamen** (öffentliche Kartendaten, ~36 Zeilen) — bei Bedarf anonymisieren.

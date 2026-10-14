@@ -13,3 +13,101 @@ model Setting {
   value     String
   updatedAt DateTime @updatedAt
 }
+
+/// Ein importierter map.sql-Stand. `hash` (SHA-256) verhindert Doppelimporte.
+model Snapshot {
+  id        Int               @id @default(autoincrement())
+  fetchedAt DateTime          @default(now())
+  hash      String            @unique
+  rowCount  Int
+  villages  VillageSnapshot[]
+  events    Event[]
+}
+
+model VillageSnapshot {
+  snapshotId   Int
+  villageId    Int
+  fieldId      Int
+  x            Int
+  y            Int
+  tribe        Int
+  villageName  String
+  playerId     Int
+  playerName   String
+  allianceId   Int
+  allianceName String
+  population   Int
+  /// Alle Spalten ab Index 11 (region, isCapital, isCity, hasHarbor, victoryPoints, ggf. weitere als colN)
+  extra        Json
+  snapshot     Snapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  @@id([snapshotId, villageId])
+  @@index([snapshotId, playerId])
+}
+
+/// Aktuelle Sicht (wird bei jedem Import neu aufgebaut). allianceId 0 = ohne Allianz.
+model Alliance {
+  id           Int    @id
+  name         String
+  memberCount  Int
+  villageCount Int
+  population   Int
+}
+
+model Player {
+  id           Int      @id
+  name         String
+  tribe        Int
+  allianceId   Int
+  population   Int
+  villageCount Int
+  /// active | stagnant | inactive | declining
+  status       String
+  noGrowthDays Int
+  delta1       Int?
+  delta3       Int?
+  delta7       Int?
+  firstSeen    DateTime
+
+  @@index([allianceId])
+  @@index([status])
+}
+
+model Village {
+  id         Int    @id
+  fieldId    Int
+  x          Int
+  y          Int
+  name       String
+  playerId   Int
+  population Int
+  extra      Json
+
+  @@index([playerId])
+}
+
+model PlayerDailyStat {
+  playerId     Int
+  date         DateTime @db.Date
+  population   Int
+  villageCount Int
+  allianceId   Int
+
+  @@id([playerId, date])
+}
+
+model Event {
+  id            Int      @id @default(autoincrement())
+  snapshotId    Int
+  /// village_new | village_lost | village_conquered | alliance_change | player_gone
+  type          String
+  at            DateTime @default(now())
+  playerId      Int?
+  otherPlayerId Int?
+  villageId     Int?
+  data          Json?
+  snapshot      Snapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  @@index([at])
+  @@index([playerId])
+}
