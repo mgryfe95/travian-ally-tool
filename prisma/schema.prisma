@@ -248,3 +248,116 @@ model AuditLog {
 
   @@index([at])
 }
+
+// ───────────── M4: Chat ─────────────
+
+enum ChannelTree {
+  ALLY
+  TASKFORCE
+}
+
+model Channel {
+  id           Int         @id @default(autoincrement())
+  tree         ChannelTree
+  name         String
+  slug         String      @unique
+  sortOrder    Int         @default(0)
+  taskforceId  Int?        @unique
+  /// Mindestrolle zum Lesen/Schreiben (GUEST..ADMIN). In Task-Force-Kanälen zählt zusätzlich die Mitgliedschaft.
+  minReadRole  String      @default("MEMBER")
+  minWriteRole String      @default("MEMBER")
+  archivedAt   DateTime?
+  messages     Message[]
+  taskforce    Taskforce?  @relation(fields: [taskforceId], references: [id], onDelete: Cascade)
+}
+
+model Message {
+  id          Int          @id @default(autoincrement())
+  channelId   Int
+  channel     Channel      @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  authorId    String
+  /// Markdown-Quelltext (wird beim Rendern in React-Knoten übersetzt, nie als HTML ausgegeben)
+  body        String
+  createdAt   DateTime     @default(now())
+  editedAt    DateTime?
+  deletedAt   DateTime?
+  tags        MessageTag[]
+  attachments Attachment[]
+
+  @@index([channelId, id])
+  @@index([authorId])
+}
+
+model Tag {
+  id        Int          @id @default(autoincrement())
+  name      String       @unique
+  /// Farbpaar-Schlüssel (red|amber|blue|green|purple|gray)
+  color     String       @default("gray")
+  createdBy String?
+  messages  MessageTag[]
+}
+
+model MessageTag {
+  messageId Int
+  tagId     Int
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, tagId])
+  @@index([tagId])
+}
+
+model Taskforce {
+  id          Int               @id @default(autoincrement())
+  name        String
+  description String            @default("")
+  createdBy   String
+  createdAt   DateTime          @default(now())
+  archivedAt  DateTime?
+  members     TaskforceMember[]
+  channel     Channel?
+}
+
+model TaskforceMember {
+  taskforceId Int
+  userId      String
+  /// lead | member
+  role        String    @default("member")
+  taskforce   Taskforce @relation(fields: [taskforceId], references: [id], onDelete: Cascade)
+
+  @@id([taskforceId, userId])
+  @@index([userId])
+}
+
+model Attachment {
+  id         Int      @id @default(autoincrement())
+  messageId  Int?
+  message    Message? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  uploaderId String
+  /// image | pdf | text
+  kind       String
+  mime       String
+  name       String
+  sizeBytes  Int
+  width      Int?
+  height     Int?
+  storageKey String
+  thumbKey   String?
+  previewKey String?
+  /// Erste ~20 Zeilen bei Text/CSV/Log
+  snippet    String?
+  createdAt  DateTime @default(now())
+
+  @@index([messageId])
+  @@index([createdAt])
+}
+
+/// Ungelesen-Zähler: letzte gesehene Nachricht je Nutzer und Kanal
+model ChannelRead {
+  userId        String
+  channelId     Int
+  lastReadMsgId Int      @default(0)
+  updatedAt     DateTime @updatedAt
+
+  @@id([userId, channelId])
+}

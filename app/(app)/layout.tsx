@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { LogoutButton } from "@/components/AuthForms";
 import { SideNav, type NavItem } from "@/components/SideNav";
+import { TabBar } from "@/components/TabBar";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { hasPermission, type Permission } from "@/lib/permissions";
@@ -40,6 +41,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         </div>
       </nav>
       <main className="main">{children}</main>
+      <TabBar />
     </div>
   );
 }

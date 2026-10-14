@@ -13,6 +13,12 @@ const schema = z.object({
   INACTIVE_DAYS: z.coerce.number().int().positive().default(3),
   /** Code, der zum Registrieren eines SYSTEMADMIN_EMAILS-Kontos nötig ist (Default: AUTH_SECRET). Verhindert, dass Fremde die Admin-Adresse vorab belegen. */
   SYSTEMADMIN_SETUP_CODE: z.preprocess(emptyToUndefined, z.string().min(8).optional()),
+  /** Better-Auth-Rate-Limit für Sign-in/Sign-up pro Minute und IP (E2E erhöht es). */
+  AUTH_RATE_LIMIT_PER_MIN: z.coerce.number().int().positive().default(5),
+  STORAGE_DIR: z.string().default("./storage"),
+  UPLOAD_MAX_IMAGE_MB: z.coerce.number().positive().default(10),
+  UPLOAD_MAX_FILE_MB: z.coerce.number().positive().default(20),
+  UPLOAD_MAX_FILES: z.coerce.number().int().positive().default(10),
   ANTHROPIC_API_KEY: z.string().optional(),
   ANTHROPIC_MODEL: z.string().optional(),
 });

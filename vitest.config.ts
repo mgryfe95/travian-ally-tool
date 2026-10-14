@@ -9,6 +9,7 @@ export default defineConfig({
       TRAVIAN_SERVER_URL: "https://ts12.x1.europe.travian.com",
       SYSTEMADMIN_EMAILS: "boss@example.com",
       APP_URL: "http://localhost:3000",
+      STORAGE_DIR: "/tmp/ally-test-storage",
     },
     globalSetup: ["./tests/global-setup.ts"], fileParallelism: false, testTimeout: 30_000 },
 });

@@ -7,6 +7,7 @@ import { RELATIONS, type Relation } from "@/lib/alliance-group";
 import { ForbiddenError, PERMISSIONS, ROLES, type Permission, type Role } from "@/lib/permissions";
 import { classifyAlliance, deleteUser, setRolePermission, setUserBanned, setUserRole } from "@/lib/services/admin";
 import { approveLink, createInvite, inviteMessage, rejectLink, revokeInvite, VerificationError } from "@/lib/services/verification";
+import { ChatError, chatCtx, createChannel, deleteTag, moveChannel, saveTag, updateChannel } from "@/lib/services/chat";
 import { requireUser } from "@/lib/session";
 import { loadMemberRows } from "./tabs/data";
 
@@ -16,7 +17,7 @@ async function run(tab: string, fn: () => Promise<void>): Promise<never> {
   try {
     await fn();
   } catch (e) {
-    if (e instanceof ForbiddenError || e instanceof VerificationError) error = e.message;
+    if (e instanceof ForbiddenError || e instanceof VerificationError || e instanceof ChatError) error = e.message;
     else throw e;
   }
   redirect(`/admin?tab=${tab}${error ? `&error=${encodeURIComponent(error)}` : ""}`);
@@ -104,3 +105,26 @@ export async function createBulkInvitesAction(): Promise<InviteState> {
   }
 }
 
+
+// ───────── Kanäle & Tags ─────────
+
+const cx = async () => chatCtx(db, await requireUser());
+
+export async function createChannelAction(f: FormData) {
+  return run("channels", async () => void (await createChannel(db, await cx(), { name: str(f, "name"), minReadRole: str(f, "minReadRole") || undefined, minWriteRole: str(f, "minWriteRole") || undefined })));
+}
+export async function updateChannelAction(f: FormData) {
+  return run("channels", async () => updateChannel(db, await cx(), int(f, "channelId"), { name: str(f, "name"), minReadRole: str(f, "minReadRole"), minWriteRole: str(f, "minWriteRole") }));
+}
+export async function archiveChannelAction(f: FormData) {
+  return run("channels", async () => updateChannel(db, await cx(), int(f, "channelId"), { archived: true }));
+}
+export async function moveChannelAction(f: FormData) {
+  return run("channels", async () => moveChannel(db, await cx(), int(f, "channelId"), str(f, "dir") === "up" ? -1 : 1));
+}
+export async function saveTagAction(f: FormData) {
+  return run("channels", async () => void (await saveTag(db, await cx(), { id: f.get("tagId") ? int(f, "tagId") : undefined, name: str(f, "name"), color: str(f, "color") })));
+}
+export async function deleteTagAction(f: FormData) {
+  return run("channels", async () => deleteTag(db, await cx(), int(f, "tagId")));
+}

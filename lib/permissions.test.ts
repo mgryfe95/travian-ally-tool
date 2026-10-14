@@ -31,7 +31,8 @@ describe("Rechte-Matrix", () => {
   });
   it("Defaults: Member chattet, Guest nicht, Moderator moderiert, nur Admin vergibt Rollen", () => {
     expect(hasPermission("MEMBER", "chat.write", m)).toBe(true);
-    expect(hasPermission("GUEST", "chat.read", m)).toBe(false);
+    expect(hasPermission("GUEST", "chat.read", m)).toBe(true);
+    expect(hasPermission("GUEST", "chat.write", m)).toBe(false);
     expect(hasPermission("MODERATOR", "chat.moderate", m)).toBe(true);
     expect(hasPermission("MODERATOR", "roles.assign", m)).toBe(false);
     expect(hasPermission("ADMIN", "alliances.classify", m)).toBe(true);

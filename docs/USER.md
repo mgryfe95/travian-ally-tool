@@ -20,4 +20,10 @@ Allianzen, die zusammengehören, als **Eigene Allianz** oder **Allianz** markier
 ## Rollen & Rechte
 Rollen: SYSTEMADMIN > ADMIN > MODERATOR > MEMBER > GUEST. ADMIN vergibt Rollen unterhalb von ADMIN; ADMINs ernennt nur SYSTEMADMIN. Die Rechte-Matrix (Admin → Rechte) ist editierbar; `permissions.edit` und `roles.assign` der Rolle ADMIN ändert nur SYSTEMADMIN. Alle Änderungen stehen im Audit-Log.
 
-Kanäle und Tags: folgen mit M4.
+## Chat (Admin → Kanäle & Tags)
+- **Kanäle:** Die 8 Standardkanäle (Deff-Call, Deff-Reports, Off-Call, Off-Reports, Ressources, Settlement, Sitter, Mixed topics) lassen sich umbenennen, sortieren (↑/↓) und archivieren; neue Kanäle legst du unten an. Je Kanal gilt „lesen ab“ und „schreiben ab“ (Gast/Member/Moderator/Admin). Gäste sehen nur Kanäle mit „lesen ab = Gast“ (Standard: Mixed topics). Recht: `settings.edit`.
+- **Tags:** Name + Farbe aus einem vorgegebenen Farbsatz (Kontrast garantiert). Recht: `tags.manage`. Tags sind optional, 0..n pro Nachricht (im Chat Standard: einer).
+- **Sammelraum „Alle“:** zeigt Nachrichten aller Allianz-Kanäle, die du lesen darfst; Task-Forces erscheinen dort nie. Beim Schreiben im Sammelraum muss ein Kanal gewählt werden.
+- **Task-Forces:** „+“ in der Kanalliste (Recht `taskforce.create`). Es entsteht ein eigener Kanal nur für Mitglieder (Admins sehen alle). Leads und Admins verwalten Mitglieder unter „Verwalten“ im Kanalkopf; archivieren blendet die Task-Force aus.
+- **Anhänge:** 📎, Drag & Drop oder Strg+V (Screenshots), bis zu 10 Dateien pro Nachricht. Erlaubt: PNG, JPG, WebP, GIF, PDF, TXT/CSV/LOG (Bild max. 10 MB, sonst 20 MB; per ENV änderbar). Bilder werden ohne EXIF/Metadaten neu gespeichert, Vorschau und Lightbox inklusive. Dateien sind nur für Leser des Kanals abrufbar. Recht: `chat.upload` (Member aufwärts). Nicht gesendete Uploads werden nach 24 h automatisch gelöscht.
+- **Moderation:** Eigene Nachrichten bearbeiten/löschen; mit `chat.moderate` auch fremde löschen (Anhänge werden mitgelöscht, im Audit-Log vermerkt).

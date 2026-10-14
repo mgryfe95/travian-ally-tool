@@ -5,6 +5,7 @@ import { loadMatrix } from "@/lib/services/context";
 import { requirePermission } from "@/lib/session";
 import { AlliancesTab } from "./tabs/alliances";
 import { AuditTab } from "./tabs/audit";
+import { ChannelsTab } from "./tabs/channels";
 import { MembersTab } from "./tabs/members";
 import { RightsTab } from "./tabs/rights";
 import { UsersTab } from "./tabs/users";
@@ -42,9 +43,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       {error && <p className="errtext" role="alert">{error}</p>}
       {current?.id === "members" && <MembersTab actor={user} />}
       {current?.id === "rights" && <RightsTab actor={user} />}
-      {current?.id === "channels" && (
-        <section className="card"><p className="sub">Kanäle (Allianz-Baum, minReadRole/minWriteRole) und Tags verwaltest du hier mit M4.</p></section>
-      )}
+      {current?.id === "channels" && <ChannelsTab actor={user} />}
       {current?.id === "alliances" && <AlliancesTab q={q} />}
       {current?.id === "users" && <UsersTab actor={user} />}
       {current?.id === "audit" && <AuditTab />}

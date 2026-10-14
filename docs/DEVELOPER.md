@@ -38,7 +38,17 @@
 - Offen: Ursprung der Inaktiven-Suche aus „Meine Dörfer“ (M5) und „letzten Ursprung merken“; Discord-OAuth (später); Rate-Limit auf Message-Post (M4).
 
 ## UI (nach `docs/ui/screenflow.html`)
-- Route-Gruppen: `app/(app)` = Sidebar-Shell (verlangt Login, Navigation nach Rechten), `app/(auth)` = zentrierte Karte (Login, Register, Invite, Claim, Forgot). Bausteine (`.card`, `.btn`, `.field`, `.pill`, `.tabs`, …) und Tokens stehen in `app/globals.css` 1:1 aus dem Screenflow; Fonts (Cinzel, IBM Plex) per Google-Fonts-`<link>` im Root-Layout wie in der Vorlage.
+- Route-Gruppen: `app/(app)` = Sidebar-Shell (verlangt Login, Navigation nach Rechten), `app/(auth)` = zentrierte Karte (Login, Register, Invite, Claim, Forgot). Bausteine (`.card`, `.btn`, `.field`, `.pill`, `.tabs`, …) und Tokens stehen in `app/globals.css` 1:1 aus dem Screenflow; Schriften: Systemstack (Arial / Georgia für das Logo / Courier für Zahlen), keine externen Fonts (DSGVO).
 - Admin: eine Seite `/admin?tab=…` (`members | rights | channels | alliances | users | audit`), sichtbare Tabs nach Recht. Server-Actions in `app/(app)/admin/actions.ts`; Zeilenaufbau des Mitglieder-Tabs in `lib/admin-members.ts` (getestet).
 - Inaktive: Ursprung `?origin=village:<id>` oder `(x|y)`; zuletzt gewählter Ursprung in `User.lastOrigin`. „Eigene Dörfer“ = Dörfer der Spieler mit verifiziertem `PlayerLink`.
 - E2E-Selektoren nutzen Labels/Rollen (`npm run e2e`).
+
+## M4 — Chat
+- **Zugriff** (`lib/chat/access.ts`, rein): ALLY → `chat.read` + `minReadRole`; TASKFORCE → Mitgliedschaft (ADMIN/SYSTEMADMIN sehen alle). Schreiben zusätzlich `chat.write` (+ `minWriteRole`). Unbekannte Mindestrolle = ADMIN (fail closed). Archivierte Kanäle sind unsichtbar. Dieselbe Prüfung gilt für Seiten, API, Socket-Join und Anhangs-Auslieferung.
+- **Services** `lib/services/chat.ts` (Nachrichten, Kanäle, Tags, Task-Forces), HTTP-Schicht `app/api/chat/*` + `app/api/attachments/[id]` (Fehler → 403/4xx über `lib/http.ts`). UI: `components/chat/*`, Seiten `app/(app)/chat/*`.
+- **Markdown** (`lib/chat/markdown.ts`): Body bleibt Quelltext; Rendern erzeugt React-Knoten (`components/Md.tsx`), nie HTML. Nur http(s)-Links, `rel=noopener noreferrer nofollow ugc`. Koordinaten `(x|y)` (−200…200) → `/inactive?origin=…`.
+- **Realtime:** `server.ts` (Socket.IO, Session-Cookie im Handshake, Join prüft Recht frisch aus der DB); Services veröffentlichen über `lib/realtime.ts` (`globalThis.__io`, weil Next-Bundle und tsx-Prozess dieselbe Instanz teilen müssen). Räume `channel:<id>`; der Client tritt allen lesbaren Kanälen bei (für Live-Zähler).
+- **Suche:** GIN-Ausdrucksindex `to_tsvector('german', body)` (Migration `m4_chat_search`); Abfragen müssen denselben Ausdruck verwenden. Bewusst keine generierte Spalte (Prisma-Drift).
+- **Anhänge:** `lib/chat/attachments.ts` (file-type-Sniffing, sharp, pdftoppm → Docker-Image installiert `poppler-utils`), `lib/storage.ts` (`StorageAdapter`, lokal unter `STORAGE_DIR`), Limits per ENV. Originalbilder werden ohne Metadaten neu kodiert; Thumbnail/Web als WebP. Auslieferung: `Content-Type` aus dem gespeicherten Typ, `nosniff`, `CSP: default-src 'none'; sandbox`, Text immer als Download. Orphans: Cron `40 * * * *` im Worker.
+- **Rate-Limits:** Nachrichten 30/min, Uploads 20/min je Nutzer (`lib/chat/limits.ts`, in-memory).
+- E2E laufen sequenziell (`01-invite` legt boss/member an, `02-chat` nutzt sie).

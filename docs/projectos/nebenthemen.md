@@ -35,3 +35,9 @@ Punkte, die Projekt, Aufbau oder andere Bereiche betreffen, aber nicht direkt zu
 - **Abweichungen vom Screenflow:** (1) „IGM-Text kopieren“ bei offener Einladung geht nicht (nur Hash gespeichert) → Button „Neuen Link erzeugen“. (2) Rechte-Matrix zeigt alle 15 Rechte statt 10 (chat.read, taskforce.manage, map.view, settings.edit, alliances.classify zusätzlich). (3) Admin-Tabs Allianzen, Konten, Audit zusätzlich. (4) Nachrichten-/Kanal-Tab ist bis M4 Platzhalter. (5) Importzeit im Gast-Screen aus `IMPORT_CRON` (stündlich xx:15) statt „02:15“.
 - **Datenschutz Google Fonts:** Die Vorlage lädt Cinzel/IBM Plex vom Google-CDN (IP-Übertragung, DSGVO-relevant). Empfehlung: Fonts selbst hosten (`next/font` mit lokalen Dateien); braucht Internetzugriff beim Build bzw. Font-Dateien im Repo. Entscheidung offen.
 - **SMTP (eingeplant):** Passwort-Reset und E-Mail-Verifizierung via `nodemailer`; ENV `SMTP_HOST/PORT/USER/PASS/FROM`; dann ließe sich auch der Setup-Code für Systemadmin durch E-Mail-Verifizierung ersetzen.
+- **Task-Force „+“ im Screenflow** ist als eigene Seite `/chat/tf/new` umgesetzt (Vorlage zeigt keinen Dialog). Mitglieder-Verwaltung unter `/chat/tf/[id]`.
+- **Anhänge „Signierte Links“:** nicht gebaut — Cookie-Auth reicht für `<img>`/Lightbox, es gibt keine öffentlichen URLs. Bei späterem Bedarf (z. B. Teilen außerhalb) nachrüstbar.
+- **PDF-Vorschau** rendert fremde PDFs mit `pdftoppm` (Timeout 20 s, temporäres Verzeichnis). Für maximale Härte später in Sandbox/Container-Limit auslagern.
+- **Gelöschte Nachrichten** bleiben als Zeile (`deletedAt`), der Text wird nicht geleert (Moderation/Audit). Bei DSGVO-Löschwunsch Body überschreiben — Entscheidung offen.
+- **Kein Verlauf bearbeiteter Texte**; „bearbeitet“-Marker genügt (Auftrag verlangt nichts anderes).
+- **Mobile Chat:** Kanal-Select + Tab-Bar wie im Screenflow; Touch-Ziele ≥ 44 px per CSS.

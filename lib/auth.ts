@@ -34,7 +34,10 @@ export const auth = betterAuth({
     enabled: true,
     window: 60,
     max: 60,
-    customRules: { "/sign-in/email": { window: 60, max: 5 }, "/sign-up/email": { window: 60, max: 5 } },
+    customRules: {
+      "/sign-in/email": { window: 60, max: env().AUTH_RATE_LIMIT_PER_MIN },
+      "/sign-up/email": { window: 60, max: env().AUTH_RATE_LIMIT_PER_MIN },
+    },
   },
   hooks: {
     before: createAuthMiddleware(async (ctx) => {

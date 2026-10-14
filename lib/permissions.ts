@@ -15,7 +15,7 @@ export const PERMISSIONS = [
 export type Permission = (typeof PERMISSIONS)[number];
 
 export const DEFAULT_PERMISSIONS: Record<StoredRole, Permission[]> = {
-  GUEST: ["map.view"],
+  GUEST: ["map.view", "chat.read"],
   MEMBER: ["map.view", "chat.read", "chat.write", "chat.upload"],
   MODERATOR: ["map.view", "chat.read", "chat.write", "chat.upload", "chat.moderate", "tags.manage", "taskforce.create", "members.invite", "members.approve"],
   ADMIN: [...PERMISSIONS],

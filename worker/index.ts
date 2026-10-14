@@ -4,6 +4,7 @@ import { env } from "../lib/env";
 import { fetchMapSql, importMapSql } from "../lib/import/importer";
 import { getInactiveDays } from "../lib/settings";
 import { checkClaims } from "../lib/services/verification";
+import { cleanupOrphanAttachments } from "../lib/chat/cleanup";
 
 const cfg = env();
 let running = false;
@@ -25,5 +26,7 @@ export async function runImport() {
 
 if (!cron.validate(cfg.IMPORT_CRON)) throw new Error(`Invalid IMPORT_CRON: ${cfg.IMPORT_CRON}`);
 cron.schedule(cfg.IMPORT_CRON, () => void runImport());
+// Verwaiste Chat-Uploads (ohne Nachricht, älter als 24 h) stündlich aufräumen.
+cron.schedule("40 * * * *", () => void cleanupOrphanAttachments(db).then((n) => n && console.log("[worker] verwaiste Uploads gelöscht:", n)).catch((e) => console.error("[worker] cleanup failed", e)));
 void runImport();
 console.log(`[worker] started, schedule "${cfg.IMPORT_CRON}"`);
