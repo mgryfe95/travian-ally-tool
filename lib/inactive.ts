@@ -16,6 +16,7 @@ export type Candidate = {
   allianceName: string;
   status: PlayerStatus;
   noGrowthDays: number;
+  delta7: number | null;
 };
 
 export type SortKey = "distance" | "population" | "days";
@@ -71,7 +72,7 @@ export async function loadCandidates(db: PrismaClient, statuses: PlayerStatus[] 
         villageId: v.id, villageName: v.name, x: v.x, y: v.y, villagePop: v.population,
         playerId: p.id, playerName: p.name, playerPop: p.population, tribe: p.tribe,
         allianceId: p.allianceId, allianceName: alliances.get(p.allianceId) ?? "", status: p.status as PlayerStatus,
-        noGrowthDays: p.noGrowthDays,
+        noGrowthDays: p.noGrowthDays, delta7: p.delta7,
       });
     }
   }
@@ -79,3 +80,12 @@ export async function loadCandidates(db: PrismaClient, statuses: PlayerStatus[] 
 }
 
 export const TRIBES: Record<number, string> = { 1: "Römer", 2: "Germanen", 3: "Gallier", 4: "Natur", 5: "Natars", 6: "Ägypter", 7: "Hunnen", 8: "Spartaner" };
+
+/** Akzeptiert `(12|-34)`, `12|-34`, `12/-34` oder `12,-34`; Koordinaten müssen im Kartenbereich liegen. */
+export function parseCoord(input: string, radius = 200): Coord | undefined {
+  const m = /^\s*\(?\s*(-?\d{1,3})\s*[|/,;]\s*(-?\d{1,3})\s*\)?\s*$/.exec(input);
+  if (!m) return undefined;
+  const x = Number(m[1]);
+  const y = Number(m[2]);
+  return Math.abs(x) <= radius && Math.abs(y) <= radius ? { x, y } : undefined;
+}

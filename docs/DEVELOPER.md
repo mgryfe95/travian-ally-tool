@@ -36,3 +36,9 @@
 - **Verifizierung** (`lib/services/verification.ts`): Einladung (Token 24 Byte base64url, nur SHA-256 gespeichert, 7 Tage, atomar einmalig), Umbenennungs-Code `ALLY-XXXX` (Prüfung nach jedem Import im Worker/Skript), manuelle Freigabe (`members.approve`). Alle verlangen, dass der Spieler **in der eigenen Allianz-Gruppe** ist.
 - **Tests:** `npm run ci` (Unit + DB-Integration); E2E: `npm run e2e` (baut, startet Server auf :3100, DB `ally_e2e`, Chromium aus `PLAYWRIGHT_BROWSERS_PATH`).
 - Offen: Ursprung der Inaktiven-Suche aus „Meine Dörfer“ (M5) und „letzten Ursprung merken“; Discord-OAuth (später); Rate-Limit auf Message-Post (M4).
+
+## UI (nach `docs/ui/screenflow.html`)
+- Route-Gruppen: `app/(app)` = Sidebar-Shell (verlangt Login, Navigation nach Rechten), `app/(auth)` = zentrierte Karte (Login, Register, Invite, Claim, Forgot). Bausteine (`.card`, `.btn`, `.field`, `.pill`, `.tabs`, …) und Tokens stehen in `app/globals.css` 1:1 aus dem Screenflow; Fonts (Cinzel, IBM Plex) per Google-Fonts-`<link>` im Root-Layout wie in der Vorlage.
+- Admin: eine Seite `/admin?tab=…` (`members | rights | channels | alliances | users | audit`), sichtbare Tabs nach Recht. Server-Actions in `app/(app)/admin/actions.ts`; Zeilenaufbau des Mitglieder-Tabs in `lib/admin-members.ts` (getestet).
+- Inaktive: Ursprung `?origin=village:<id>` oder `(x|y)`; zuletzt gewählter Ursprung in `User.lastOrigin`. „Eigene Dörfer“ = Dörfer der Spieler mit verifiziertem `PlayerLink`.
+- E2E-Selektoren nutzen Labels/Rollen (`npm run e2e`).

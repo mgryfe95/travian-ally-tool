@@ -13,7 +13,8 @@ export class RegisterError extends Error {
 
 export const registerSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(200),
-  name: z.string().trim().min(2).max(40),
+  /** Bei Einladungen optional: dann gilt der Spielername. */
+  name: z.string().trim().min(2).max(40).optional(),
   password: z.string().min(10).max(200),
   inviteToken: z.string().min(10).max(200).optional(),
   setupCode: z.string().max(200).optional(),
@@ -29,14 +30,20 @@ const safeEqual = (a: string, b: string) => timingSafeEqual(digest(a), digest(b)
 export async function registerUser(raw: unknown) {
   const parsed = registerSchema.safeParse(raw);
   if (!parsed.success) throw new RegisterError("Eingaben ungültig (Passwort mind. 10 Zeichen)");
-  const { email, name, password, inviteToken, setupCode } = parsed.data;
+  const { email, password, inviteToken, setupCode } = parsed.data;
+  let name = parsed.data.name;
   const cfg = env();
 
   if (cfg.SYSTEMADMIN_EMAILS.includes(email)) {
     const expected = cfg.SYSTEMADMIN_SETUP_CODE ?? cfg.AUTH_SECRET;
     if (!setupCode || !safeEqual(setupCode, expected)) throw new RegisterError("Setup-Code erforderlich oder falsch", 403);
   }
-  if (inviteToken && !(await findOpenInvite(db, inviteToken))) throw new RegisterError("Einladung ungültig, abgelaufen oder bereits verwendet");
+  if (inviteToken) {
+    const invite = await findOpenInvite(db, inviteToken);
+    if (!invite) throw new RegisterError("Einladung ungültig, abgelaufen oder bereits verwendet. Bitte einen Admin um einen neuen Link bitten.");
+    name ??= (await db.player.findUnique({ where: { id: invite.travianPlayerId }, select: { name: true } }))?.name;
+  }
+  if (!name) throw new RegisterError("Bitte einen Anzeigenamen angeben");
 
   let result;
   try {

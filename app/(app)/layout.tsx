@@ -1,0 +1,45 @@
+import type { ReactNode } from "react";
+import { LogoutButton } from "@/components/AuthForms";
+import { SideNav, type NavItem } from "@/components/SideNav";
+import { db } from "@/lib/db";
+import { env } from "@/lib/env";
+import { hasPermission, type Permission } from "@/lib/permissions";
+import { serverLabel, ownAllianceTag } from "@/lib/serverinfo";
+import { loadMatrix } from "@/lib/services/context";
+import { requireUser } from "@/lib/session";
+
+const ROLE_LABEL: Record<string, string> = { SYSTEMADMIN: "Systemadmin", ADMIN: "Admin", MODERATOR: "Moderator", MEMBER: "Member", GUEST: "Gast" };
+const ADMIN_PERMS: Permission[] = ["members.invite", "members.approve", "roles.assign", "permissions.edit", "alliances.classify"];
+
+export default async function AppLayout({ children }: { children: ReactNode }) {
+  const user = await requireUser();
+  const matrix = await loadMatrix(db);
+  const can = (p: Permission) => hasPermission(user.role, p, matrix);
+  const items: NavItem[] = [
+    { href: "/", label: "Übersicht" },
+    { href: "/villages", label: "Meine Dörfer" },
+    { href: "/inactive", label: "Inaktive" },
+    { href: "/chat", label: "Chat" },
+    { href: "/chat?tf=1", label: "Task-Forces", match: "/taskforces" },
+  ];
+  if (ADMIN_PERMS.some(can)) items.push({ href: "/admin", label: "Admin", sepBefore: true });
+  items.push({ href: "/gamedata", label: "Spieldaten", sepBefore: !ADMIN_PERMS.some(can) });
+  const tag = await ownAllianceTag(db);
+  return (
+    <div className="shell">
+      <nav className="side" aria-label="Hauptnavigation">
+        <div className="logo">Ally Tool</div>
+        <div className="srv">{[serverLabel(env().TRAVIAN_SERVER_URL), tag].filter(Boolean).join(" · ")}</div>
+        <SideNav items={items} />
+        <div className="me">
+          <div style={{ fontWeight: 600 }}>{user.name}</div>
+          <div className="sub">{ROLE_LABEL[user.role] ?? user.role}</div>
+          <div style={{ marginTop: 6, fontSize: 12 }}>
+            <LogoutButton />
+          </div>
+        </div>
+      </nav>
+      <main className="main">{children}</main>
+    </div>
+  );
+}

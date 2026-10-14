@@ -33,6 +33,14 @@ describe("Registrierung", () => {
     expect((await db.user.findUnique({ where: { id: r.userId } }))?.role).toBe("MEMBER");
     expect(await db.playerLink.findFirst({ where: { userId: r.userId } })).toMatchObject({ status: "verified", travianPlayerId: 1 });
   });
+  it("Einladung ohne Namen übernimmt den Spielernamen", async () => {
+    const { token } = await createInvite(db, { id: "mod", role: "MODERATOR" }, 1);
+    const r = await registerUser({ email: "z@x.de", password: PW, inviteToken: token });
+    expect((await db.user.findUnique({ where: { id: r.userId } }))?.name).toBe("Alpha");
+  });
+  it("Gast-Registrierung ohne Namen scheitert", async () => {
+    await expect(registerUser({ email: "q@x.de", password: PW })).rejects.toBeInstanceOf(RegisterError);
+  });
   it("ungültige Einladung verhindert die Registrierung", async () => {
     await expect(registerUser({ email: "a@x.de", name: "Alpha", password: PW, inviteToken: "nope-nope-nope" })).rejects.toBeInstanceOf(RegisterError);
     expect(await db.user.count({ where: { email: "a@x.de" } })).toBe(0);

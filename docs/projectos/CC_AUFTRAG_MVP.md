@@ -10,6 +10,8 @@ und Task-Forces, Rollen- und Rechteverwaltung. Spätere Phase: eigene Dörfer, S
 
 **Regel:** Das Tool automatisiert **nichts** im Spiel und scrapt keine eingeloggten Seiten. Einzige externe Datenquelle ist `map.sql`, plus das, was Nutzer selbst hochladen.
 
+**UI-Vorlage für alle Screens:** `screenflow.html` liegt dem Auftrag bei. Es ist ein klickbarer Screenflow mit Beispieldaten; den Schalter „Hinweise für CC“ oben rechts einschalten. Layout, Navigation und Zustände sind verbindlich. Für Logik und Datenmodell gilt dieser Auftrag.
+
 ## 1. Stack (fix)
 - **Next.js 15** (App Router, TypeScript strict) + **Tailwind** + shadcn/ui
 - **PostgreSQL 16** + **Prisma**
@@ -136,7 +138,7 @@ ANTHROPIC_MODEL=
 - „Meine Dörfer“: Liste der Dörfer des verifizierten Spielers aus map.sql. Jedes Dorf hat ein eigenes Dashboard.
 
 ## 4. Phase 2 — Schema, Seiten-Gerüst und Schnittstellen jetzt anlegen, Logik später
-**UI-Vorlage:** Mockup „Travian Ally Tool – Mockup“, Screens Übersicht, Dorf-Dashboard und Spieldaten.
+**UI-Vorlage:** `screenflow.html` (alle Screens, mit zuschaltbaren CC-Hinweisen), hier Übersicht, Dorf-Dashboard und Spieldaten.
 
 ### 4.1 Spieldaten-Referenz-DB (immer aktuelle Spielinfos)
 - `Tribe(id, key, name, traits jsonb)`
@@ -211,7 +213,6 @@ Spielautomatisierung · Scraping eingeloggter Seiten · Mehrere Server oder Alli
 ## 7. Reihenfolge
 M1 → M2 → M3 → M4 → M5 → Phase-2-Gerüst (4.5). Nach jedem Meilenstein kurz berichten: Stand, Abweichungen, offene Fragen.
 **Bei Unklarheiten nachfragen statt raten**, insbesondere zum tatsächlichen Spaltenformat der map.sql.
-
 
 ---
 ## Nachtrag 14.10.2026 — Allianz-Gruppe (dringend)

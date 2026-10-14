@@ -143,6 +143,8 @@ model User {
   /// GUEST | MEMBER | MODERATOR | ADMIN. SYSTEMADMIN steht nie hier, sondern kommt aus SYSTEMADMIN_EMAILS.
   role          String       @default("GUEST")
   banned        Boolean      @default(false)
+  /// Zuletzt gewählter Ursprung der Inaktiven-Suche: `village:<id>` oder `x|y`.
+  lastOrigin    String?
   sessions      Session[]
   accounts      Account[]
   links         PlayerLink[]

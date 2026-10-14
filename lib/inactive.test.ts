@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { searchInactive, type Candidate } from "./inactive";
+import { parseCoord, searchInactive, type Candidate } from "./inactive";
 
 const c = (o: Partial<Candidate> & { villageId: number }): Candidate => ({
-  villageName: "v", x: 0, y: 0, villagePop: 5, playerId: o.villageId, playerName: "p", playerPop: 100, tribe: 1,
+  villageName: "v", x: 0, y: 0, villagePop: 5, delta7: 0, playerId: o.villageId, playerName: "p", playerPop: 100, tribe: 1,
   allianceId: 0, allianceName: "", status: "inactive", noGrowthDays: 5, ...o,
 });
 
@@ -34,5 +34,16 @@ describe("searchInactive", () => {
   });
   it("blendet Allianzen (z. B. eigene Gruppe) aus", () => {
     expect(searchInactive(data, origin, { excludeAllianceIds: new Set([36]) }).map((x) => x.villageId)).toEqual([2, 1]);
+  });
+});
+
+describe("parseCoord", () => {
+  it("verschiedene Schreibweisen", () => {
+    for (const t of ["(12|-34)", "12|-34", " 12 / -34 ", "12,-34"]) expect(parseCoord(t)).toEqual({ x: 12, y: -34 });
+  });
+  it("ungültig oder außerhalb der Karte", () => {
+    expect(parseCoord("abc")).toBeUndefined();
+    expect(parseCoord("(201|0)")).toBeUndefined();
+    expect(parseCoord("")).toBeUndefined();
   });
 });
