@@ -15,7 +15,7 @@ async function login(page: Page, email: string) {
 test("Meine Dörfer: Übersicht, KI-Instruktionen, Erinnerungen, Upload, Zugriff nur auf eigene Dörfer", async ({ page, browser }) => {
   // member ist mit einem Spieler der Gruppe verifiziert (aus 01-invite.spec.ts).
   await login(page, "member@example.com");
-  await expect(page.getByRole("heading", { name: /Deine \d+ Dörfer?/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Deine \d+ (Dorf|Dörfer)/ })).toBeVisible();
 
   // Account-Instruktionen speichern (prominent oben)
   await page.getByLabel(/dorfübergreifende Strategie/).fill("Off-Account, Hammerdorf im Hauptdorf");
