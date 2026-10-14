@@ -3,6 +3,9 @@
 ## Start
 `cp .env.example .env`, Werte setzen (`AUTH_SECRET` mit `openssl rand -base64 32`, `SYSTEMADMIN_EMAILS`, `TRAVIAN_ALLIANCE_ID=36`), `docker compose up -d`. Health: `/api/health`.
 
+## E-Mail-Versand (Passwort vergessen)
+`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` in der `.env` setzen. Ohne `SMTP_HOST` zeigt „Passwort vergessen?“ nur einen Hinweis. Der Reset-Link ist eine Stunde gültig, einmalig und beendet alle Sitzungen. Ob eine Adresse existiert, wird nie verraten.
+
 ## Erster Login (Systemadmin)
 Unter `/register` mit einer Adresse aus `SYSTEMADMIN_EMAILS` registrieren. Dafür ist der **Setup-Code** nötig (`SYSTEMADMIN_SETUP_CODE`, sonst der Wert von `AUTH_SECRET`), damit niemand die Admin-Adresse vorab belegen kann. SYSTEMADMIN gilt nur, solange die Adresse in der ENV-Liste steht; er ist im UI nicht änderbar.
 

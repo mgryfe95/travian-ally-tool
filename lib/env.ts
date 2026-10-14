@@ -15,6 +15,13 @@ const schema = z.object({
   SYSTEMADMIN_SETUP_CODE: z.preprocess(emptyToUndefined, z.string().min(8).optional()),
   /** Better-Auth-Rate-Limit für Sign-in/Sign-up pro Minute und IP (E2E erhöht es). */
   AUTH_RATE_LIMIT_PER_MIN: z.coerce.number().int().positive().default(5),
+  /** SMTP für Passwort-Reset; ohne SMTP_HOST ist der Versand aus (die Seite /forgot zeigt dann einen Hinweis). */
+  SMTP_HOST: z.preprocess(emptyToUndefined, z.string().optional()),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_SECURE: z.preprocess((v) => v === "true" || v === "1", z.boolean()).default(false),
+  SMTP_USER: z.preprocess(emptyToUndefined, z.string().optional()),
+  SMTP_PASS: z.preprocess(emptyToUndefined, z.string().optional()),
+  SMTP_FROM: z.string().default("Ally Tool <noreply@localhost>"),
   STORAGE_DIR: z.string().default("./storage"),
   UPLOAD_MAX_IMAGE_MB: z.coerce.number().positive().default(10),
   UPLOAD_MAX_FILE_MB: z.coerce.number().positive().default(20),

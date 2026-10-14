@@ -85,3 +85,44 @@ export function LogoutButton() {
     </button>
   );
 }
+
+export function ForgotForm() {
+  const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string>();
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setBusy(true);
+    setError(undefined);
+    const email = new FormData(e.currentTarget).get("email");
+    const res = await fetch("/api/auth/request-password-reset", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email, redirectTo: "/reset-password" }) });
+    setBusy(false);
+    if (res.status === 429) return setError("Zu viele Versuche, bitte später erneut.");
+    setSent(true);
+  }
+  if (sent) return <p className="sub">Falls die Adresse bekannt ist, ist eine E-Mail mit einem Link unterwegs (eine Stunde gültig).</p>;
+  return (
+    <form onSubmit={onSubmit} style={col}>
+      <div><label className="lbl" htmlFor="fe">E-Mail</label><input id="fe" name="email" className="field" type="email" required autoComplete="email" /></div>
+      {error && <p className="errtext" role="alert">{error}</p>}
+      <button disabled={busy} className="btn">Link anfordern</button>
+    </form>
+  );
+}
+
+export function ResetForm({ token }: { token: string }) {
+  const { onSubmit, error, busy } = useSubmit(
+    "/api/auth/reset-password",
+    (f) => ({ newPassword: f.get("password"), token }),
+    "/login",
+    (f) => (f.get("password") !== f.get("password2") ? "Die Passwörter stimmen nicht überein" : undefined),
+  );
+  return (
+    <form onSubmit={onSubmit} style={col}>
+      <div><label className="lbl" htmlFor="np">Neues Passwort</label><input id="np" name="password" className="field" type="password" required minLength={10} autoComplete="new-password" /></div>
+      <div><label className="lbl" htmlFor="np2">Passwort wiederholen</label><input id="np2" name="password2" className="field" type="password" required minLength={10} autoComplete="new-password" /></div>
+      {error && <p className="errtext" role="alert">{error}</p>}
+      <button disabled={busy} className="btn">Passwort speichern</button>
+    </form>
+  );
+}

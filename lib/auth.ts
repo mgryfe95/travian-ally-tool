@@ -5,6 +5,7 @@ import { createAuthMiddleware, APIError } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { db } from "./db";
 import { env } from "./env";
+import { resetMail, sendMail } from "./mail";
 
 /** Header, mit dem nur unsere eigene Registrierungs-Route (/api/register) den Sign-up von Better Auth aufrufen darf. */
 export const INTERNAL_HEADER = "x-internal-register";
@@ -18,6 +19,12 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 10,
     autoSignIn: true,
+    resetPasswordTokenExpiresIn: 3600,
+    revokeSessionsOnPasswordReset: true,
+    // Versandfehler werden nur geloggt und nie nach außen gemeldet (sonst ließe sich erraten, ob eine Adresse existiert).
+    sendResetPassword: async ({ user, url }) => {
+      void sendMail(resetMail(user.email, user.name, url)).catch((e) => console.error("[mail] Reset-Mail fehlgeschlagen", e));
+    },
     password: {
       hash: (password) => hash(password),
       verify: ({ hash: h, password }) => verify(h, password),
