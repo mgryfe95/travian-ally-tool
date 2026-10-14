@@ -30,6 +30,12 @@ const schema = z.object({
   UPLOAD_MAX_FILES: z.coerce.number().int().positive().default(10),
   ANTHROPIC_API_KEY: z.string().optional(),
   ANTHROPIC_MODEL: z.string().optional(),
+  /** Bilderkennung: Anzahl unabhängiger Lesedurchläufe je Screenshot (≥2 = Konsens-Prüfung, höhere Konfidenz, höhere Kosten). */
+  VISION_PASSES: z.coerce.number().int().min(1).max(3).default(2),
+  /** Ab dieser Konfidenz (und ohne Auffälligkeit) wird automatisch übernommen – sobald der Lernmodus für die Art abgeschlossen ist. */
+  VISION_AUTO_ACCEPT: z.coerce.number().min(0).max(1).default(0.97),
+  /** Lernmodus: so viele bestätigte Screenshots je Art, bevor automatisch übernommen wird (0 = Lernmodus aus). */
+  VISION_LEARNING_MIN: z.coerce.number().int().min(0).default(10),
 });
 
 export type Env = Omit<z.infer<typeof schema>, "SYSTEMADMIN_EMAILS" | "TRAVIAN_ALLIANCE_ID"> & { SYSTEMADMIN_EMAILS: string[]; TRAVIAN_ALLIANCE_IDS: number[] };

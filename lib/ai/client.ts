@@ -1,17 +1,12 @@
+import { ClaudeVision, type ReadOptions } from "./claude";
+import type { Reading } from "./reading";
+import { env } from "../env";
 /**
  * Schnittstellen der KI-Anbindung (Phase 2). In diesem Auftrag gibt es nur Stubs – echte Claude-API-Calls
  * (`@anthropic-ai/sdk`, Modell aus ENV `ANTHROPIC_MODEL`) folgen nach Freigabe von Datenquelle und Prompts.
  */
-export type ScreenshotKind = "RALLY_POINT" | "VILLAGE_STATS" | "VILLAGE_VIEW" | "RESOURCE_VIEW" | "UNKNOWN";
+export type { ReadingKind as ScreenshotKind } from "./reading";
 export type DeviceKind = "DESKTOP" | "MOBILE" | "UNKNOWN";
-
-export type Classification = { kind: ScreenshotKind; device: DeviceKind; confidence: number };
-
-export type Extraction = {
-  /** Art-spezifisches, strikt validiertes JSON (Schema je Art folgt mit der echten Pipeline). */
-  data: unknown;
-  confidence: number;
-};
 
 export type AdviceInput = {
   scope: "account" | "village";
@@ -31,8 +26,8 @@ export type Advice = {
 };
 
 export interface AiClient {
-  classifyScreenshot(image: Buffer): Promise<Classification>;
-  extract(kind: ScreenshotKind, image: Buffer): Promise<Extraction>;
+  /** Liest einen Screenshot (Art, Gerät, Werte). Ohne API-Key: NotImplementedError. */
+  read(image: Buffer, opts?: ReadOptions): Promise<Reading>;
   advise(input: AdviceInput): Promise<Advice[]>;
 }
 
@@ -44,19 +39,35 @@ export class NotImplementedError extends Error {
 
 /** Stub: klassifiziert nichts, berät nicht. Dient als Platzhalter und für Tests der Verdrahtung. */
 export class StubAiClient implements AiClient {
-  async classifyScreenshot(): Promise<Classification> {
-    return { kind: "UNKNOWN", device: "UNKNOWN", confidence: 0 };
-  }
-  async extract(): Promise<Extraction> {
-    throw new NotImplementedError("Screenshot-Extraktion");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async read(_image?: Buffer, _opts?: ReadOptions): Promise<Reading> {
+    throw new NotImplementedError("Screenshot-Erkennung (ANTHROPIC_API_KEY fehlt)");
   }
   async advise(): Promise<Advice[]> {
     return [];
   }
 }
 
-let client: AiClient = new StubAiClient();
-export const aiClient = () => client;
-export const setAiClient = (c: AiClient) => {
+/** Echter Client, sobald ANTHROPIC_API_KEY gesetzt ist (Modell: ANTHROPIC_MODEL, sonst claude-opus-5-5). */
+export class ClaudeAiClient extends StubAiClient {
+  private readonly vision: ClaudeVision;
+  constructor(apiKey: string, model?: string) {
+    super();
+    this.vision = new ClaudeVision(apiKey, model || undefined);
+  }
+  override read(image: Buffer, opts?: ReadOptions) {
+    return this.vision.read(image, opts);
+  }
+}
+
+let client: AiClient | undefined;
+export const aiClient = (): AiClient => {
+  if (!client) {
+    const e = env();
+    client = e.ANTHROPIC_API_KEY ? new ClaudeAiClient(e.ANTHROPIC_API_KEY, e.ANTHROPIC_MODEL) : new StubAiClient();
+  }
+  return client;
+};
+export const setAiClient = (c: AiClient | undefined) => {
   client = c;
 };

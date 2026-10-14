@@ -11,5 +11,6 @@ Ausführliche, append-only Fassung: `docs/CHANGELOG.md`. Dies ist die Zusammenfa
 - **SMTP** Passwort-Reset.
 - **M5 + Phase-2-Gerüst** Meine Dörfer, KI-Instruktionen, Erinnerungen, Screenshot-Upload (Stub), Spieldaten-Schema/-Seite/-Importformat.
 - **Betrieb** Weltende-Erkennung + „Neue Welt“, Pruning der Dorf-Rohzeilen, Docker-Build-Fix (Platzhalter-Env beim Build), `scripts/backup.sh`, `scripts/deploy.sh`, `docs/DEPLOY.md`, Probe-Skript für die Wissensdatenbank.
+- **Screenshot-Erkennung** (Claude Vision, 12 Arten, Konfidenz-Prüfungen, Lernmodus + Review-UI, Eval-Skript).
 
 Commits: siehe `git log` auf Branch `claude/new-session-hlffy1` (PR #1).

@@ -404,7 +404,7 @@ model Screenshot {
   id             Int      @id @default(autoincrement())
   userId         String
   villageId      Int?
-  /// RALLY_POINT | VILLAGE_STATS | VILLAGE_VIEW | RESOURCE_VIEW | UNKNOWN
+  /// Art laut lib/ai/reading.ts (READING_KINDS)
   detectedKind   String   @default("UNKNOWN")
   /// DESKTOP | MOBILE | UNKNOWN
   detectedDevice String   @default("UNKNOWN")
@@ -501,4 +501,24 @@ model Unit {
   researchReq  Json            @default("{}")
 
   @@unique([versionId, tribeId, key])
+}
+
+/// Lernmodus: bestätigte/korrigierte Screenshots dienen als Beispiele (Bild + richtige Lesung) im Prompt der Bilderkennung.
+model VisionExample {
+  id         Int      @id @default(autoincrement())
+  kind       String
+  storageKey String
+  gold       Json
+  createdBy  String
+  createdAt  DateTime @default(now())
+
+  @@index([kind, createdAt])
+}
+
+/// Wissen für die Bilderkennung: Emojis, Kürzel, Einheiten-Spitznamen → Bedeutung.
+model VisionAlias {
+  id        Int      @id @default(autoincrement())
+  term      String   @unique
+  meaning   String
+  createdAt DateTime @default(now())
 }

@@ -33,3 +33,6 @@ Rollen: SYSTEMADMIN > ADMIN > MODERATOR > MEMBER > GUEST. ADMIN vergibt Rollen u
 
 ## Truppenübersicht (Admin/Moderator)
 Unter **Truppen** (Recht `troops.view`, Standard: Moderator und Admin) sehen Moderatoren und Admins die Truppen aller Mitglieder der Allianz-Gruppe mit Summen je Einheit, je Mitglied und je Dorf; veraltete Stände sind markiert (Schwelle `staleDays`, Standard 2 Tage). Grundlage sind die Stände, die Mitglieder im Dorf-Dashboard eintragen (später per Screenshot-Erkennung). Mitglieder werden darauf hingewiesen (Einladungsseite und Dorf-Dashboard); jede Einsicht steht im Audit-Log. Das Recht lässt sich in der Rechte-Matrix ändern.
+
+## Screenshots (Erkennung & Lernmodus)
+Unter **Screenshots** lädst du Bilder hoch (oder Strg+V). Art und Gerät werden erkannt. Am Anfang prüfst du jede Lesung: **„Stimmt, übernehmen“** oder mit Häkchen **„Werte korrigieren“** (JSON anpassen). Jede Bestätigung wird zum Lernbeispiel. Nach `VISION_LEARNING_MIN` (Standard 10) bestätigten Screenshots einer Art werden sehr sichere Lesungen automatisch übernommen; auffällige (Summen passen nicht, Dorf nicht zuordenbar) landen weiter in der Prüfung. Emojis/Kürzel für die KI: `npx tsx scripts/vision-alias.ts add "<Begriff>" "<Bedeutung>"`.

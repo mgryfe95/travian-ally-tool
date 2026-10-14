@@ -1,0 +1,126 @@
+{
+ "kind": "VILLAGE_VIEW",
+ "device": "MOBILE",
+ "language": "en",
+ "village": {
+  "name": "MG Ryfe",
+  "x": -3,
+  "y": -82
+ },
+ "topBar": {
+  "wood": 13956,
+  "clay": 25729,
+  "iron": 17229,
+  "crop": 2496,
+  "freeCrop": 2435,
+  "warehouse": null,
+  "granary": null
+ },
+ "rows": [],
+ "totals": null,
+ "fields": [],
+ "buildings": [
+  {
+   "slot": null,
+   "name": null,
+   "level": 12
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 5
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 5
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 5
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 5
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 15
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 5
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 15
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 10
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 10
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 10
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 15
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 15
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 17
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 16
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 3
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 20
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 5
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 12
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 11
+  }
+ ],
+ "selfRating": 0.95,
+ "uncertain": []
+}

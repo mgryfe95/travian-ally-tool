@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { StubScreenshotPipeline } from "@/lib/ai/pipeline";
+import { VisionPipeline } from "@/lib/ai/pipeline";
 import { processUpload } from "@/lib/chat/attachments";
 import { uploadLimiter } from "@/lib/chat/limits";
 import { db } from "@/lib/db";
@@ -32,7 +32,7 @@ export function POST(req: Request) {
     const key = `shots/${user.id}/${randomUUID()}.${p.origExt}`;
     await storage().put(key, p.orig);
     const shot = await db.screenshot.create({ data: { userId: user.id, villageId: villageId ?? null, storageKey: key } });
-    const result = await new StubScreenshotPipeline(db).process(shot.id);
+    const result = await new VisionPipeline(db).process(shot.id);
     return NextResponse.json({ id: shot.id, status: result.status, message: result.reason ?? null }, { status: 201 });
   });
 }

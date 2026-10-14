@@ -1,34 +1,112 @@
 import type { PrismaClient } from "@prisma/client";
 import { aiClient, NotImplementedError } from "./client";
+import { applyReading } from "./apply";
+import type { Example } from "./claude";
+import { readingSchema, type Reading } from "./reading";
+import { agreementOf, assess, type Assessment, type Issue } from "./validate";
+import { env } from "../env";
+import { ownVillages } from "../services/villages";
 import { storage } from "../storage";
 
 export type PipelineResult = { status: "uploaded" | "parsed" | "needs_review" | "failed"; reason?: string };
 
-/**
- * Pipeline: (1) klassifizieren (Art + Gerät), (2) art-spezifisch extrahieren, (3) gegen Spieldaten validieren,
- * (4) in VillageState schreiben. Niedrige Konfidenz → needs_review (Nutzer bestätigt/korrigiert).
- * Stub: ruft nur den (Stub-)Client auf; solange er nichts erkennt, bleibt der Screenshot `uploaded`.
- */
-export interface ScreenshotPipeline {
-  process(screenshotId: number): Promise<PipelineResult>;
+/** Was in Screenshot.parsed steht. */
+export type ParsedShot = { reading?: Reading; issues?: Issue[]; agreement?: number; error?: string; confirmedBy?: string; corrected?: boolean; applied?: { villageId: number; areas: string[] }[] };
+
+const MAX_EXAMPLES = 6;
+const KEEP_EXAMPLES_PER_KIND = 30;
+
+async function knownVillages(db: PrismaClient, userId: string) {
+  return (await ownVillages(db, userId)).map((v) => ({ id: v.id, name: v.name, x: v.x, y: v.y }));
 }
 
-export class StubScreenshotPipeline implements ScreenshotPipeline {
+/** Lern-Beispiele: je Art das jüngste bestätigte Beispiel (Bild + richtige Lesung), höchstens MAX_EXAMPLES. */
+export async function loadExamples(db: PrismaClient): Promise<Example[]> {
+  const rows = await db.visionExample.findMany({ orderBy: { createdAt: "desc" }, take: 200 });
+  const seen = new Set<string>();
+  const out: Example[] = [];
+  for (const r of rows) {
+    if (seen.has(r.kind) || out.length >= MAX_EXAMPLES) continue;
+    const gold = readingSchema.safeParse(r.gold);
+    if (!gold.success) continue;
+    try {
+      out.push({ image: await storage().get(r.storageKey), gold: gold.data });
+      seen.add(r.kind);
+    } catch {
+      /* Bild nicht mehr vorhanden → Beispiel überspringen */
+    }
+  }
+  return out;
+}
+
+export const learningDone = async (db: PrismaClient, kind: string) => {
+  const need = env().VISION_LEARNING_MIN;
+  return need === 0 || (await db.visionExample.count({ where: { kind } })) >= need;
+};
+
+/**
+ * Pipeline: lesen (1–3 Durchläufe, Konsens) → deterministisch prüfen (Summenzeilen, Spaltenzahl, Koordinaten, Dörfer des Kontos)
+ * → Konfidenz. Hohe Konfidenz UND Lernmodus für diese Art abgeschlossen → automatisch in den Dorfzustand; sonst needs_review.
+ */
+export class VisionPipeline {
   constructor(private readonly db: PrismaClient) {}
 
   async process(screenshotId: number): Promise<PipelineResult> {
     const shot = await this.db.screenshot.findUnique({ where: { id: screenshotId } });
     if (!shot) return { status: "failed", reason: "Screenshot nicht gefunden" };
     const image = await storage().get(shot.storageKey);
-    const c = await aiClient().classifyScreenshot(image);
-    await this.db.screenshot.update({ where: { id: shot.id }, data: { detectedKind: c.kind, detectedDevice: c.device, confidence: c.confidence } });
-    if (c.kind === "UNKNOWN") return { status: "uploaded", reason: "Automatische Erkennung noch nicht aktiv" };
+    const e = env();
     try {
-      await aiClient().extract(c.kind, image);
-    } catch (e) {
-      if (e instanceof NotImplementedError) return { status: "uploaded", reason: e.message };
-      throw e;
+      const [examples, aliases, known] = await Promise.all([loadExamples(this.db), this.db.visionAlias.findMany({ orderBy: { term: "asc" } }), knownVillages(this.db, shot.userId)]);
+      const runs = await Promise.allSettled(Array.from({ length: e.VISION_PASSES }, () => aiClient().read(image, { examples, aliases })));
+      const ok = runs.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
+      if (ok.length === 0) {
+        const err = runs.find((r) => r.status === "rejected") as PromiseRejectedResult;
+        if (err.reason instanceof NotImplementedError) return { status: "uploaded", reason: err.reason.message };
+        throw err.reason;
+      }
+      const reading = ok[0]!;
+      const agreement = ok.length > 1 ? ok.slice(1).reduce((m, o) => Math.min(m, agreementOf(reading, o)), 1) : 0.9; // ein Durchlauf allein = weniger Vertrauen
+      const a: Assessment = assess(reading, known, agreement);
+      const parsed: ParsedShot = { reading, issues: a.issues, agreement };
+      const auto = a.confidence >= e.VISION_AUTO_ACCEPT && a.issues.length === 0 && reading.kind !== "UNKNOWN" && (await learningDone(this.db, reading.kind));
+      let applied;
+      if (auto) {
+        applied = await applyReading(this.db, shot.userId, shot.id, reading, known, shot.villageId ?? undefined);
+        parsed.applied = applied;
+      }
+      const status = auto && applied && applied.length > 0 ? "parsed" : "needs_review";
+      await this.db.screenshot.update({
+        where: { id: shot.id },
+        data: { detectedKind: reading.kind, detectedDevice: reading.device, confidence: a.confidence, status, parsed: parsed as object, villageId: shot.villageId ?? a.village?.id ?? Object.values(a.matched)[0] ?? null },
+      });
+      return { status };
+    } catch (err) {
+      const msg = (err as Error).message.slice(0, 300);
+      await this.db.screenshot.update({ where: { id: shot.id }, data: { status: "failed", parsed: { error: msg } } });
+      return { status: "failed", reason: msg };
     }
-    return { status: "needs_review" };
+  }
+
+  /** Nutzer bestätigt (optional korrigiert): übernehmen und als Lern-Beispiel speichern. */
+  async confirm(screenshotId: number, userId: string, corrected?: unknown): Promise<PipelineResult> {
+    const shot = await this.db.screenshot.findUnique({ where: { id: screenshotId } });
+    if (!shot || shot.userId !== userId) return { status: "failed", reason: "Screenshot nicht gefunden" };
+    const parsed = (shot.parsed ?? {}) as ParsedShot;
+    const candidate = corrected ?? parsed.reading;
+    const reading = readingSchema.safeParse(candidate);
+    if (!reading.success) return { status: "failed", reason: "Keine gültige Lesung zum Bestätigen" };
+    const known = await knownVillages(this.db, userId);
+    const a = assess(reading.data, known);
+    if (reading.data.kind === "UNKNOWN") return { status: "failed", reason: "Art nicht erkannt – bitte Art korrigieren" };
+    const applied = await applyReading(this.db, userId, shot.id, reading.data, known, shot.villageId ?? undefined);
+    await this.db.screenshot.update({
+      where: { id: shot.id },
+      data: { status: "parsed", detectedKind: reading.data.kind, detectedDevice: reading.data.device, parsed: { ...parsed, reading: reading.data, issues: a.issues, confirmedBy: userId, corrected: corrected !== undefined, applied } as object },
+    });
+    await this.db.visionExample.create({ data: { kind: reading.data.kind, storageKey: shot.storageKey, gold: reading.data as object, createdBy: userId } });
+    const old = await this.db.visionExample.findMany({ where: { kind: reading.data.kind }, orderBy: { createdAt: "desc" }, skip: KEEP_EXAMPLES_PER_KIND, select: { id: true } });
+    if (old.length) await this.db.visionExample.deleteMany({ where: { id: { in: old.map((o) => o.id) } } });
+    return { status: "parsed" };
   }
 }

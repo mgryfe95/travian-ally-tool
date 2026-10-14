@@ -1,0 +1,109 @@
+{
+ "kind": "VILLAGE_VIEW",
+ "device": "DESKTOP",
+ "language": "de",
+ "village": {
+  "name": "MG",
+  "x": -3,
+  "y": -83
+ },
+ "topBar": {
+  "wood": 225,
+  "clay": 243,
+  "iron": 184,
+  "crop": 12503,
+  "freeCrop": 480,
+  "warehouse": 25900,
+  "granary": 25900
+ },
+ "rows": [
+  {
+   "name": "info",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    288,
+    100
+   ],
+   "texts": []
+  },
+  {
+   "name": "queue:Palisade",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    6
+   ],
+   "texts": [
+    "0:12:40",
+    "15:25"
+   ]
+  },
+  {
+   "name": "queue:Palisade",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    7
+   ],
+   "texts": [
+    "1:43:20",
+    "16:56"
+   ]
+  }
+ ],
+ "totals": null,
+ "fields": [],
+ "buildings": [
+  {
+   "slot": null,
+   "name": null,
+   "level": 10
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 10
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 8
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 14
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 14
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 10
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 10
+  },
+  {
+   "slot": null,
+   "name": null,
+   "level": 1
+  },
+  {
+   "slot": null,
+   "name": "Palisade",
+   "level": 5
+  }
+ ],
+ "selfRating": 0.95,
+ "uncertain": []
+}
