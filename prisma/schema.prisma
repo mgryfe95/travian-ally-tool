@@ -133,21 +133,23 @@ model AllianceClassification {
 // ───────────── M3: Accounts, Rollen, Verifizierung (Better Auth Kerntabellen + eigene) ─────────────
 
 model User {
-  id            String       @id
-  name          String
-  email         String       @unique
-  emailVerified Boolean      @default(false)
-  image         String?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  id             String       @id
+  name           String
+  email          String       @unique
+  emailVerified  Boolean      @default(false)
+  image          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
   /// GUEST | MEMBER | MODERATOR | ADMIN. SYSTEMADMIN steht nie hier, sondern kommt aus SYSTEMADMIN_EMAILS.
-  role          String       @default("GUEST")
-  banned        Boolean      @default(false)
+  role           String       @default("GUEST")
+  banned         Boolean      @default(false)
   /// Zuletzt gewählter Ursprung der Inaktiven-Suche: `village:<id>` oder `x|y`.
-  lastOrigin    String?
-  sessions      Session[]
-  accounts      Account[]
-  links         PlayerLink[]
+  lastOrigin     String?
+  /// KI-Instruktionen auf Account-Ebene (gelten für alle Dörfer)
+  aiInstructions String       @default("")
+  sessions       Session[]
+  accounts       Account[]
+  links          PlayerLink[]
 }
 
 model Session {
@@ -360,4 +362,143 @@ model ChannelRead {
   updatedAt     DateTime @updatedAt
 
   @@id([userId, channelId])
+}
+
+// ───────────── M5 / Phase 2: Dörfer, Ist-Zustand, Screenshots, Spieldaten (Schema + Gerüst) ─────────────
+
+/// KI-Instruktionen je Dorf und Nutzer. Das Dorf selbst kommt aus map.sql (`Village`), daher kein FK.
+model VillageProfile {
+  villageId      Int
+  userId         String
+  aiInstructions String   @default("")
+  updatedAt      DateTime @updatedAt
+
+  @@id([villageId, userId])
+}
+
+/// Aktueller Ist-Zustand je Dorf, gespeist aus Screenshots. Jeder Bereich hat einen eigenen Zeitstempel.
+model VillageState {
+  villageId          Int       @id
+  userId             String
+  capturedAt         DateTime?
+  /// {stock, capacity, production} je Rohstoff
+  resources          Json?
+  /// 18 Ressourcenfelder mit Stufe
+  fields             Json?
+  /// Slot → {building, level}
+  buildings          Json?
+  /// {inVillage, away, support} je Einheit
+  troops             Json?
+  /// Bau- und Ausbildungsschleifen
+  queues             Json?
+  resourcesAt        DateTime?
+  buildingsAt        DateTime?
+  troopsAt           DateTime?
+  sourceScreenshotId Int?
+  updatedAt          DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Screenshot {
+  id             Int      @id @default(autoincrement())
+  userId         String
+  villageId      Int?
+  /// RALLY_POINT | VILLAGE_STATS | VILLAGE_VIEW | RESOURCE_VIEW | UNKNOWN
+  detectedKind   String   @default("UNKNOWN")
+  /// DESKTOP | MOBILE | UNKNOWN
+  detectedDevice String   @default("UNKNOWN")
+  confidence     Float?
+  storageKey     String
+  /// uploaded | parsed | needs_review | failed
+  status         String   @default("uploaded")
+  parsed         Json?
+  createdAt      DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+/// Versionierte Spieldaten. Jede Zeile verweist auf ihre Version, damit Patches nachvollziehbar bleiben.
+model GameDataVersion {
+  id          Int        @id @default(autoincrement())
+  /// URL + Abrufdatum der freigegebenen Quelle
+  source      String
+  importedAt  DateTime   @default(now())
+  serverSpeed Int        @default(1)
+  notes       String     @default("")
+  tribes      Tribe[]
+  buildings   Building[]
+  units       Unit[]
+}
+
+model Tribe {
+  id        Int             @id @default(autoincrement())
+  versionId Int
+  version   GameDataVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  key       String
+  name      String
+  /// Völkerboni, Spezialgebäude, Versteck-/Plünderregeln
+  traits    Json            @default("{}")
+  units     Unit[]
+
+  @@unique([versionId, key])
+}
+
+model Building {
+  id               Int             @id @default(autoincrement())
+  versionId        Int
+  version          GameDataVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  key              String
+  name             String
+  category         String
+  tribeRestriction String?
+  maxLevel         Int
+  prerequisites    Json            @default("[]")
+  description      String          @default("")
+  levels           BuildingLevel[]
+
+  @@unique([versionId, key])
+}
+
+/// Basiswerte bei Server-Speed 1; Zeiten werden beim Anzeigen mit der Server-Geschwindigkeit umgerechnet.
+model BuildingLevel {
+  buildingId    Int
+  building      Building @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  level         Int
+  costWood      Int
+  costClay      Int
+  costIron      Int
+  costCrop      Int
+  upkeep        Int
+  buildTimeSec  Int
+  culturePoints Int
+  /// Vorteile je Stufe: Produktion/h, Lagerkapazität, Versteck, Fallen, Bau-/Ausbildungsbonus …
+  effects       Json     @default("{}")
+
+  @@id([buildingId, level])
+}
+
+model Unit {
+  id           Int             @id @default(autoincrement())
+  versionId    Int
+  version      GameDataVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  tribeId      Int
+  tribe        Tribe           @relation(fields: [tribeId], references: [id], onDelete: Cascade)
+  key          String
+  name         String
+  attack       Int
+  defInf       Int
+  defCav       Int
+  speed        Int
+  carry        Int
+  costWood     Int
+  costClay     Int
+  costIron     Int
+  costCrop     Int
+  upkeep       Int
+  trainTimeSec Int
+  building     String
+  researchReq  Json            @default("{}")
+
+  @@unique([versionId, tribeId, key])
 }

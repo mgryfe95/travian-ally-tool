@@ -41,3 +41,7 @@ Punkte, die Projekt, Aufbau oder andere Bereiche betreffen, aber nicht direkt zu
 - **Gelöschte Nachrichten** bleiben als Zeile (`deletedAt`), der Text wird nicht geleert (Moderation/Audit). Bei DSGVO-Löschwunsch Body überschreiben — Entscheidung offen.
 - **Kein Verlauf bearbeiteter Texte**; „bearbeitet“-Marker genügt (Auftrag verlangt nichts anderes).
 - **Mobile Chat:** Kanal-Select + Tab-Bar wie im Screenflow; Touch-Ziele ≥ 44 px per CSS.
+- **Spieldaten-Schritt 1 offen** (Netz blockiert). Blockiert auch Kosten/Nutzen in Dorf-Dashboard und KI-Tipps. Rechtliche Anfrage an Travian Games (To-do Max) weiterhin offen.
+- **Mockup „Dörferstatistik-Upload“** auf der Übersicht ist ein generischer Screenshot-Upload ohne Dorfbezug (`villageId` leer); die Zuordnung der Dörfer aus dem Bild folgt mit der echten Pipeline.
+- **Spieldaten-Seite ist für alle mit `map.view` sichtbar** (nur lesen); Bearbeiten (`gamedata.edit`) hat noch keine Oberfläche, weil es noch keine Daten gibt.
+- **Produktion/h in der Dörfertabelle** zeigt „–“, bis Ressourcen-Screenshots ausgewertet werden.

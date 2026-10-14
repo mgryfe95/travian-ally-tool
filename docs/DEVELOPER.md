@@ -52,3 +52,10 @@
 - **Anhänge:** `lib/chat/attachments.ts` (file-type-Sniffing, sharp, pdftoppm → Docker-Image installiert `poppler-utils`), `lib/storage.ts` (`StorageAdapter`, lokal unter `STORAGE_DIR`), Limits per ENV. Originalbilder werden ohne Metadaten neu kodiert; Thumbnail/Web als WebP. Auslieferung: `Content-Type` aus dem gespeicherten Typ, `nosniff`, `CSP: default-src 'none'; sandbox`, Text immer als Download. Orphans: Cron `40 * * * *` im Worker.
 - **Rate-Limits:** Nachrichten 30/min, Uploads 20/min je Nutzer (`lib/chat/limits.ts`, in-memory).
 - E2E laufen sequenziell (`01-invite` legt boss/member an, `02-chat` nutzt sie).
+
+## M5 / Phase 2 (Gerüst)
+- **Eigene Dörfer** (`lib/services/villages.ts`): Dörfer der Spieler mit verifiziertem `PlayerLink`; jede Dorf-Route/-API prüft `getOwnVillage` (fremd → 404/403).
+- **Erinnerungen** (`lib/reminders.ts`): pur, läuft auch auf Leerdaten; Schwelle aus Setting `staleDays` (Default 2). „Nie aktualisiert“ zählt als veraltet.
+- **KI-Schnittstellen** (`lib/ai/`): `AiClient` (classify/extract/advise), `StubAiClient`, `ScreenshotPipeline` (klassifizieren → extrahieren → gegen Spieldaten validieren → `VillageState`; niedrige Konfidenz → `needs_review`) mit Stub. `setAiClient()` tauscht die Implementierung. Cache-Idee für Empfehlungen: Hash aus Instruktionen + VillageState-Zeitstempeln.
+- **Screenshot-Upload** (`/api/screenshots`): ein Weg für alle Arten, Gerät wird erkannt (keine Auswahl); gleiche Bildprüfung wie im Chat (`processUpload`), Ablage über `StorageAdapter` unter `shots/<user>/…`.
+- **Spieldaten:** Schema ist versioniert (`GameDataVersion`); Import erst nach Freigabe. **Schritt 1 (Analyse der Knowledge Base) konnte nicht laufen:** `knowledgebase.legends.travian.com` und `support.travian.com` sind aus der Sandbox nicht erreichbar (CONNECT 403). Bitte Netzfreigabe oder einen Export der Seiten/Netzwerkaufrufe (HAR) liefern, dann folgt der Bericht zu Format, Abdeckung und Aktualität.
