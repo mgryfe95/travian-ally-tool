@@ -113,7 +113,7 @@ sudo tee /etc/apache2/sites-available/humans-travian.com.conf >/dev/null <<'APAC
     RewriteRule ^/socket.io/(.*) ws://127.0.0.1:3000/socket.io/$1 [P,L]
     ProxyPass / http://127.0.0.1:3000/
     ProxyPassReverse / http://127.0.0.1:3000/
-    ProxyTimeout 120
+    ProxyTimeout 240
 </VirtualHost>
 APACHE
 sudo a2ensite humans-travian.com && sudo apache2ctl configtest && sudo systemctl reload apache2
