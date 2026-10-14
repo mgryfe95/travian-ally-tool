@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { requirePermission } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,7 @@ const LABEL: Record<string, string> = {
 };
 
 export default async function EventsPage() {
+  await requirePermission("map.view");
   const events = await db.event.findMany({ orderBy: { id: "desc" }, take: 200 });
   const ids = [...new Set(events.flatMap((e) => [e.playerId, e.otherPlayerId]).filter((x): x is number => x !== null))];
   const names = new Map((await db.player.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } })).map((p) => [p.id, p.name]));

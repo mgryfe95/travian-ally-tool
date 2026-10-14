@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { requirePermission } from "@/lib/session";
 import { roundFields } from "@/lib/geo";
 import { loadCandidates, searchInactive, TRIBES, type SortKey } from "@/lib/inactive";
 import { fmt } from "@/lib/format";
@@ -14,6 +15,7 @@ const SORTS: SortKey[] = ["distance", "population", "days"];
 const MAX_ROWS = 300;
 
 export default async function InactivePage({ searchParams }: { searchParams: Promise<Params> }) {
+  await requirePermission("map.view");
   const sp = await searchParams;
   const ox = int(sp.ox);
   const oy = int(sp.oy);

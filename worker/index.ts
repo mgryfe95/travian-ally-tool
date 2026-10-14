@@ -3,6 +3,7 @@ import { db } from "../lib/db";
 import { env } from "../lib/env";
 import { fetchMapSql, importMapSql } from "../lib/import/importer";
 import { getInactiveDays } from "../lib/settings";
+import { checkClaims } from "../lib/services/verification";
 
 const cfg = env();
 let running = false;
@@ -14,6 +15,7 @@ export async function runImport() {
     const text = await fetchMapSql(cfg.TRAVIAN_SERVER_URL);
     const result = await importMapSql(db, text, { inactiveDays: await getInactiveDays(db) });
     console.log("[worker] import", result);
+    if (result.status === "imported") console.log("[worker] umbenennungs-beweise verifiziert:", await checkClaims(db));
   } catch (err) {
     console.error("[worker] import failed", err);
   } finally {

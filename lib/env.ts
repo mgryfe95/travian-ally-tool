@@ -11,6 +11,8 @@ const schema = z.object({
   TRAVIAN_ALLIANCE_ID: z.preprocess(emptyToUndefined, z.coerce.number().int().positive().optional()),
   IMPORT_CRON: z.string().default("15 * * * *"),
   INACTIVE_DAYS: z.coerce.number().int().positive().default(3),
+  /** Code, der zum Registrieren eines SYSTEMADMIN_EMAILS-Kontos nötig ist (Default: AUTH_SECRET). Verhindert, dass Fremde die Admin-Adresse vorab belegen. */
+  SYSTEMADMIN_SETUP_CODE: z.preprocess(emptyToUndefined, z.string().min(8).optional()),
   ANTHROPIC_API_KEY: z.string().optional(),
   ANTHROPIC_MODEL: z.string().optional(),
 });

@@ -4,3 +4,5 @@ node_modules
 *.tsbuildinfo
 coverage
 storage
+test-results
+playwright-report

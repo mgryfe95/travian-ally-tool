@@ -2,12 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Sparkline } from "@/components/Sparkline";
 import { db } from "@/lib/db";
+import { requirePermission } from "@/lib/session";
 import { delta, fmt, STATUS_LABEL } from "@/lib/format";
 import { TRIBES } from "@/lib/inactive";
 
 export const dynamic = "force-dynamic";
 
 export default async function PlayerPage({ params }: { params: Promise<{ id: string }> }) {
+  await requirePermission("map.view");
   const id = Number((await params).id);
   if (!Number.isInteger(id)) notFound();
   const player = await db.player.findUnique({ where: { id } });

@@ -129,3 +129,120 @@ model AllianceClassification {
   updatedBy  String?
   updatedAt  DateTime         @updatedAt
 }
+
+// ───────────── M3: Accounts, Rollen, Verifizierung (Better Auth Kerntabellen + eigene) ─────────────
+
+model User {
+  id            String       @id
+  name          String
+  email         String       @unique
+  emailVerified Boolean      @default(false)
+  image         String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  /// GUEST | MEMBER | MODERATOR | ADMIN. SYSTEMADMIN steht nie hier, sondern kommt aus SYSTEMADMIN_EMAILS.
+  role          String       @default("GUEST")
+  banned        Boolean      @default(false)
+  sessions      Session[]
+  accounts      Account[]
+  links         PlayerLink[]
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+/// Editierbare Rechte-Matrix für GUEST..ADMIN. SYSTEMADMIN hat implizit alles und keine Zeilen.
+model RolePermission {
+  role       String
+  permission String
+
+  @@id([role, permission])
+}
+
+model PlayerLink {
+  id              Int       @id @default(autoincrement())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  travianPlayerId Int
+  /// pending | verified | rejected
+  status          String    @default("pending")
+  /// invite | village_rename | admin
+  method          String
+  /// Code ALLY-XXXX für den Dorf-Umbenennungs-Beweis
+  claimCode       String?
+  verifiedBy      String?
+  verifiedAt      DateTime?
+  createdAt       DateTime  @default(now())
+
+  /// Mehrere User pro Spieler sind erlaubt (Duals), aber pro Paar nur ein Link.
+  @@unique([userId, travianPlayerId])
+  @@index([travianPlayerId])
+}
+
+model Invite {
+  id              Int       @id @default(autoincrement())
+  /// SHA-256 des Tokens; der Klartext wird nur einmal angezeigt.
+  tokenHash       String    @unique
+  travianPlayerId Int
+  createdBy       String
+  createdAt       DateTime  @default(now())
+  expiresAt       DateTime
+  usedAt          DateTime?
+  usedBy          String?
+  revokedAt       DateTime?
+
+  @@index([travianPlayerId])
+}
+
+model AuditLog {
+  id      Int      @id @default(autoincrement())
+  actorId String
+  action  String
+  target  String
+  before  Json?
+  after   Json?
+  at      DateTime @default(now())
+
+  @@index([at])
+}

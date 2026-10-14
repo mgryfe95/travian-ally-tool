@@ -26,3 +26,13 @@
 - Überall, wo „eigene Allianz“ gemeint ist (Einladungsliste, Dorf-Umbenennungs-Beweis „Spieler ist in der eigenen Allianz“, Austritts-Markierung, Mitgliederabgleich), gilt die Gruppe, nie nur die Einzel-ID.
 - Abgleich `compareMembers(groupPlayers, links)`: Mitglieder mit/ohne verifizierten Account, ausstehende Links, verifizierte Accounts außerhalb der Gruppe (`orphanLinks`, nur Markierung).
 - Setzen bis zum Admin-UI: `npx tsx scripts/set-alliance-relation.ts 36 OWN` bzw. `... 7 ALLIED`.
+
+## M3 — Auth, Rollen, Verifizierung
+- **Auth:** Better Auth 1.7 (`lib/auth.ts`), Prisma-Adapter, DB-Sessions, argon2id (`@node-rs/argon2`). `.npmrc` setzt `legacy-peer-deps` (optionale Peers von better-auth kollidieren mit vite 5 aus vitest 2).
+- **Registrierung nur über `/api/register`** (`lib/services/register.ts`): Better Auth `/sign-up/email` ist per Hook ohne internen Header gesperrt; Rolle/`banned` sind `input:false`. Rate-Limit: 5 pro 10 min und IP (in-memory), Better Auth selbst 5/min für Sign-in/up.
+- **SYSTEMADMIN** wird bei jedem Request aus `SYSTEMADMIN_EMAILS` abgeleitet (`lib/session.ts`, `effectiveRole`); DB-Wert `SYSTEMADMIN` wird ignoriert. Weil es keinen E-Mail-Versand gibt, ließe sich die Admin-Adresse sonst vorab registrieren → **Setup-Code** (ENV `SYSTEMADMIN_SETUP_CODE`, Default `AUTH_SECRET`) ist für diese Adressen Pflicht.
+- **Regeln** (`lib/permissions.ts`, getestet in `lib/permissions.test.ts` + `tests/admin.db.test.ts`): niemand vergibt SYSTEMADMIN; ADMIN ändert/sperrt/löscht SYSTEMADMIN nie; ADMIN vergibt/ändert nur Rollen unterhalb von ADMIN; Rechte der Rolle SYSTEMADMIN sind unveränderlich; `permissions.edit`/`roles.assign` der Rolle ADMIN ändert nur SYSTEMADMIN (Aussperr-Schutz). Verstoß → `ForbiddenError` (HTTP 403-Semantik).
+- **Service-Schicht** `lib/services/*`: jede Schreiboperation prüft Recht + Regel und schreibt `AuditLog`. UI-Actions (`app/admin/actions.ts`) sind dünn.
+- **Verifizierung** (`lib/services/verification.ts`): Einladung (Token 24 Byte base64url, nur SHA-256 gespeichert, 7 Tage, atomar einmalig), Umbenennungs-Code `ALLY-XXXX` (Prüfung nach jedem Import im Worker/Skript), manuelle Freigabe (`members.approve`). Alle verlangen, dass der Spieler **in der eigenen Allianz-Gruppe** ist.
+- **Tests:** `npm run ci` (Unit + DB-Integration); E2E: `npm run e2e` (baut, startet Server auf :3100, DB `ally_e2e`, Chromium aus `PLAYWRIGHT_BROWSERS_PATH`).
+- Offen: Ursprung der Inaktiven-Suche aus „Meine Dörfer“ (M5) und „letzten Ursprung merken“; Discord-OAuth (später); Rate-Limit auf Message-Post (M4).

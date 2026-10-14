@@ -2,12 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Sparkline } from "@/components/Sparkline";
 import { db } from "@/lib/db";
+import { requirePermission } from "@/lib/session";
 import { loadRelations, RELATION_LABEL } from "@/lib/alliance-group";
 import { delta, fmt, STATUS_LABEL } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
 export default async function AlliancePage({ params }: { params: Promise<{ id: string }> }) {
+  await requirePermission("map.view");
   const id = Number((await params).id);
   if (!Number.isInteger(id)) notFound();
   const alliance = await db.alliance.findUnique({ where: { id } });

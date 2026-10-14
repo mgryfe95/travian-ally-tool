@@ -211,3 +211,11 @@ Spielautomatisierung · Scraping eingeloggter Seiten · Mehrere Server oder Alli
 ## 7. Reihenfolge
 M1 → M2 → M3 → M4 → M5 → Phase-2-Gerüst (4.5). Nach jedem Meilenstein kurz berichten: Stand, Abweichungen, offene Fragen.
 **Bei Unklarheiten nachfragen statt raten**, insbesondere zum tatsächlichen Spaltenformat der map.sql.
+
+
+---
+## Nachtrag 14.10.2026 — Allianz-Gruppe (dringend)
+Mehrere Allianzen, die zusammengehören, gelten intern als **eine** Allianz.
+- Jede Allianz kann von ADMIN/SYSTEMADMIN (Recht `alliances.classify`) einen Typ bekommen: **Eigene Allianz** (OWN), **Allianz** (ALLIED), NAP, Neutral, Feind.
+- **Eigene Gruppe = OWN ∪ ALLIED.** Überall, wo „eigene Allianz“ steht (Einladungsliste, Dorf-Umbenennungs-Beweis „nur wenn in eigener Allianz“, Austrittsmarkierung, Filter), gilt die ganze Gruppe.
+- **Abgleich:** „Mitglieder in unserem System“ (verifizierte Accounts) vs. „Mitglieder unserer Allianz-Gruppe“ (map.sql): wer hat ein Konto, wer nicht, welche Konten gehören zu Spielern außerhalb der Gruppe.

@@ -26,3 +26,8 @@ Punkte, die Projekt, Aufbau oder andere Bereiche betreffen, aber nicht direkt zu
 - **Fixture enthält echte Spielernamen** (öffentliche Kartendaten, ~36 Zeilen) — bei Bedarf anonymisieren.
 - **Allianz-Typen angenommen:** OWN, ALLIED, NAP, NEUTRAL, ENEMY (genannt waren nur „Allianz“ und „eigene Allianz“). Weitere Typen bei Bedarf ergänzen.
 - **CC-Auftrag M3 ändert sich:** „Spieler der eigenen Allianz“ (Einladungsliste, Rename-Beweis, Austrittsmarkierung) = eigene Gruppe. Auftrag-Text in `docs/projectos/CC_AUFTRAG_MVP.md` ist noch der alte Stand.
+- **Setup-Code für SYSTEMADMIN-Registrierung** ist eine Ergänzung zur Spezifikation (neue ENV `SYSTEMADMIN_SETUP_CODE`); ohne sie wäre die Admin-Adresse vorab kapern-bar, weil es keine E-Mail-Verifizierung gibt. Alternative: SMTP + Mail-Verifizierung (neues Infra-Thema).
+- **E-Mail-Verifizierung/Passwort-Reset fehlen** (kein Mailversand im Auftrag). Passwort vergessen = Admin muss Konto löschen/neu einladen. Klären, ob SMTP gewünscht ist.
+- **`.npmrc legacy-peer-deps`** wegen better-auth-Peers; bei Vitest-Upgrade auf 3 prüfen, ob es entfällt.
+- **`next lint`-Deprecation** und **Prisma `package.json#prisma`-Config** (Prisma 7) stehen zur Migration an.
+- **AUTH_SECRET-Länge:** Better Auth warnt unter 32 Zeichen; `.env.example` nennt `openssl rand -base64 32`.

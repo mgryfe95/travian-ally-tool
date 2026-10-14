@@ -3,7 +3,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-cert
 WORKDIR /app
 
 FROM base AS deps
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 COPY prisma ./prisma
 RUN npm ci && npx prisma generate
 
