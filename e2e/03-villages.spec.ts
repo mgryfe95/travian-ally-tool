@@ -33,6 +33,8 @@ test("Meine Dörfer: Übersicht, KI-Instruktionen, Erinnerungen, Upload, Zugriff
   await expect(page.getByText("Off-Account, Hammerdorf im Hauptdorf")).toBeVisible();
   await page.getByLabel(/Was soll dieses Dorf werden/).fill("Hammerdorf, keine Deff");
   await page.locator("#desc").getByRole("button", { name: "Speichern" }).click();
+  // Erst die Weiterleitung der Server-Action abwarten, sonst geht der folgende Upload in die alte Seite.
+  await expect(page.getByRole("status").filter({ hasText: "Gespeichert" })).toBeVisible();
   await expect(page.getByLabel(/Was soll dieses Dorf werden/)).toHaveValue("Hammerdorf, keine Deff");
 
   // Screenshot hochladen (ein Weg, keine Geräte-Auswahl); Erkennung ist noch Stub
