@@ -27,6 +27,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
         Dein Account wird automatisch mit dem Travian-Spieler <b style={{ color: "var(--text)" }}>{player.name}</b> verknüpft.
       </p>
       <RegisterForm inviteToken={token} />
+      <p className="sub" style={{ fontSize: 12, marginTop: 12 }}>Hinweis: Admins und Moderatoren der Allianz können die Truppen, die du im Tool einträgst, zur Planung und Koordination einsehen.</p>
       <div className="sub" style={{ fontSize: 12, marginTop: 12 }}>Link gültig bis {invite.expiresAt.toLocaleDateString("de-DE")} · nur einmal verwendbar</div>
     </>
   );

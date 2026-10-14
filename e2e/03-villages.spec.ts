@@ -42,6 +42,16 @@ test("Meine Dörfer: Übersicht, KI-Instruktionen, Erinnerungen, Upload, Zugriff
   await page.locator("#file-troops").setInputFiles({ name: "versammlungsplatz.png", mimeType: "image/png", buffer: png });
   await expect(page.getByText(/Gespeichert\. Automatische Erkennung noch nicht aktiv/)).toBeVisible();
 
+  // Truppen manuell eintragen (Hinweis auf Sichtbarkeit für Admins/Moderatoren)
+  await expect(page.getByText(/Admins und Moderatoren können die Truppen deiner Dörfer/)).toBeVisible();
+  await page.getByLabel(/Manuell eintragen/).fill("Axtkämpfer; 3.410; 600; 0\nKatapult; 120");
+  await page.getByRole("button", { name: "Truppen speichern" }).click();
+  await expect(page.getByRole("row", { name: /Axtkämpfer 3\.410 600/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Truppen", exact: true })).toHaveCount(0); // Member sieht den Menüpunkt nicht
+  expect((await page.goto("/troops"))?.status()).toBe(200);
+  await expect(page.getByText("Kein Zugriff")).toBeVisible();
+  await page.goBack();
+
   // Advisor-Stub und Zugriffsschutz
   const villageId = Number(new URL(page.url()).pathname.split("/").pop());
   const advice = await page.request.post(`/api/advisor/village/${villageId}`);
@@ -50,7 +60,12 @@ test("Meine Dörfer: Übersicht, KI-Instruktionen, Erinnerungen, Upload, Zugriff
 
   const other = await browser.newContext();
   const b = await other.newPage();
-  await login(b, "boss@example.com"); // ohne verifizierten Spieler
+  await login(b, "boss@example.com"); // ohne verifizierten Spieler, aber Systemadmin
+  // Systemadmin sieht die Truppen des Mitglieds in der Übersicht
+  await b.getByRole("link", { name: "Truppen", exact: true }).click();
+  await expect(b.getByRole("heading", { name: "Truppen der Mitglieder" })).toBeVisible();
+  await expect(b.getByRole("row", { name: /Axtkämpfer 3\.410/ }).first()).toBeVisible();
+  await expect(b.getByText(/Jede Einsicht wird im Audit-Log vermerkt/)).toBeVisible();
   const resp = await b.goto(`/villages/${villageId}`);
   expect(resp?.status()).toBe(404);
   expect((await b.request.post(`/api/advisor/village/${villageId}`)).status()).toBe(404);

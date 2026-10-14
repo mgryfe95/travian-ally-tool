@@ -37,6 +37,9 @@ describe("Rechte-Matrix", () => {
     expect(hasPermission("MODERATOR", "roles.assign", m)).toBe(false);
     expect(hasPermission("ADMIN", "alliances.classify", m)).toBe(true);
     expect(hasPermission("MEMBER", "chat.upload", m)).toBe(true);
+    expect(hasPermission("MODERATOR", "troops.view", m)).toBe(true);
+    expect(hasPermission("MEMBER", "troops.view", m)).toBe(false);
+    expect(hasPermission("GUEST", "troops.view", m)).toBe(false);
   });
 });
 

@@ -7,7 +7,8 @@ import { fmt } from "@/lib/format";
 import { AREA_LABEL, ageInDays, ageLabel, type StateArea } from "@/lib/reminders";
 import { getOwnVillage, getStaleDays, getVillageInstructions, ownVillages } from "@/lib/services/villages";
 import { requireUser } from "@/lib/session";
-import { saveVillageInstructionsAction } from "../actions";
+import { readTroops, troopsToText } from "@/lib/troops";
+import { saveTroopsAction, saveVillageInstructionsAction } from "../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,7 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
   ]);
   const now = new Date();
   const s = village.state;
+  const troops = readTroops(s?.troops);
 
   return (
     <>
@@ -86,9 +88,19 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
           <div className="row between" style={{ alignItems: "baseline" }}><h2 id="res">Rohstoffe</h2><span className="sub" style={{ fontSize: 12 }}>{s?.resourcesAt ? `Stand ${s.resourcesAt.toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" })}` : ""}</span></div>
           <p className="sub" style={{ marginTop: 10 }}>{s?.resources ? "Daten vorhanden." : "Noch kein Ist-Zustand – lade einen Screenshot der Ressourcenfelder hoch."}</p>
         </section>
-        <section className="card" aria-labelledby="trp">
-          <div className="row between" style={{ alignItems: "baseline" }}><h2 id="trp">Truppen</h2><span className="sub" style={{ fontSize: 12 }}>{s?.troopsAt ? `Stand ${ageLabel(ageInDays(s.troopsAt, now))}` : ""}</span></div>
-          <p className="sub" style={{ marginTop: 10 }}>{s?.troops ? "Daten vorhanden." : "Noch kein Ist-Zustand – lade einen Screenshot vom Versammlungsplatz hoch."}</p>
+        <section id="trp" className="card" aria-labelledby="trp-h">
+          <div className="row between" style={{ alignItems: "baseline" }}><h2 id="trp-h">Truppen</h2><span className={s?.troopsAt && (ageInDays(s.troopsAt, now) ?? 0) >= staleDays ? "stale" : "sub"} style={{ fontSize: 12 }}>{s?.troopsAt ? `Stand ${ageLabel(ageInDays(s.troopsAt, now))}` : "noch nie aktualisiert"}</span></div>
+          {troops.length > 0 && (
+            <div className="scroll" style={{ marginTop: 8 }}><table><thead><tr><th>Einheit</th><th className="r">Im Dorf</th><th className="r">Unterwegs</th><th className="r">Unterstützung</th></tr></thead>
+              <tbody>{troops.map((t) => <tr key={t.unit}><td>{t.unit}</td><td className="mono r">{fmt(t.inVillage)}</td><td className="mono r">{fmt(t.away)}</td><td className="mono r">{fmt(t.support)}</td></tr>)}</tbody></table></div>
+          )}
+          <form action={saveTroopsAction} style={{ marginTop: 12 }}>
+            <input type="hidden" name="villageId" value={id} />
+            <label htmlFor="troops-text" className="lbl">Manuell eintragen – eine Einheit je Zeile: Name; im Dorf; unterwegs; Unterstützung</label>
+            <textarea id="troops-text" name="text" rows={5} className="field mono" defaultValue={troopsToText(troops)} placeholder={"Axtkämpfer; 3410; 600; 0\nKatapult; 120; 0; 0"} />
+            <div className="row" style={{ marginTop: 8 }}><button className="btn sm">Truppen speichern</button></div>
+          </form>
+          <p className="sub" style={{ marginTop: 8, fontSize: 12 }}>Bis die Screenshot-Erkennung aktiv ist, ist das der Weg zu Truppendaten. <strong>Hinweis:</strong> Admins und Moderatoren können die Truppen deiner Dörfer zur Planung und Koordination einsehen.</p>
         </section>
       </div>
 

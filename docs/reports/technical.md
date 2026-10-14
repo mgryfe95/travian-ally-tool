@@ -18,6 +18,7 @@ Stand 2026-10-14 · Projekt-Slug `travian-ally-tool` · Notion-Root `3f912988-70
 | Verifizierung | `lib/services/verification.ts`, `lib/services/register.ts` |
 | Chat | `lib/chat/*`, `lib/services/chat.ts`, `app/api/chat/*`, `app/api/attachments/[id]`, `components/chat/*`, `server.ts` |
 | Dörfer/Phase 2 | `lib/services/villages.ts`, `lib/reminders.ts`, `lib/ai/*` (Stubs), `app/api/screenshots`, `app/api/advisor/*` |
+| Truppenübersicht | `lib/troops.ts`, `lib/services/troops.ts`, `app/(app)/troops`, Recht `troops.view` |
 | Spieldaten | `lib/gamedata/*`, `scripts/import-gamedata.ts`, `scripts/probe-knowledgebase.ts`, `docs/gamedata-format.md` |
 | Betrieb | `lib/services/world.ts` (Weltende, neue Welt), `lib/mail.ts` (SMTP), `scripts/*.sh` |
 

@@ -24,6 +24,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     { href: "/chat", label: "Chat" },
     { href: "/chat?tf=1", label: "Task-Forces", match: "/taskforces" },
   ];
+  if (can("troops.view")) items.push({ href: "/troops", label: "Truppen" });
   if (ADMIN_PERMS.some(can)) items.push({ href: "/admin", label: "Admin", sepBefore: true });
   items.push({ href: "/gamedata", label: "Spieldaten", sepBefore: !ADMIN_PERMS.some(can) });
   const tag = await ownAllianceTag(db);
