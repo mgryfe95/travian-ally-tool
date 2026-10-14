@@ -27,6 +27,8 @@ export type InactiveFilters = {
   minDays?: number;
   allianceId?: number;
   tribe?: number;
+  /** Allianz-IDs, die ausgeblendet werden (z. B. eigene Gruppe). */
+  excludeAllianceIds?: ReadonlySet<number>;
   statuses?: PlayerStatus[];
   sort?: SortKey;
   dir?: "asc" | "desc";
@@ -44,6 +46,7 @@ export function searchInactive(candidates: Candidate[], origin: Coord, f: Inacti
     .filter((c) => f.minDays === undefined || c.noGrowthDays >= f.minDays)
     .filter((c) => f.allianceId === undefined || c.allianceId === f.allianceId)
     .filter((c) => f.tribe === undefined || c.tribe === f.tribe)
+    .filter((c) => !f.excludeAllianceIds?.has(c.allianceId))
     .map((c) => ({ ...c, distance: distance(origin, c) }))
     .filter((c) => f.maxDistance === undefined || c.distance <= f.maxDistance);
 

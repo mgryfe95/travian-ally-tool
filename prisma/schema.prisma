@@ -111,3 +111,21 @@ model Event {
   @@index([at])
   @@index([playerId])
 }
+
+/// Beziehung einer Allianz zu uns. OWN und ALLIED bilden zusammen die „eigene Gruppe“ (intern wie eine Allianz behandelt).
+enum AllianceRelation {
+  OWN
+  ALLIED
+  NAP
+  NEUTRAL
+  ENEMY
+}
+
+/// Separat von `Alliance`, weil die aktuelle Sicht bei jedem Import neu aufgebaut wird. Kein FK, absichtlich.
+model AllianceClassification {
+  allianceId Int              @id
+  relation   AllianceRelation
+  note       String?
+  updatedBy  String?
+  updatedAt  DateTime         @updatedAt
+}

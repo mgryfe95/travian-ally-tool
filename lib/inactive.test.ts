@@ -32,4 +32,7 @@ describe("searchInactive", () => {
     expect(searchInactive(data, origin, { statuses: ["active", "inactive"], sort: "population" })[0]?.villageId).toBe(4);
     expect(searchInactive(data, origin, { sort: "days", dir: "asc" }).map((x) => x.villageId)).toEqual([2, 1, 4]);
   });
+  it("blendet Allianzen (z. B. eigene Gruppe) aus", () => {
+    expect(searchInactive(data, origin, { excludeAllianceIds: new Set([36]) }).map((x) => x.villageId)).toEqual([2, 1]);
+  });
 });

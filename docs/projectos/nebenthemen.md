@@ -24,3 +24,5 @@ Punkte, die Projekt, Aufbau oder andere Bereiche betreffen, aber nicht direkt zu
 - **`main` zeigt auf M1-Stand** (Branch-Kopie), daher enthält der erste PR M1+M2 (Diff nur ab Commit nach `main`). Sauberer Start mit leerem Root-Commit wurde blockiert.
 - **Tribe-Mapping Natars:** auf dem Server ist `tribe=5` Natars; 4 (Natur) kommt in den Daten nicht vor.
 - **Fixture enthält echte Spielernamen** (öffentliche Kartendaten, ~36 Zeilen) — bei Bedarf anonymisieren.
+- **Allianz-Typen angenommen:** OWN, ALLIED, NAP, NEUTRAL, ENEMY (genannt waren nur „Allianz“ und „eigene Allianz“). Weitere Typen bei Bedarf ergänzen.
+- **CC-Auftrag M3 ändert sich:** „Spieler der eigenen Allianz“ (Einladungsliste, Rename-Beweis, Austrittsmarkierung) = eigene Gruppe. Auftrag-Text in `docs/projectos/CC_AUFTRAG_MVP.md` ist noch der alte Stand.

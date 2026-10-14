@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Sparkline } from "@/components/Sparkline";
 import { db } from "@/lib/db";
+import { loadRelations, RELATION_LABEL } from "@/lib/alliance-group";
 import { delta, fmt, STATUS_LABEL } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +12,7 @@ export default async function AlliancePage({ params }: { params: Promise<{ id: s
   if (!Number.isInteger(id)) notFound();
   const alliance = await db.alliance.findUnique({ where: { id } });
   if (!alliance) notFound();
+  const relation = (await loadRelations(db)).get(id);
   const [members, history] = await Promise.all([
     db.player.findMany({ where: { allianceId: id }, orderBy: { population: "desc" } }),
     db.playerDailyStat.groupBy({ by: ["date"], where: { allianceId: id }, _sum: { population: true }, orderBy: { date: "asc" } }),
@@ -19,7 +21,7 @@ export default async function AlliancePage({ params }: { params: Promise<{ id: s
     <main className="mx-auto max-w-4xl space-y-6 p-6">
       <header>
         <h1 className="text-xl font-semibold">{alliance.name}</h1>
-        <p className="text-sm text-zinc-400">{alliance.memberCount} Mitglieder · {alliance.villageCount} Dörfer · Bevölkerung {fmt(alliance.population)}</p>
+        <p className="text-sm text-zinc-400">{relation ? `${RELATION_LABEL[relation]} · ` : ""}{alliance.memberCount} Mitglieder · {alliance.villageCount} Dörfer · Bevölkerung {fmt(alliance.population)}</p>
       </header>
       <section><h2 className="mb-2 font-medium">Verlauf (Summe Bevölkerung)</h2><Sparkline values={history.map((h) => h._sum.population ?? 0)} /></section>
       <section>

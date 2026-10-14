@@ -4,6 +4,7 @@ import { roundFields } from "@/lib/geo";
 import { loadCandidates, searchInactive, TRIBES, type SortKey } from "@/lib/inactive";
 import { fmt } from "@/lib/format";
 import { getAllianceId, getInactiveDays } from "@/lib/settings";
+import { loadRelations, ownGroupIds, RELATION_LABEL } from "@/lib/alliance-group";
 
 export const dynamic = "force-dynamic";
 
@@ -18,12 +19,15 @@ export default async function InactivePage({ searchParams }: { searchParams: Pro
   const oy = int(sp.oy);
   const origin = ox !== undefined && oy !== undefined ? { x: ox, y: oy } : undefined;
   const sort = SORTS.includes(sp.sort as SortKey) ? (sp.sort as SortKey) : "distance";
-  const [inactiveDays, ownAlliance] = await Promise.all([getInactiveDays(db), getAllianceId(db)]);
+  const [inactiveDays, ownAlliance, relations] = await Promise.all([getInactiveDays(db), getAllianceId(db), loadRelations(db)]);
+  const includeOwn = sp.own === "1";
+  const ownIds = ownGroupIds(relations);
 
   const results = origin
     ? searchInactive(await loadCandidates(db), origin, {
         maxDistance: int(sp.maxDistance), minPop: int(sp.minPop), maxPop: int(sp.maxPop), minDays: int(sp.minDays),
         allianceId: int(sp.alliance), tribe: int(sp.tribe), sort,
+        excludeAllianceIds: includeOwn ? undefined : ownIds,
       })
     : [];
 
@@ -33,7 +37,7 @@ export default async function InactivePage({ searchParams }: { searchParams: Pro
       <h1 className="text-xl font-semibold">Inaktiven-Suche</h1>
       <p className="mt-1 text-sm text-zinc-400">
         Inaktiv = seit mindestens {inactiveDays} Tagen kein Bevölkerungszuwachs.
-        {ownAlliance ? ` Eigene Allianz-ID: ${ownAlliance}.` : ""} Der Ursprung aus „Meine Dörfer“ folgt mit dem Login (M3); bis dahin freie Koordinate.
+        {ownAlliance ? ` Eigene Allianz-ID: ${ownAlliance}.` : ""} Allianzen der eigenen Gruppe (Typ „Eigene Allianz“ / „Allianz“) sind standardmäßig ausgeblendet. Der Ursprung aus „Meine Dörfer“ folgt mit dem Login (M3); bis dahin freie Koordinate.
       </p>
       <form className="mt-4 flex flex-wrap items-end gap-3 text-sm">
         {([
@@ -62,6 +66,9 @@ export default async function InactivePage({ searchParams }: { searchParams: Pro
             <option value="days">Tage inaktiv</option>
           </select>
         </label>
+        <label className="flex items-center gap-2 pb-1">
+          <input type="checkbox" name="own" value="1" defaultChecked={includeOwn} /> eigene Gruppe einblenden
+        </label>
         <button className="rounded bg-amber-500 px-4 py-1.5 font-medium text-zinc-950">Suchen</button>
       </form>
 
@@ -84,7 +91,7 @@ export default async function InactivePage({ searchParams }: { searchParams: Pro
                   <td>{r.villageName}</td>
                   <td className="tabular-nums">({r.x}|{r.y})</td>
                   <td><Link className="hover:text-amber-400" href={`/players/${r.playerId}`}>{r.playerName}</Link></td>
-                  <td>{r.allianceId ? <Link className="hover:text-amber-400" href={`/alliances/${r.allianceId}`}>{r.allianceName}</Link> : "–"}</td>
+                  <td>{r.allianceId ? <Link className="hover:text-amber-400" href={`/alliances/${r.allianceId}`}>{r.allianceName}</Link> : "–"}{relations.has(r.allianceId) && <span className="ml-1 text-xs text-zinc-500">({RELATION_LABEL[relations.get(r.allianceId)!]})</span>}</td>
                   <td>{TRIBES[r.tribe] ?? r.tribe}</td>
                   <td className="text-right tabular-nums">{fmt(r.playerPop)}</td>
                   <td className="text-right tabular-nums">{r.noGrowthDays}</td>

@@ -19,3 +19,10 @@
 - Manuell importieren: `npx tsx scripts/import-file.ts <map.sql>` (Dauer real ≈ 6 s).
 - Integrationstests nutzen `TEST_DATABASE_URL` (Default `postgresql://ally:ally@localhost:5432/ally_test`, wird per `prisma migrate deploy` angelegt).
 - Offen für M3: Ursprung per Dropdown aus „Meine Dörfer“ und „zuletzt gewählten Ursprung merken“ (braucht Login/PlayerLink).
+
+## Allianz-Gruppe (eigene Gruppe)
+- Tabelle `AllianceClassification(allianceId, relation, note, updatedBy)` — bewusst ohne FK, weil `Alliance` bei jedem Import neu aufgebaut wird.
+- Typen: `OWN` (Eigene Allianz), `ALLIED` (Allianz), `NAP`, `NEUTRAL`, `ENEMY`. **Eigene Gruppe = OWN ∪ ALLIED** (`lib/alliance-group.ts`). Die konfigurierte `TRAVIAN_ALLIANCE_ID` / Setting `allianceId` ist implizit OWN; ein expliziter Eintrag überschreibt das.
+- Überall, wo „eigene Allianz“ gemeint ist (Einladungsliste, Dorf-Umbenennungs-Beweis „Spieler ist in der eigenen Allianz“, Austritts-Markierung, Mitgliederabgleich), gilt die Gruppe, nie nur die Einzel-ID.
+- Abgleich `compareMembers(groupPlayers, links)`: Mitglieder mit/ohne verifizierten Account, ausstehende Links, verifizierte Accounts außerhalb der Gruppe (`orphanLinks`, nur Markierung).
+- Setzen bis zum Admin-UI: `npx tsx scripts/set-alliance-relation.ts 36 OWN` bzw. `... 7 ALLIED`.
