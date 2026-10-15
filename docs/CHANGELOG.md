@@ -38,3 +38,6 @@ Was & Warum: Admin → Konten: Moderator/Admin kann ein Konto direkt einem Spiel
 
 ## 2026-10-15 · travian-ally-tool/m4/tag-types
 Was & Warum: Tag-Typen (Achsen) an Kanäle gebunden — je Typ Einzel-/Mehrfachauswahl, Pflicht, Task-Force-Geltung, Kanalzuweisung; Admin-UI „Tag-Typen & Tags“, Chat-Composer zeigt nur Typen des Zielkanals, Validierung serverseitig; Migration `tag_types`. Zusätzlich Layout-Fix Admin → Kanäle & Tags. Anker `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.
+
+## 2026-10-15 · travian-ally-tool/m6/schedule
+Was & Warum: Allianz-Schedule — Admins legen Calls (Angriff, Deff, Angriffstag) mit Koordinaten an; Text aus Vorlage mit Platzhaltern, Spieler/Dorf/Link automatisch aus map.sql; geplant (automatisch zur Zeit) oder auf Abruf; Seite `/schedule`, Rechte `schedule.view/manage`, Migration `schedule`. Folgt: Task-Force-Einladungen/Rollen, Messenger. Anker `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.

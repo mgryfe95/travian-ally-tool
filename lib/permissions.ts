@@ -11,14 +11,14 @@ export const PERMISSIONS = [
   "tags.manage", "taskforce.create", "taskforce.manage",
   "members.invite", "members.approve", "roles.assign", "permissions.edit",
   "map.view", "settings.edit", "alliances.classify", "gamedata.edit",
-  "troops.view",
+  "troops.view", "schedule.view", "schedule.manage",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
 export const DEFAULT_PERMISSIONS: Record<StoredRole, Permission[]> = {
   GUEST: ["map.view", "chat.read"],
-  MEMBER: ["map.view", "chat.read", "chat.write", "chat.upload"],
-  MODERATOR: ["map.view", "chat.read", "chat.write", "chat.upload", "chat.moderate", "tags.manage", "taskforce.create", "members.invite", "members.approve", "troops.view"],
+  MEMBER: ["map.view", "chat.read", "chat.write", "chat.upload", "schedule.view"],
+  MODERATOR: ["map.view", "chat.read", "chat.write", "chat.upload", "chat.moderate", "tags.manage", "taskforce.create", "members.invite", "members.approve", "troops.view", "schedule.view"],
   ADMIN: [...PERMISSIONS],
 };
 

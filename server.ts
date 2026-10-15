@@ -9,6 +9,7 @@ import { effectiveRole } from "./lib/permissions";
 import { channelRoom, setIo } from "./lib/realtime";
 import { seedPermissions } from "./lib/services/admin";
 import { chatCtx, seedChat } from "./lib/services/chat";
+import { dispatchDueCalls, seedSchedule } from "./lib/services/schedule";
 
 const dev = process.env.NODE_ENV !== "production";
 const port = Number(process.env.PORT ?? 3000);
@@ -20,6 +21,7 @@ await app.prepare();
 // Idempotent: Rechte-Defaults, ALLY-Kanäle und Tags beim ersten Start anlegen.
 await seedPermissions(db);
 await seedChat(db);
+await seedSchedule(db);
 const httpServer = createServer((req, res) => void handle(req, res));
 const io = new SocketServer(httpServer, { path: "/socket.io" });
 setIo(io);
@@ -33,6 +35,9 @@ async function userFromCookie(cookie: string | undefined) {
   if (!u || u.banned) return null;
   return { id: u.id, role: effectiveRole(u, env().SYSTEMADMIN_EMAILS) };
 }
+
+// Geplante Calls (Allianz-Schedule) alle 30 s prüfen und zur Zeit in den Zielkanal posten.
+setInterval(() => void dispatchDueCalls(db).catch((e) => console.error("[schedule]", e)), 30_000);
 
 io.use(async (socket, nextFn) => {
   try {

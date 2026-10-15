@@ -24,6 +24,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     { href: "/chat", label: "Chat" },
     { href: "/chat?tf=1", label: "Task-Forces", match: "/taskforces" },
   ];
+  if (can("schedule.view")) items.push({ href: "/schedule", label: "Schedule" });
   if (can("troops.view")) items.push({ href: "/troops", label: "Truppen" });
   if (user.role !== "GUEST") items.push({ href: "/screenshots", label: "Screenshots" });
   if (ADMIN_PERMS.some(can)) items.push({ href: "/admin", label: "Admin", sepBefore: true });

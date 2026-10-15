@@ -42,3 +42,6 @@ Unter **Screenshots** lädst du Bilder hoch (oder Strg+V). Art und Gerät werden
 
 ## Tag-Typen & Tags (Admin → Kanäle & Tags)
 Ein **Tag-Typ** ist eine Achse wie „Priorität“ oder „Status“ mit eigenen Tags. Je Typ legst Du fest: **ein Tag** (Einzelauswahl) oder **mehrere**, **Pflicht** (Nachricht braucht ein Tag dieses Typs), **Task-Forces** (auch in Task-Force-Kanälen anbieten) und die **Kanäle**, in denen er gilt. Beim Schreiben erscheinen nur die Typen des gewählten Kanals. Ein Typ lässt sich löschen, sobald er keine Tags mehr hat. Vorhandene Tags liegen im Typ „Kategorie“ (Einzelauswahl, alle Allianz-Kanäle).
+
+## Allianz-Schedule (Calls)
+Menü **Schedule** (alle Mitglieder sehen die anstehenden Calls). Admins (`schedule.manage`) legen Calls an: **Art** (Angriff, Deff-Unterstützung, Angriffstag, Sonstiges), **Koordinaten** `x|y`, optional **Zeit** (MEZ/MESZ) – leer = „auf Abruf“, nur per **Jetzt senden**. Spieler, Dorf und Link zur Spielerseite werden aus den Koordinaten ermittelt (letzte map.sql). Der Text kommt aus einer **Vorlage** (unten auf der Seite editierbar, Platzhalter `{art} {titel} {spieler} {dorf} {koordinaten} {zeit} {link} {notiz}`) und wird in den Kanal der Vorlage gepostet (überschreibbar). Geplante Calls sendet der Server automatisch (Prüfung alle 30 s). Abbrechen/Löschen jederzeit vor dem Senden.

@@ -551,3 +551,40 @@ model VisionAlias {
   meaning   String
   createdAt DateTime @default(now())
 }
+
+/// Vorlage für Calls (Angriff, Deff-Unterstützung, Angriffstag, …). Platzhalter: {art} {titel} {spieler} {dorf} {koordinaten} {zeit} {link} {notiz}
+model CallTemplate {
+  id        Int    @id @default(autoincrement())
+  /// ATTACK | DEFF | ATTACK_DAY | OTHER
+  kind      String
+  name      String @unique
+  body      String
+  /// Standard-Kanal (Allianz-Kanal); leer = erster Allianz-Kanal
+  channelId Int?
+  sortOrder Int    @default(0)
+}
+
+/// Ein Call im Allianz-Schedule: scheduled (wird zur Zeit automatisch gepostet), draft (nur auf Knopfdruck), sent, cancelled.
+model AllianceCall {
+  id           Int       @id @default(autoincrement())
+  kind         String
+  title        String    @default("")
+  x            Int?
+  y            Int?
+  villageId    Int?
+  villageName  String?
+  playerId     Int?
+  playerName   String?
+  at           DateTime?
+  channelId    Int
+  /// Vorlagentext zum Zeitpunkt des Anlegens (Platzhalter werden beim Senden ersetzt)
+  template     String
+  note         String    @default("")
+  status       String    @default("scheduled")
+  createdBy    String
+  createdAt    DateTime  @default(now())
+  sentAt       DateTime?
+  messageId    Int?
+
+  @@index([status, at])
+}

@@ -70,3 +70,6 @@
 
 ## Tag-Typen
 `TagType` (multi, required, forTaskforces, sortOrder) ↔ `ChannelTagType` (n:m zu Allianz-Kanälen); `Tag.tagTypeId` (Name nur je Typ eindeutig, Löschen des Typs mit Tags per `Restrict` gesperrt). `postMessage` validiert über `validateTags`: Tag bekannt, Typ im Kanal angeboten (`offeredTagTypes`; Task-Force-Kanäle zusätzlich alle Typen mit `forTaskforces`), Einzelauswahl max. ein Tag, Pflicht-Typen belegt. Migration `tag_types` überführt bestehende Tags in den Typ „Kategorie“ und weist ihn allen Allianz-Kanälen zu. Recht: `tags.manage`.
+
+## Allianz-Schedule
+`CallTemplate` (Art, Text, Standardkanal) und `AllianceCall` (Ziel aus `Village`/`Player` per Koordinate, `template` als Snapshot, Status draft|scheduled|sending|sent|cancelled). `lib/services/schedule.ts`: `createCall`, `sendCall`, `dispatchDueCalls` (von `server.ts` alle 30 s; Claim per `updateMany status→sending` verhindert Doppelversand), `renderCall` (Platzhalter, Link = `APP_URL/players/<id>`), `berlinToDate` (Eingabe Europe/Berlin → UTC). Posten geschieht im Server-Prozess, damit Socket.IO live zustellt. Rechte `schedule.view` (Member+), `schedule.manage` (Admin), Migration `schedule`. Der Autor der Kanalnachricht ist der Ersteller des Calls.

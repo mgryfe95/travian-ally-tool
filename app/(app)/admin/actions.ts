@@ -8,6 +8,7 @@ import { ForbiddenError, PERMISSIONS, ROLES, type Permission, type Role } from "
 import { classifyAlliance, deleteUser, setRolePermission, setUserBanned, setUserRole } from "@/lib/services/admin";
 import { approveLink, assignPlayer, createInvite, inviteMessage, rejectLink, revokeInvite, VerificationError } from "@/lib/services/verification";
 import { ChatError, chatCtx, createChannel, deleteTag, deleteTagType, moveChannel, saveTag, saveTagType, updateChannel } from "@/lib/services/chat";
+import { berlinToDate, cancelCall, createCall, deleteCall, deleteTemplate, saveTemplate, sendCall } from "@/lib/services/schedule";
 import { requireUser } from "@/lib/session";
 import { loadMemberRows } from "./tabs/data";
 
@@ -141,4 +142,44 @@ export async function saveTagTypeAction(f: FormData) {
 }
 export async function deleteTagTypeAction(f: FormData) {
   return run("channels", async () => deleteTagType(db, await cx(), int(f, "tagTypeId")));
+}
+
+// ───────── Allianz-Schedule ─────────
+async function runSchedule(fn: () => Promise<void>): Promise<never> {
+  let error: string | undefined;
+  try {
+    await fn();
+  } catch (e) {
+    if (e instanceof ForbiddenError || e instanceof ChatError) error = e.message;
+    else throw e;
+  }
+  redirect(`/schedule${error ? `?error=${encodeURIComponent(error)}` : ""}`);
+}
+export async function createCallAction(f: FormData) {
+  return runSchedule(async () => {
+    const atRaw = str(f, "at").trim();
+    const at = atRaw ? berlinToDate(atRaw) : null;
+    if (atRaw && !at) throw new ChatError("Zeit ungültig");
+    await createCall(db, await requireUser(), {
+      kind: str(f, "kind"), title: str(f, "title"), coord: str(f, "coord"), at, note: str(f, "note"),
+      channelId: f.get("channelId") ? int(f, "channelId") : undefined, templateId: f.get("templateId") ? int(f, "templateId") : undefined, sendNow: f.get("sendNow") === "1",
+    });
+  });
+}
+export async function sendCallAction(f: FormData) {
+  return runSchedule(async () => void (await sendCall(db, await requireUser(), int(f, "callId"))));
+}
+export async function cancelCallAction(f: FormData) {
+  return runSchedule(async () => cancelCall(db, await requireUser(), int(f, "callId")));
+}
+export async function deleteCallAction(f: FormData) {
+  return runSchedule(async () => deleteCall(db, await requireUser(), int(f, "callId")));
+}
+export async function saveTemplateAction(f: FormData) {
+  return runSchedule(async () => void (await saveTemplate(db, await requireUser(), {
+    id: f.get("templateId") ? int(f, "templateId") : undefined, kind: str(f, "kind"), name: str(f, "name"), body: str(f, "body"), channelId: f.get("channelId") ? int(f, "channelId") : null,
+  })));
+}
+export async function deleteTemplateAction(f: FormData) {
+  return runSchedule(async () => deleteTemplate(db, await requireUser(), int(f, "templateId")));
 }
