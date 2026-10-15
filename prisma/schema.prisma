@@ -270,6 +270,7 @@ model Channel {
   minWriteRole String      @default("MEMBER")
   archivedAt   DateTime?
   messages     Message[]
+  tagTypes     ChannelTagType[]
   taskforce    Taskforce?  @relation(fields: [taskforceId], references: [id], onDelete: Cascade)
 }
 
@@ -290,13 +291,41 @@ model Message {
   @@index([authorId])
 }
 
+/// Tag-Typ = Achse (z. B. „Priorität“, „Status“). Ein Typ gilt für bestimmte Kanäle; `multi` erlaubt mehrere Tags dieses Typs je Nachricht.
+model TagType {
+  id            Int              @id @default(autoincrement())
+  name          String           @unique
+  /// false = genau ein Tag dieses Typs je Nachricht (Einzelauswahl), true = mehrere
+  multi         Boolean          @default(false)
+  /// true = Nachricht braucht ein Tag dieses Typs
+  required      Boolean          @default(false)
+  /// auch in Task-Force-Kanälen anbieten
+  forTaskforces Boolean          @default(true)
+  sortOrder     Int              @default(0)
+  tags          Tag[]
+  channels      ChannelTagType[]
+}
+
+model ChannelTagType {
+  channelId Int
+  tagTypeId Int
+  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  tagType   TagType @relation(fields: [tagTypeId], references: [id], onDelete: Cascade)
+
+  @@id([channelId, tagTypeId])
+}
+
 model Tag {
   id        Int          @id @default(autoincrement())
-  name      String       @unique
+  tagTypeId Int
+  tagType   TagType      @relation(fields: [tagTypeId], references: [id], onDelete: Restrict)
+  name      String
   /// Farbpaar-Schlüssel (red|amber|blue|green|purple|gray)
   color     String       @default("gray")
   createdBy String?
   messages  MessageTag[]
+
+  @@unique([tagTypeId, name])
 }
 
 model MessageTag {

@@ -40,7 +40,7 @@ test("Meine Dörfer: Übersicht, KI-Instruktionen, Erinnerungen, Upload, Zugriff
   // Screenshot hochladen (ein Weg, keine Geräte-Auswahl); Erkennung ist noch Stub
   const png = await sharp(randomBytes(300 * 200 * 3), { raw: { width: 300, height: 200, channels: 3 } }).png().toBuffer();
   await page.locator("#file-troops").setInputFiles({ name: "versammlungsplatz.png", mimeType: "image/png", buffer: png });
-  await expect(page.getByText(/Gespeichert\. Automatische Erkennung noch nicht aktiv/)).toBeVisible();
+  await expect(page.getByText(/Gespeichert\. Screenshot-Erkennung/)).toBeVisible();
 
   // Truppen manuell eintragen (Hinweis auf Sichtbarkeit für Admins/Moderatoren)
   await expect(page.getByText(/Admins und Moderatoren können die Truppen deiner Dörfer/)).toBeVisible();

@@ -67,3 +67,6 @@
 - Lernmodus: `VisionExample` (Bild + Gold-Lesung, je Art max. 30), `VisionAlias` (Emojis/Kürzel → Bedeutung, `scripts/vision-alias.ts`). ENV: `VISION_PASSES`, `VISION_AUTO_ACCEPT`, `VISION_LEARNING_MIN`, `ANTHROPIC_MODEL`.
 - Muster: `tests/fixtures/screenshots/*.png` + `.gold.json`; `npx tsx scripts/eval-vision.ts` misst die Trefferquote (API-Key nötig). Neue Art/Layout: Muster + Gold ablegen, Prompt-Abschnitt und ggf. Prüfung ergänzen.
 - Beobachtungen: Desktop-Produktionstabelle zeigt Getreide brutto, Seitenleiste/Mobil netto; Schmiede „-“ = nicht verfügbar (null), in Truppen-/Hospitaltabellen = 0; Koordinaten teils mit Unicode-Minus.
+
+## Tag-Typen
+`TagType` (multi, required, forTaskforces, sortOrder) ↔ `ChannelTagType` (n:m zu Allianz-Kanälen); `Tag.tagTypeId` (Name nur je Typ eindeutig, Löschen des Typs mit Tags per `Restrict` gesperrt). `postMessage` validiert über `validateTags`: Tag bekannt, Typ im Kanal angeboten (`offeredTagTypes`; Task-Force-Kanäle zusätzlich alle Typen mit `forTaskforces`), Einzelauswahl max. ein Tag, Pflicht-Typen belegt. Migration `tag_types` überführt bestehende Tags in den Typ „Kategorie“ und weist ihn allen Allianz-Kanälen zu. Recht: `tags.manage`.

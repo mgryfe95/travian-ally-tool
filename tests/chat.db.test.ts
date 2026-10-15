@@ -4,8 +4,8 @@ import { cleanupOrphanAttachments } from "@/lib/chat/cleanup";
 import { ForbiddenError, type Role } from "@/lib/permissions";
 import { seedPermissions } from "@/lib/services/admin";
 import {
-  addTaskforceMember, archiveTaskforce, ChatError, chatCtx, createChannel, createTaskforce, deleteMessage, deleteTag, editMessage, listChannels,
-  listMessages, markRead, moveChannel, postMessage, removeTaskforceMember, saveTag, seedChat, updateChannel,
+  addTaskforceMember, archiveTaskforce, ChatError, chatCtx, createChannel, createTaskforce, deleteMessage, deleteTag, deleteTagType, editMessage, listChannels,
+  listMessages, markRead, moveChannel, postMessage, removeTaskforceMember, saveTag, saveTagType, seedChat, updateChannel,
 } from "@/lib/services/chat";
 import { storage } from "@/lib/storage";
 
@@ -22,7 +22,7 @@ const ch = async (name: string) => (await db.channel.findFirstOrThrow({ where: {
 const f = async (p: Promise<unknown>) => p.then(() => null, (e: unknown) => e);
 
 beforeEach(async () => {
-  await db.$executeRaw`TRUNCATE "User","RolePermission","AuditLog","Channel","Message","Tag","Taskforce","Attachment","ChannelRead" RESTART IDENTITY CASCADE`;
+  await db.$executeRaw`TRUNCATE "User","RolePermission","AuditLog","Channel","Message","Tag","TagType","Taskforce","Attachment","ChannelRead" RESTART IDENTITY CASCADE`;
   await seedPermissions(db);
   await seedChat(db);
   for (const [id, role] of [["m1", "MEMBER"], ["m2", "MEMBER"], ["g1", "GUEST"], ["mod", "MODERATOR"], ["mod2", "MODERATOR"], ["adm", "ADMIN"]] as const)
@@ -31,7 +31,7 @@ beforeEach(async () => {
 afterAll(() => db.$disconnect());
 
 describe("Seed und Sichtbarkeit", () => {
-  it("8 Standardkanäle + 4 Tags, idempotent", async () => {
+  it("8 Standardkanäle + 4 Tags in einem Typ, idempotent", async () => {
     await seedChat(db);
     expect((await db.channel.findMany({ orderBy: { sortOrder: "asc" } })).map((c) => c.name)).toEqual(["Deff-Call", "Deff-Reports", "Off-Call", "Off-Reports", "Ressources", "Settlement", "Sitter", "Mixed topics"]);
     expect(await db.tag.count()).toBe(4);
@@ -195,11 +195,53 @@ describe("Kanäle und Tags verwalten", () => {
     expect((await listChannels(db, await ctx(member))).some((x) => x.id === c.id)).toBe(false);
   });
   it("Tags: nur mit tags.manage; Name eindeutig; Farbe aus Vorgabe", async () => {
-    expect(await f(saveTag(db, await ctx(member), { name: "Neu", color: "red" }))).toBeInstanceOf(ForbiddenError);
-    const t = await saveTag(db, await ctx(mod), { name: "Wichtig", color: "purple" });
-    expect(await f(saveTag(db, await ctx(mod), { name: "Wichtig", color: "red" }))).toBeInstanceOf(ChatError);
-    expect(await f(saveTag(db, await ctx(mod), { name: "Bunt", color: "pink" }))).toBeInstanceOf(ChatError);
+    const type = await db.tagType.findFirstOrThrow();
+    expect(await f(saveTag(db, await ctx(member), { tagTypeId: type.id, name: "Neu", color: "red" }))).toBeInstanceOf(ForbiddenError);
+    const t = await saveTag(db, await ctx(mod), { tagTypeId: type.id, name: "Wichtig", color: "purple" });
+    expect(await f(saveTag(db, await ctx(mod), { tagTypeId: type.id, name: "Wichtig", color: "red" }))).toBeInstanceOf(ChatError);
+    expect(await f(saveTag(db, await ctx(mod), { tagTypeId: type.id, name: "Bunt", color: "pink" }))).toBeInstanceOf(ChatError);
     await deleteTag(db, await ctx(mod), t.id);
     expect(await db.tag.count({ where: { name: "Wichtig" } })).toBe(0);
+  });
+});
+
+describe("Tag-Typen", () => {
+  it("Typ gilt nur in zugewiesenen Kanälen; Einzelauswahl und Pflicht werden erzwungen", async () => {
+    const c = await ctx(mod);
+    const prio = await saveTagType(db, c, { name: "Priorität", multi: false, required: true, forTaskforces: false, channelIds: [await ch("Deff-Call")] });
+    const hoch = await saveTag(db, c, { tagTypeId: prio.id, name: "Hoch", color: "red" });
+    const niedrig = await saveTag(db, c, { tagTypeId: prio.id, name: "Niedrig", color: "gray" });
+    const mc = await ctx(member);
+    const deff = await ch("Deff-Call");
+    expect(await f(postMessage(db, mc, { channelId: deff, body: "x" }))).toBeInstanceOf(ChatError); // Pflicht fehlt
+    expect(await f(postMessage(db, mc, { channelId: deff, body: "x", tagIds: [hoch.id, niedrig.id] }))).toBeInstanceOf(ChatError); // nur ein Tag
+    expect((await postMessage(db, mc, { channelId: deff, body: "ok", tagIds: [hoch.id] })).tags.map((t) => t.name)).toEqual(["Hoch"]);
+    // in einem anderen Kanal nicht angeboten: Tag abgelehnt, Nachricht ohne Tag erlaubt
+    const off = await ch("Off-Call");
+    expect(await f(postMessage(db, mc, { channelId: off, body: "x", tagIds: [hoch.id] }))).toBeInstanceOf(ChatError);
+    expect((await postMessage(db, mc, { channelId: off, body: "ohne" })).tags).toEqual([]);
+  });
+  it("multi erlaubt mehrere Tags; gleicher Tag-Name in verschiedenen Typen; Löschen nur ohne Tags; Rechte", async () => {
+    const c = await ctx(mod);
+    const t = await saveTagType(db, c, { name: "Themen", multi: true, required: false, forTaskforces: false, channelIds: [await ch("Off-Call")] });
+    const a = await saveTag(db, c, { tagTypeId: t.id, name: "Info", color: "blue" }); // „Info“ existiert auch in Kategorie
+    const b = await saveTag(db, c, { tagTypeId: t.id, name: "Ziel", color: "green" });
+    const m = await postMessage(db, await ctx(member), { channelId: await ch("Off-Call"), body: "x", tagIds: [a.id, b.id] });
+    expect(m.tags.length).toBe(2);
+    expect(await f(deleteTagType(db, c, t.id))).toBeInstanceOf(ChatError);
+    expect(await f(saveTagType(db, await ctx(member), { name: "Nope", multi: false, required: false, forTaskforces: true, channelIds: [] }))).toBeInstanceOf(ForbiddenError);
+    await deleteTag(db, c, a.id);
+    await deleteTag(db, c, b.id);
+    await deleteTagType(db, c, t.id);
+    expect(await db.tagType.count({ where: { id: t.id } })).toBe(0);
+  });
+  it("Task-Force-Kanäle bekommen Typen mit forTaskforces", async () => {
+    const c = await ctx(mod);
+    const t = await saveTagType(db, c, { name: "TF-Typ", multi: false, required: true, forTaskforces: true, channelIds: [] });
+    const tag = await saveTag(db, c, { tagTypeId: t.id, name: "Plan", color: "amber" });
+    const tf = await createTaskforce(db, await ctx(mod), { name: "Operation X" } as never);
+    const tfChannel = await db.channel.findFirstOrThrow({ where: { taskforceId: (tf as { id: number }).id } });
+    expect(await f(postMessage(db, await ctx(mod), { channelId: tfChannel.id, body: "x" }))).toBeInstanceOf(ChatError);
+    expect((await postMessage(db, await ctx(mod), { channelId: tfChannel.id, body: "x", tagIds: [tag.id] })).tags.length).toBe(1);
   });
 });

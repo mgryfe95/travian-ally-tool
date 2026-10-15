@@ -20,7 +20,7 @@ test("Chat: Nachricht mit Tag in Deff-Call erscheint im Sammelraum; Screenshot e
   await expect(page.getByRole("heading", { name: "Alle Kanäle" })).toBeVisible();
   // Im Sammelraum ist die Kanalwahl Pflicht; Deff-Call wählen und mit Tag senden.
   await page.locator("#chs").selectOption({ label: "Deff-Call" });
-  await page.getByLabel("Tag", { exact: true }).selectOption({ label: "Dringend" });
+  await page.getByLabel("Kategorie", { exact: true }).selectOption({ label: "Dringend" });
   await page.getByLabel("Nachricht", { exact: true }).fill("Angriff auf (12|-34) in 2 h");
   await page.getByRole("button", { name: "Senden" }).click();
   const msg = page.locator("article.msg", { hasText: "Angriff auf" });

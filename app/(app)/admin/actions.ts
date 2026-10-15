@@ -7,7 +7,7 @@ import { RELATIONS, type Relation } from "@/lib/alliance-group";
 import { ForbiddenError, PERMISSIONS, ROLES, type Permission, type Role } from "@/lib/permissions";
 import { classifyAlliance, deleteUser, setRolePermission, setUserBanned, setUserRole } from "@/lib/services/admin";
 import { approveLink, assignPlayer, createInvite, inviteMessage, rejectLink, revokeInvite, VerificationError } from "@/lib/services/verification";
-import { ChatError, chatCtx, createChannel, deleteTag, moveChannel, saveTag, updateChannel } from "@/lib/services/chat";
+import { ChatError, chatCtx, createChannel, deleteTag, deleteTagType, moveChannel, saveTag, saveTagType, updateChannel } from "@/lib/services/chat";
 import { requireUser } from "@/lib/session";
 import { loadMemberRows } from "./tabs/data";
 
@@ -126,8 +126,19 @@ export async function moveChannelAction(f: FormData) {
   return run("channels", async () => moveChannel(db, await cx(), int(f, "channelId"), str(f, "dir") === "up" ? -1 : 1));
 }
 export async function saveTagAction(f: FormData) {
-  return run("channels", async () => void (await saveTag(db, await cx(), { id: f.get("tagId") ? int(f, "tagId") : undefined, name: str(f, "name"), color: str(f, "color") })));
+  return run("channels", async () => void (await saveTag(db, await cx(), { id: f.get("tagId") ? int(f, "tagId") : undefined, tagTypeId: f.get("tagTypeId") ? int(f, "tagTypeId") : undefined, name: str(f, "name"), color: str(f, "color") })));
 }
 export async function deleteTagAction(f: FormData) {
   return run("channels", async () => deleteTag(db, await cx(), int(f, "tagId")));
+}
+
+export async function saveTagTypeAction(f: FormData) {
+  return run("channels", async () =>
+    void (await saveTagType(db, await cx(), {
+      id: f.get("tagTypeId") ? int(f, "tagTypeId") : undefined, name: str(f, "name"), multi: str(f, "multi") === "1", required: f.get("required") === "on",
+      forTaskforces: f.get("forTaskforces") === "on", channelIds: f.getAll("channelIds").map(Number).filter(Number.isInteger),
+    })));
+}
+export async function deleteTagTypeAction(f: FormData) {
+  return run("channels", async () => deleteTagType(db, await cx(), int(f, "tagTypeId")));
 }

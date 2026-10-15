@@ -3,18 +3,17 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent, type DragEvent, type FormEvent } from "react";
-import type { ChannelView, MessageView } from "@/lib/services/chat";
+import type { ChannelView, MessageView, TagTypeView } from "@/lib/services/chat";
 import { Lightbox, type LightboxImage } from "./Lightbox";
 import { MessageItem } from "./Message";
 import { getSocket } from "./socket";
 
-type Tag = { id: number; name: string; color: string };
 type Pending = { key: string; id?: number; name: string; preview?: string; kind?: string; error?: string };
 
 export type ChatProps = {
   me: { id: string; role: string };
   channels: ChannelView[];
-  tags: Tag[];
+  tagTypes: TagTypeView[];
   current: number | "all";
   initial: { messages: MessageView[]; nextBefore: number | null };
   caps: { canUpload: boolean; canModerate: boolean; canCreateTf: boolean };
@@ -29,7 +28,7 @@ async function api<T>(url: string, init?: RequestInit): Promise<{ ok: boolean; s
 }
 
 export function ChatClient(props: ChatProps) {
-  const { me, channels, tags, current, caps, limits } = props;
+  const { me, channels, tagTypes, current, caps, limits } = props;
   const router = useRouter();
   const ally = useMemo(() => channels.filter((c) => c.tree === "ALLY"), [channels]);
   const tfs = useMemo(() => channels.filter((c) => c.tree === "TASKFORCE"), [channels]);
@@ -42,7 +41,7 @@ export function ChatClient(props: ChatProps) {
   const [tagFilter, setTagFilter] = useState<number | null>(null);
   const [q, setQ] = useState("");
   const [body, setBody] = useState("");
-  const [tagId, setTagId] = useState("");
+  const [picked, setPicked] = useState<Record<number, number[]>>({});
   const writable = ally.filter((c) => c.canWrite);
   const [target, setTarget] = useState<number | undefined>(writable[0]?.id);
   const [pending, setPending] = useState<Pending[]>([]);
@@ -56,6 +55,16 @@ export function ChatClient(props: ChatProps) {
 
   const canWriteHere = isAll ? writable.length > 0 : !!cur?.canWrite;
   const sendChannel = isAll ? target : cur?.id;
+  const sendTree = channels.find((c) => c.id === sendChannel)?.tree;
+  // Typen, die im Zielkanal angeboten werden
+  const offered = useMemo(() => tagTypes.filter((t) => (sendChannel !== undefined && t.channelIds.includes(sendChannel)) || (sendTree === "TASKFORCE" && t.forTaskforces)), [tagTypes, sendChannel, sendTree]);
+  const allTags = useMemo(() => tagTypes.flatMap((t) => t.tags), [tagTypes]);
+  const togglePick = (t: TagTypeView, id: number) =>
+    setPicked((p) => {
+      const cur = p[t.id] ?? [];
+      const next = cur.includes(id) ? cur.filter((x) => x !== id) : t.multi ? [...cur, id] : [id];
+      return { ...p, [t.id]: next };
+    });
 
   const scrollDown = () => requestAnimationFrame(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight }));
   useEffect(() => {
@@ -189,17 +198,19 @@ export function ChatClient(props: ChatProps) {
     const ready = pending.filter((p) => p.id);
     if (pending.some((p) => !p.id && !p.error)) return setError("Upload läuft noch …");
     if (!body.trim() && ready.length === 0) return;
+    const missing = offered.find((t) => t.required && !(picked[t.id]?.length));
+    if (missing) return setError(`„${missing.name}“ ist Pflicht`);
     setBusy(true);
     setError(undefined);
     const r = await api<MessageView>("/api/chat/messages", {
       method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ channelId: sendChannel, body, tagIds: tagId ? [Number(tagId)] : [], attachmentIds: ready.map((p) => p.id) }),
+      body: JSON.stringify({ channelId: sendChannel, body, tagIds: offered.flatMap((t) => picked[t.id] ?? []), attachmentIds: ready.map((p) => p.id) }),
     });
     setBusy(false);
     if (!r.ok) return setError(r.data.error ?? "Senden fehlgeschlagen");
     setBody("");
     setPending([]);
-    setTagId("");
+    setPicked({});
     if (tagFilter === null && !q.trim()) setMessages((list) => (list.some((x) => x.id === r.data.id) ? list : [...list, r.data]));
     scrollDown();
   }
@@ -262,7 +273,7 @@ export function ChatClient(props: ChatProps) {
             <label className="sr" htmlFor="chat-q">Suchen</label>
             <input id="chat-q" className="field" placeholder="Suchen …" value={q} onChange={(e) => setQ(e.target.value)} style={{ width: 150, minHeight: 32 }} />
             <button type="button" className={`filterchip ${tagFilter === null ? "on" : ""}`} onClick={() => setTagFilter(null)}>Alle Tags</button>
-            {tags.map((t) => <button key={t.id} type="button" className={`filterchip ${tagFilter === t.id ? "on" : ""}`} onClick={() => setTagFilter(tagFilter === t.id ? null : t.id)}>{t.name}</button>)}
+            {allTags.map((t) => <button key={t.id} type="button" className={`filterchip ${tagFilter === t.id ? "on" : ""}`} onClick={() => setTagFilter(tagFilter === t.id ? null : t.id)}>{t.name}</button>)}
           </div>
         </header>
 
@@ -301,13 +312,26 @@ export function ChatClient(props: ChatProps) {
                   </select>
                 </div>
               )}
-              <div>
-                <label className="lbl" htmlFor="tag">Tag</label>
-                <select id="tag" className="field" style={{ width: "auto" }} value={tagId} onChange={(e) => setTagId(e.target.value)}>
-                  <option value="">— kein Tag —</option>
-                  {tags.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-                </select>
-              </div>
+              {offered.map((t) =>
+                t.multi ? (
+                  <fieldset key={t.id} style={{ border: 0, padding: 0, margin: 0 }}>
+                    <legend className="lbl">{t.name}{t.required ? " *" : ""}</legend>
+                    <div className="row" style={{ gap: 6 }}>
+                      {t.tags.map((g) => (
+                        <button key={g.id} type="button" aria-pressed={(picked[t.id] ?? []).includes(g.id)} className={`filterchip ${(picked[t.id] ?? []).includes(g.id) ? "on" : ""}`} onClick={() => togglePick(t, g.id)}>{g.name}</button>
+                      ))}
+                    </div>
+                  </fieldset>
+                ) : (
+                  <div key={t.id}>
+                    <label className="lbl" htmlFor={`tt-${t.id}`}>{t.name}{t.required ? " *" : ""}</label>
+                    <select id={`tt-${t.id}`} aria-label={t.name} className="field" style={{ width: "auto" }} value={picked[t.id]?.[0] ?? ""} onChange={(e) => setPicked((p) => ({ ...p, [t.id]: e.target.value ? [Number(e.target.value)] : [] }))}>
+                      <option value="">— {t.required ? "bitte wählen" : "kein Tag"} —</option>
+                      {t.tags.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+                    </select>
+                  </div>
+                ),
+              )}
               {caps.canUpload && (
                 <>
                   <label className="btn ghost" style={{ padding: "0 12px" }} aria-label="Datei anhängen" title={`Bis zu ${limits.maxFiles} Dateien (Bild ${limits.maxImageMb} MB, sonst ${limits.maxFileMb} MB) – auch per Drag & Drop oder Strg+V`}>

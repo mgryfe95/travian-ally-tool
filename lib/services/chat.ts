@@ -15,6 +15,7 @@ export class ChatError extends Error {
 export const MAX_BODY = 4000;
 export const DEFAULT_CHANNELS = ["Deff-Call", "Deff-Reports", "Off-Call", "Off-Reports", "Ressources", "Settlement", "Sitter", "Mixed topics"];
 export const DEFAULT_TAGS: [string, string][] = [["Dringend", "red"], ["Angriff", "amber"], ["Info", "blue"], ["Erledigt", "green"]];
+export const DEFAULT_TAG_TYPE = "Kategorie";
 export const TAG_COLORS = ["red", "amber", "blue", "green", "purple", "gray"] as const;
 
 export const slugify = (s: string) =>
@@ -34,7 +35,12 @@ export async function seedChat(db: PrismaClient) {
       data: DEFAULT_CHANNELS.map((name, i) => ({ tree: "ALLY" as const, name, slug: slugify(name), sortOrder: i, minReadRole: name === "Mixed topics" ? "GUEST" : "MEMBER", minWriteRole: "MEMBER" })),
     });
   }
-  if ((await db.tag.count()) === 0) await db.tag.createMany({ data: DEFAULT_TAGS.map(([name, color]) => ({ name, color })) });
+  const type = (await db.tagType.findFirst({ orderBy: { id: "asc" } })) ?? (await db.tagType.create({ data: { name: DEFAULT_TAG_TYPE } }));
+  if ((await db.tag.count()) === 0) await db.tag.createMany({ data: DEFAULT_TAGS.map(([name, color]) => ({ name, color, tagTypeId: type.id })) });
+  if ((await db.channelTagType.count()) === 0) {
+    const chans = await db.channel.findMany({ where: { tree: "ALLY" }, select: { id: true } });
+    await db.channelTagType.createMany({ data: chans.map((c) => ({ channelId: c.id, tagTypeId: type.id })), skipDuplicates: true });
+  }
 }
 
 // ───────── Kanäle ─────────
@@ -120,6 +126,41 @@ async function loadView(db: PrismaClient, id: number) {
   return row ? (await toViews(db, [row]))[0] : undefined;
 }
 
+/** Tags einer Nachricht prüfen: bekannt, Typ im Kanal angeboten, Einzelauswahl-Typen höchstens ein Tag, Pflicht-Typen belegt. */
+async function validateTags(db: PrismaClient, ch: { id: number; tree: string }, tagIds: number[]) {
+  const offered = await offeredTagTypes(db, ch);
+  const tags = tagIds.length ? await db.tag.findMany({ where: { id: { in: tagIds } } }) : [];
+  if (tags.length !== tagIds.length) throw new ChatError("Unbekannter Tag");
+  const byType = new Map<number, number>();
+  for (const t of tags) {
+    if (!offered.some((o) => o.id === t.tagTypeId)) throw new ChatError("Dieser Tag ist in diesem Kanal nicht verfügbar");
+    byType.set(t.tagTypeId, (byType.get(t.tagTypeId) ?? 0) + 1);
+  }
+  for (const o of offered) {
+    const n = byType.get(o.id) ?? 0;
+    if (!o.multi && n > 1) throw new ChatError(`„${o.name}“: nur ein Tag erlaubt`);
+    if (o.required && n === 0) throw new ChatError(`„${o.name}“ ist Pflicht`);
+  }
+}
+
+/** Tag-Typen, die in diesem Kanal angeboten werden (zugewiesen; in Task-Force-Kanälen zusätzlich alle mit forTaskforces). */
+export async function offeredTagTypes(db: PrismaClient, ch: { id: number; tree: string }) {
+  return db.tagType.findMany({
+    where: { OR: [{ channels: { some: { channelId: ch.id } } }, ...(ch.tree === "TASKFORCE" ? [{ forTaskforces: true }] : [])] },
+    orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+  });
+}
+
+export type TagTypeView = { id: number; name: string; multi: boolean; required: boolean; forTaskforces: boolean; channelIds: number[]; tags: { id: number; name: string; color: string }[] };
+
+export async function listTagTypes(db: PrismaClient): Promise<TagTypeView[]> {
+  const types = await db.tagType.findMany({ orderBy: [{ sortOrder: "asc" }, { id: "asc" }], include: { channels: true, tags: { orderBy: { id: "asc" } } } });
+  return types.map((t) => ({
+    id: t.id, name: t.name, multi: t.multi, required: t.required, forTaskforces: t.forTaskforces,
+    channelIds: t.channels.map((c) => c.channelId), tags: t.tags.map((x) => ({ id: x.id, name: x.name, color: x.color })),
+  }));
+}
+
 export async function postMessage(
   db: PrismaClient, ctx: ChatCtx, input: { channelId: number; body: string; tagIds?: number[]; attachmentIds?: number[] },
 ): Promise<MessageView> {
@@ -132,7 +173,7 @@ export async function postMessage(
   if (attachmentIds.length > env().UPLOAD_MAX_FILES) throw new ChatError(`Maximal ${env().UPLOAD_MAX_FILES} Dateien pro Nachricht`);
   if (attachmentIds.length > 0 && !hasPermission(ctx.role, "chat.upload", ctx.matrix)) throw new ForbiddenError("Fehlendes Recht chat.upload");
   const tagIds = [...new Set(input.tagIds ?? [])];
-  if (tagIds.length > 0 && (await db.tag.count({ where: { id: { in: tagIds } } })) !== tagIds.length) throw new ChatError("Unbekannter Tag");
+  await validateTags(db, ch, tagIds);
 
   const id = await db.$transaction(async (tx) => {
     const own = attachmentIds.length ? await tx.attachment.findMany({ where: { id: { in: attachmentIds }, uploaderId: ctx.userId, messageId: null } }) : [];
@@ -324,17 +365,18 @@ function requireTags(ctx: ChatCtx) {
   if (!hasPermission(ctx.role, "tags.manage", ctx.matrix)) throw new ForbiddenError("Fehlendes Recht tags.manage");
 }
 
-export async function saveTag(db: PrismaClient, ctx: ChatCtx, input: { id?: number; name: string; color: string }) {
+export async function saveTag(db: PrismaClient, ctx: ChatCtx, input: { id?: number; tagTypeId?: number; name: string; color: string }) {
   requireTags(ctx);
   const name = input.name.trim();
   if (name.length < 2 || name.length > 24) throw new ChatError("Name: 2–24 Zeichen");
   if (!(TAG_COLORS as readonly string[]).includes(input.color)) throw new ChatError("Ungültige Farbe");
   try {
-    return input.id
-      ? await db.tag.update({ where: { id: input.id }, data: { name, color: input.color } })
-      : await db.tag.create({ data: { name, color: input.color, createdBy: ctx.userId } });
-  } catch {
-    throw new ChatError("Tag existiert bereits");
+    if (input.id) return await db.tag.update({ where: { id: input.id }, data: { name, color: input.color } });
+    if (!input.tagTypeId || !(await db.tagType.findUnique({ where: { id: input.tagTypeId } }))) throw new ChatError("Tag-Typ fehlt");
+    return await db.tag.create({ data: { tagTypeId: input.tagTypeId, name, color: input.color, createdBy: ctx.userId } });
+  } catch (e) {
+    if (e instanceof ChatError) throw e;
+    throw new ChatError("Tag existiert in diesem Typ bereits");
   }
 }
 
@@ -343,3 +385,29 @@ export async function deleteTag(db: PrismaClient, ctx: ChatCtx, id: number) {
   await db.tag.deleteMany({ where: { id } });
 }
 
+export async function saveTagType(
+  db: PrismaClient, ctx: ChatCtx, input: { id?: number; name: string; multi: boolean; required: boolean; forTaskforces: boolean; channelIds: number[] },
+) {
+  requireTags(ctx);
+  const name = input.name.trim();
+  if (name.length < 2 || name.length > 24) throw new ChatError("Name: 2–24 Zeichen");
+  const channelIds = [...new Set(input.channelIds)];
+  if (channelIds.length && (await db.channel.count({ where: { id: { in: channelIds }, tree: "ALLY" } })) !== channelIds.length) throw new ChatError("Unbekannter Kanal");
+  const data = { name, multi: input.multi, required: input.required, forTaskforces: input.forTaskforces };
+  try {
+    return await db.$transaction(async (tx) => {
+      const t = input.id ? await tx.tagType.update({ where: { id: input.id }, data }) : await tx.tagType.create({ data });
+      await tx.channelTagType.deleteMany({ where: { tagTypeId: t.id } });
+      await tx.channelTagType.createMany({ data: channelIds.map((channelId) => ({ channelId, tagTypeId: t.id })) });
+      return t;
+    });
+  } catch {
+    throw new ChatError("Tag-Typ existiert bereits");
+  }
+}
+
+export async function deleteTagType(db: PrismaClient, ctx: ChatCtx, id: number) {
+  requireTags(ctx);
+  if ((await db.tag.count({ where: { tagTypeId: id } })) > 0) throw new ChatError("Erst die Tags dieses Typs löschen");
+  await db.tagType.deleteMany({ where: { id } });
+}

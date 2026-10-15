@@ -2,7 +2,7 @@ import { ChatClient } from "@/components/chat/ChatClient";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { hasPermission } from "@/lib/permissions";
-import { chatCtx, listChannels, listMessages } from "@/lib/services/chat";
+import { chatCtx, listChannels, listMessages, listTagTypes } from "@/lib/services/chat";
 import { requirePermission } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +12,7 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
   const sp = await searchParams;
   const ctx = await chatCtx(db, user);
   const channels = await listChannels(db, ctx);
-  const tags = await db.tag.findMany({ orderBy: { id: "asc" }, select: { id: true, name: true, color: true } });
+  const tagTypes = await listTagTypes(db);
 
   const requested = sp.c === "all" ? "all" : Number(sp.c);
   const byId = Number.isInteger(requested) ? channels.find((c) => c.id === requested) : undefined;
@@ -26,7 +26,7 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
       key={String(current)}
       me={{ id: user.id, role: user.role }}
       channels={channels}
-      tags={tags}
+      tagTypes={tagTypes}
       current={current}
       initial={initial}
       caps={{ canUpload: hasPermission(user.role, "chat.upload", ctx.matrix), canModerate: hasPermission(user.role, "chat.moderate", ctx.matrix), canCreateTf: hasPermission(user.role, "taskforce.create", ctx.matrix) }}

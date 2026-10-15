@@ -35,3 +35,6 @@ Was & Warum: Screenshot-Erkennung für 1.0 (Anker `travian-ally-tool` · `3f9129
 
 ## 2026-10-15 · travian-ally-tool/m3/assign-player
 Was & Warum: Admin → Konten: Moderator/Admin kann ein Konto direkt einem Spieler der eigenen Gruppe zuordnen (`assignPlayer`, Audit `link.assign`, Gast → Mitglied), ohne dass das Konto vorher einen Claim startet. Anlass: erster Systemadmin hatte keinen Weg zur Verknüpfung. Anker `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.
+
+## 2026-10-15 · travian-ally-tool/m4/tag-types
+Was & Warum: Tag-Typen (Achsen) an Kanäle gebunden — je Typ Einzel-/Mehrfachauswahl, Pflicht, Task-Force-Geltung, Kanalzuweisung; Admin-UI „Tag-Typen & Tags“, Chat-Composer zeigt nur Typen des Zielkanals, Validierung serverseitig; Migration `tag_types`. Zusätzlich Layout-Fix Admin → Kanäle & Tags. Anker `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.

@@ -39,3 +39,6 @@ Unter **Screenshots** lädst du Bilder hoch (oder Strg+V). Art und Gerät werden
 
 ## Konto direkt einem Spieler zuordnen
 **Admin → Konten:** In der Spalte „Spieler“ den Travian-Spieler der eigenen Gruppe wählen und **Zuordnen** (Recht `members.approve`, Moderator+). Das Konto gilt sofort als verifiziert (Gäste werden Mitglied), der Vorgang steht im Audit-Log. Gilt auch für Systemadmins.
+
+## Tag-Typen & Tags (Admin → Kanäle & Tags)
+Ein **Tag-Typ** ist eine Achse wie „Priorität“ oder „Status“ mit eigenen Tags. Je Typ legst Du fest: **ein Tag** (Einzelauswahl) oder **mehrere**, **Pflicht** (Nachricht braucht ein Tag dieses Typs), **Task-Forces** (auch in Task-Force-Kanälen anbieten) und die **Kanäle**, in denen er gilt. Beim Schreiben erscheinen nur die Typen des gewählten Kanals. Ein Typ lässt sich löschen, sobald er keine Tags mehr hat. Vorhandene Tags liegen im Typ „Kategorie“ (Einzelauswahl, alle Allianz-Kanäle).

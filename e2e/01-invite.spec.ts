@@ -58,5 +58,5 @@ test("Einladung erzeugen → einlösen → verifiziert; Systemadmin bleibt unant
   await page.goto("/admin?tab=users");
   const bossRow = page.locator("tr", { hasText: "boss@example.com" });
   await expect(bossRow).toContainText("Systemadmin");
-  await expect(bossRow.getByRole("button")).toHaveCount(0);
+  await expect(bossRow.getByRole("button", { name: /Sperren|Löschen/ })).toHaveCount(0);
 });
