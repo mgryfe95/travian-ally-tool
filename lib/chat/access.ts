@@ -14,6 +14,8 @@ export type ChatCtx = {
   matrix: Matrix;
   /** Task-Forces, in denen der Nutzer Mitglied ist. */
   taskforceIds: ReadonlySet<number>;
+  /** Rolle je Task-Force (founder | lead | member | reader). Fehlt der Eintrag, gilt "member". */
+  taskforceRoles?: ReadonlyMap<number, string>;
 };
 
 const KNOWN: readonly string[] = ["GUEST", "MEMBER", "MODERATOR", "ADMIN", "SYSTEMADMIN"];
@@ -31,7 +33,8 @@ export function canReadChannel(ch: ChannelLike, ctx: ChatCtx): boolean {
 export function canWriteChannel(ch: ChannelLike, ctx: ChatCtx): boolean {
   if (!canReadChannel(ch, ctx)) return false;
   if (!hasPermission(ctx.role, "chat.write", ctx.matrix)) return false;
-  return ch.tree === "TASKFORCE" ? true : atLeast(ctx.role, ch.minWriteRole);
+  if (ch.tree === "TASKFORCE") return !(ch.taskforceId !== null && ctx.taskforceRoles?.get(ch.taskforceId) === "reader" && !atLeast(ctx.role, "ADMIN"));
+  return atLeast(ctx.role, ch.minWriteRole);
 }
 
 /** Bearbeiten: nur der Autor. Löschen: Autor oder chat.moderate. */

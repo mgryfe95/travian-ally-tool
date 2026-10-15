@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { ForbiddenError } from "@/lib/permissions";
-import { addTaskforceMember, archiveTaskforce, ChatError, chatCtx, createTaskforce, removeTaskforceMember } from "@/lib/services/chat";
+import { archiveTaskforce, ChatError, chatCtx, createTaskforce, inviteToTaskforce, removeTaskforceMember, respondTaskforceInvite, revokeTaskforceInvite, setTaskforceRole } from "@/lib/services/chat";
 import { requireUser } from "@/lib/session";
 
 async function run(back: string, fn: () => Promise<string | void>): Promise<never> {
@@ -28,9 +28,37 @@ export async function createTaskforceAction(f: FormData) {
   });
 }
 
-export async function addMemberAction(f: FormData) {
+const tfRole = (v: string) => (v === "lead" || v === "reader" ? v : "member");
+
+export async function inviteMemberAction(f: FormData) {
   const id = Number(str(f, "taskforceId"));
-  return run(`/chat/tf/${id}`, async () => addTaskforceMember(db, await chatCtx(db, await requireUser()), id, str(f, "userId"), str(f, "role") === "lead" ? "lead" : "member"));
+  return run(`/chat/tf/${id}`, async () => void (await inviteToTaskforce(db, await chatCtx(db, await requireUser()), id, str(f, "userId"), tfRole(str(f, "role")))));
+}
+
+export async function revokeInviteAction(f: FormData) {
+  const id = Number(str(f, "taskforceId"));
+  return run(`/chat/tf/${id}`, async () => revokeTaskforceInvite(db, await chatCtx(db, await requireUser()), Number(str(f, "inviteId"))));
+}
+
+export async function setRoleAction(f: FormData) {
+  const id = Number(str(f, "taskforceId"));
+  return run(`/chat/tf/${id}`, async () => setTaskforceRole(db, await chatCtx(db, await requireUser()), id, str(f, "userId"), tfRole(str(f, "role"))));
+}
+
+export async function respondInviteAction(f: FormData) {
+  return run("/chat", async () => {
+    const ch = await respondTaskforceInvite(db, await chatCtx(db, await requireUser()), Number(str(f, "inviteId")), str(f, "answer") === "accept");
+    return ch ? `/chat?c=${ch}` : "/chat";
+  });
+}
+
+export async function leaveTaskforceAction(f: FormData) {
+  const id = Number(str(f, "taskforceId"));
+  return run(`/chat/tf/${id}`, async () => {
+    const u = await requireUser();
+    await removeTaskforceMember(db, await chatCtx(db, u), id, u.id);
+    return "/chat";
+  });
 }
 
 export async function removeMemberAction(f: FormData) {

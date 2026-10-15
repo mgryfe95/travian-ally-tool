@@ -1,7 +1,7 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { canDeleteMessage, canEditMessage, canManageTaskforce, canReadChannel, canWriteChannel, type ChatCtx } from "../chat/access";
 import { env } from "../env";
-import { effectiveRole, ForbiddenError, hasPermission, ROLES, type Role } from "../permissions";
+import { effectiveRole, ForbiddenError, hasPermission, rank, ROLES, type Role } from "../permissions";
 import { publish } from "../realtime";
 import { storage } from "../storage";
 import { audit, loadMatrix, type Actor } from "./context";
@@ -22,8 +22,8 @@ export const slugify = (s: string) =>
   s.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/ß/g, "ss").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "kanal";
 
 export async function chatCtx(db: PrismaClient, actor: Actor): Promise<ChatCtx> {
-  const [matrix, tfs] = await Promise.all([loadMatrix(db), db.taskforceMember.findMany({ where: { userId: actor.id }, select: { taskforceId: true } })]);
-  return { userId: actor.id, role: actor.role, matrix, taskforceIds: new Set(tfs.map((t) => t.taskforceId)) };
+  const [matrix, tfs] = await Promise.all([loadMatrix(db), db.taskforceMember.findMany({ where: { userId: actor.id }, select: { taskforceId: true, role: true } })]);
+  return { userId: actor.id, role: actor.role, matrix, taskforceIds: new Set(tfs.map((t) => t.taskforceId)), taskforceRoles: new Map(tfs.map((t) => [t.taskforceId, t.role])) };
 }
 
 // ───────── Seed ─────────
@@ -255,6 +255,10 @@ export async function listMessages(db: PrismaClient, ctx: ChatCtx, query: Messag
 
 // ───────── Task-Forces ─────────
 
+export type TfRole = "founder" | "lead" | "member" | "reader";
+export const TF_ROLE_LABEL: Record<TfRole, string> = { founder: "Gründer", lead: "Lead", member: "Mitglied", reader: "Leser" };
+
+/** Legt Task-Force + Kanal an. Der Ersteller ist Gründer; `memberIds` bekommen eine Einladung (Annahme nötig). */
 export async function createTaskforce(db: PrismaClient, ctx: ChatCtx, input: { name: string; description?: string; memberIds?: string[] }) {
   if (!hasPermission(ctx.role, "taskforce.create", ctx.matrix)) throw new ForbiddenError("Fehlendes Recht taskforce.create");
   const name = input.name.trim();
@@ -263,7 +267,7 @@ export async function createTaskforce(db: PrismaClient, ctx: ChatCtx, input: { n
   const valid = memberIds.length ? await db.user.findMany({ where: { id: { in: memberIds }, banned: false, role: { not: "GUEST" } }, select: { id: true } }) : [];
   const tf = await db.$transaction(async (tx) => {
     const t = await tx.taskforce.create({
-      data: { name, description: input.description?.trim() ?? "", createdBy: ctx.userId, members: { create: [{ userId: ctx.userId, role: "lead" }, ...valid.map((u) => ({ userId: u.id, role: "member" }))] } },
+      data: { name, description: input.description?.trim() ?? "", createdBy: ctx.userId, members: { create: [{ userId: ctx.userId, role: "founder" }] }, invites: { create: valid.map((u) => ({ userId: u.id, invitedBy: ctx.userId, role: "member" })) } },
     });
     await tx.channel.create({ data: { tree: "TASKFORCE", name, slug: `tf-${t.id}`, taskforceId: t.id, sortOrder: t.id } });
     return t;
@@ -272,30 +276,106 @@ export async function createTaskforce(db: PrismaClient, ctx: ChatCtx, input: { n
   return tf;
 }
 
-async function requireManage(db: PrismaClient, ctx: ChatCtx, taskforceId: number) {
-  const m = await db.taskforceMember.findUnique({ where: { taskforceId_userId: { taskforceId, userId: ctx.userId } } });
-  if (!canManageTaskforce(ctx, m?.role === "lead")) throw new ForbiddenError("Nur Leads und Admins verwalten Task-Forces");
+const isAdminish = (ctx: ChatCtx) => rank(ctx.role) >= rank("ADMIN");
+
+async function myRole(db: PrismaClient, ctx: ChatCtx, taskforceId: number) {
+  return (await db.taskforceMember.findUnique({ where: { taskforceId_userId: { taskforceId, userId: ctx.userId } } }))?.role ?? null;
 }
 
-export async function addTaskforceMember(db: PrismaClient, ctx: ChatCtx, taskforceId: number, userId: string, role: "lead" | "member" = "member") {
+/** Einladen/Entfernen: Gründer, Lead, Admin. */
+async function requireManage(db: PrismaClient, ctx: ChatCtx, taskforceId: number) {
+  const r = await myRole(db, ctx, taskforceId);
+  if (!canManageTaskforce(ctx, r === "founder" || r === "lead")) throw new ForbiddenError("Nur Gründer, Leads und Admins verwalten Task-Forces");
+  return r;
+}
+
+/** Rollen vergeben: nur der Gründer (und Admins als Notausgang). */
+async function requireFounder(db: PrismaClient, ctx: ChatCtx, taskforceId: number) {
+  if ((await myRole(db, ctx, taskforceId)) !== "founder" && !isAdminish(ctx)) throw new ForbiddenError("Rollen vergibt nur der Gründer der Task-Force");
+}
+
+/** Direktes Hinzufügen (ohne Annahme) – für Admins/Gründer/Leads; im UI läuft der Normalfall über Einladungen. */
+export async function addTaskforceMember(db: PrismaClient, ctx: ChatCtx, taskforceId: number, userId: string, role: "lead" | "member" | "reader" = "member") {
   await requireManage(db, ctx, taskforceId);
+  if (role === "lead") await requireFounder(db, ctx, taskforceId);
   const u = await db.user.findUnique({ where: { id: userId } });
   if (!u || u.banned || u.role === "GUEST") throw new ChatError("Nutzer kann nicht hinzugefügt werden");
+  const existing = await db.taskforceMember.findUnique({ where: { taskforceId_userId: { taskforceId, userId } } });
+  if (existing?.role === "founder") throw new ChatError("Die Rolle des Gründers lässt sich nicht ändern");
   await db.taskforceMember.upsert({ where: { taskforceId_userId: { taskforceId, userId } }, create: { taskforceId, userId, role }, update: { role } });
   await audit(db, ctx.userId, "taskforce.member_add", `taskforce:${taskforceId}`, undefined, { userId, role });
 }
 
-export async function removeTaskforceMember(db: PrismaClient, ctx: ChatCtx, taskforceId: number, userId: string) {
+export async function inviteToTaskforce(db: PrismaClient, ctx: ChatCtx, taskforceId: number, userId: string, role: "lead" | "member" | "reader" = "member") {
   await requireManage(db, ctx, taskforceId);
-  const leads = await db.taskforceMember.count({ where: { taskforceId, role: "lead" } });
+  if (role === "lead") await requireFounder(db, ctx, taskforceId);
+  const tf = await db.taskforce.findUnique({ where: { id: taskforceId } });
+  if (!tf || tf.archivedAt) throw new ChatError("Task-Force nicht gefunden");
+  const u = await db.user.findUnique({ where: { id: userId } });
+  if (!u || u.banned || u.role === "GUEST") throw new ChatError("Nutzer kann nicht eingeladen werden");
+  if (await db.taskforceMember.findUnique({ where: { taskforceId_userId: { taskforceId, userId } } })) throw new ChatError("Ist schon Mitglied");
+  const open = await db.taskforceInvite.findFirst({ where: { taskforceId, userId, status: "pending" } });
+  const inv = open
+    ? await db.taskforceInvite.update({ where: { id: open.id }, data: { role, invitedBy: ctx.userId } })
+    : await db.taskforceInvite.create({ data: { taskforceId, userId, invitedBy: ctx.userId, role } });
+  await audit(db, ctx.userId, "taskforce.invite", `taskforce:${taskforceId}`, undefined, { userId, role });
+  return inv;
+}
+
+export async function revokeTaskforceInvite(db: PrismaClient, ctx: ChatCtx, inviteId: number) {
+  const inv = await db.taskforceInvite.findUnique({ where: { id: inviteId } });
+  if (!inv) throw new ChatError("Einladung nicht gefunden");
+  await requireManage(db, ctx, inv.taskforceId);
+  await db.taskforceInvite.updateMany({ where: { id: inviteId, status: "pending" }, data: { status: "revoked", answeredAt: new Date() } });
+}
+
+export async function listMyTaskforceInvites(db: PrismaClient, userId: string) {
+  const rows = await db.taskforceInvite.findMany({ where: { userId, status: "pending", taskforce: { archivedAt: null } }, include: { taskforce: { select: { id: true, name: true, description: true } } }, orderBy: { id: "desc" } });
+  const inviters = await db.user.findMany({ where: { id: { in: [...new Set(rows.map((r) => r.invitedBy))] } }, select: { id: true, name: true } });
+  const n = new Map(inviters.map((u) => [u.id, u.name]));
+  return rows.map((r) => ({ id: r.id, role: r.role as TfRole, taskforce: r.taskforce, invitedBy: n.get(r.invitedBy) ?? "?" }));
+}
+
+/** Eingeladener nimmt an (→ Mitglied mit der eingeladenen Rolle) oder lehnt ab. */
+export async function respondTaskforceInvite(db: PrismaClient, ctx: ChatCtx, inviteId: number, accept: boolean) {
+  const inv = await db.taskforceInvite.findUnique({ where: { id: inviteId } });
+  if (!inv || inv.userId !== ctx.userId || inv.status !== "pending") throw new ChatError("Einladung nicht gefunden");
+  const claimed = await db.taskforceInvite.updateMany({ where: { id: inviteId, status: "pending" }, data: { status: accept ? "accepted" : "declined", answeredAt: new Date() } });
+  if (claimed.count === 0) throw new ChatError("Einladung nicht gefunden");
+  if (!accept) return null;
+  const tf = await db.taskforce.findUnique({ where: { id: inv.taskforceId }, include: { channel: true } });
+  if (!tf || tf.archivedAt) throw new ChatError("Task-Force existiert nicht mehr");
+  await db.taskforceMember.upsert({ where: { taskforceId_userId: { taskforceId: inv.taskforceId, userId: ctx.userId } }, create: { taskforceId: inv.taskforceId, userId: ctx.userId, role: inv.role }, update: {} });
+  await audit(db, ctx.userId, "taskforce.join", `taskforce:${inv.taskforceId}`, undefined, { role: inv.role });
+  return tf.channel?.id ?? null;
+}
+
+/** Rolle ändern (lead | member | reader): nur Gründer. Die Gründer-Rolle ist fest. */
+export async function setTaskforceRole(db: PrismaClient, ctx: ChatCtx, taskforceId: number, userId: string, role: "lead" | "member" | "reader") {
+  await requireFounder(db, ctx, taskforceId);
+  if (!["lead", "member", "reader"].includes(role)) throw new ChatError("Ungültige Rolle");
   const target = await db.taskforceMember.findUnique({ where: { taskforceId_userId: { taskforceId, userId } } });
-  if (target?.role === "lead" && leads <= 1) throw new ChatError("Der letzte Lead kann nicht entfernt werden");
+  if (!target) throw new ChatError("Kein Mitglied");
+  if (target.role === "founder") throw new ChatError("Die Rolle des Gründers lässt sich nicht ändern");
+  await db.taskforceMember.update({ where: { taskforceId_userId: { taskforceId, userId } }, data: { role } });
+  await audit(db, ctx.userId, "taskforce.role", `taskforce:${taskforceId}`, { userId, role: target.role }, { role });
+}
+
+/** Entfernen: Gründer/Admin alle außer dem Gründer, Leads nur Mitglieder und Leser, jeder sich selbst (Verlassen) – außer der Gründer. */
+export async function removeTaskforceMember(db: PrismaClient, ctx: ChatCtx, taskforceId: number, userId: string) {
+  const target = await db.taskforceMember.findUnique({ where: { taskforceId_userId: { taskforceId, userId } } });
+  if (!target) return;
+  if (target.role === "founder") throw new ChatError("Der Gründer kann nicht entfernt werden – Task-Force archivieren");
+  if (userId !== ctx.userId) {
+    const r = await requireManage(db, ctx, taskforceId);
+    if (r === "lead" && target.role === "lead" && !isAdminish(ctx)) throw new ForbiddenError("Leads können keine anderen Leads entfernen");
+  }
   await db.taskforceMember.deleteMany({ where: { taskforceId, userId } });
   await audit(db, ctx.userId, "taskforce.member_remove", `taskforce:${taskforceId}`, { userId });
 }
 
 export async function archiveTaskforce(db: PrismaClient, ctx: ChatCtx, taskforceId: number) {
-  await requireManage(db, ctx, taskforceId);
+  await requireFounder(db, ctx, taskforceId);
   const now = new Date();
   await db.$transaction([db.taskforce.update({ where: { id: taskforceId }, data: { archivedAt: now } }), db.channel.updateMany({ where: { taskforceId }, data: { archivedAt: now } })]);
   await audit(db, ctx.userId, "taskforce.archive", `taskforce:${taskforceId}`);

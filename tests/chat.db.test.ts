@@ -4,7 +4,7 @@ import { cleanupOrphanAttachments } from "@/lib/chat/cleanup";
 import { ForbiddenError, type Role } from "@/lib/permissions";
 import { seedPermissions } from "@/lib/services/admin";
 import {
-  addTaskforceMember, archiveTaskforce, ChatError, chatCtx, createChannel, createTaskforce, deleteMessage, deleteTag, deleteTagType, editMessage, listChannels,
+  addTaskforceMember, archiveTaskforce, inviteToTaskforce, listMyTaskforceInvites, respondTaskforceInvite, revokeTaskforceInvite, setTaskforceRole, ChatError, chatCtx, createChannel, createTaskforce, deleteMessage, deleteTag, deleteTagType, editMessage, listChannels,
   listMessages, markRead, moveChannel, postMessage, removeTaskforceMember, saveTag, saveTagType, seedChat, updateChannel,
 } from "@/lib/services/chat";
 import { storage } from "@/lib/storage";
@@ -70,6 +70,7 @@ describe("Sammelraum, Tags, Suche, Cursor", () => {
     await postMessage(db, await ctx(member), { channelId: await ch("Deff-Call"), body: "a" });
     await postMessage(db, await ctx(member), { channelId: await ch("Off-Call"), body: "b" });
     const tf = await createTaskforce(db, await ctx(mod), { name: "TF Süd", memberIds: ["m1"] });
+    await respondTaskforceInvite(db, await ctx(member), (await db.taskforceInvite.findFirstOrThrow({ where: { taskforceId: tf.id, userId: "m1" } })).id, true);
     const tfCh = await db.channel.findFirstOrThrow({ where: { taskforceId: tf.id } });
     await postMessage(db, await ctx(member), { channelId: tfCh.id, body: "geheim" });
     const all = await listMessages(db, await ctx(member), { channelId: "all" });
@@ -161,7 +162,9 @@ describe("Task-Forces", () => {
   it("anlegen braucht taskforce.create; Kanal nur für Mitglieder; Admin sieht alle", async () => {
     expect(await f(createTaskforce(db, await ctx(member), { name: "TF X" }))).toBeInstanceOf(ForbiddenError);
     const tf = await createTaskforce(db, await ctx(mod), { name: "TF Südfront", memberIds: ["m1", "g1"] });
-    expect((await db.taskforceMember.findMany({ where: { taskforceId: tf.id } })).map((m) => m.userId).sort()).toEqual(["m1", "mod"]); // Gast wird nicht aufgenommen
+    expect((await db.taskforceMember.findMany({ where: { taskforceId: tf.id } })).map((m) => m.userId)).toEqual(["mod"]); // Eingeladene sind erst nach Annahme Mitglied
+    expect((await db.taskforceInvite.findMany({ where: { taskforceId: tf.id } })).map((i) => i.userId)).toEqual(["m1"]); // Gast wird nicht eingeladen
+    await respondTaskforceInvite(db, await ctx(member), (await db.taskforceInvite.findFirstOrThrow({ where: { taskforceId: tf.id } })).id, true);
     const names = async (a: { id: string; role: Role }) => (await listChannels(db, await ctx(a))).filter((c) => c.tree === "TASKFORCE").map((c) => c.name);
     expect(await names(member)).toEqual(["TF Südfront"]);
     expect(await names(member2)).toEqual([]);
@@ -180,6 +183,47 @@ describe("Task-Forces", () => {
     expect(await f(removeTaskforceMember(db, await ctx(mod), tf.id, "mod"))).toBeInstanceOf(ChatError);
     await archiveTaskforce(db, await ctx(mod), tf.id);
     expect((await listChannels(db, await ctx(mod))).some((c) => c.name === "TF Nord")).toBe(false);
+  });
+});
+
+describe("Task-Force: Einladungen und Rollen", () => {
+  it("Einladung mit Annahme; Rollen nur vom Gründer; Leser schreibt nicht; Lead-Grenzen; Verlassen", async () => {
+    const tf = await createTaskforce(db, await ctx(mod), { name: "TF Rollen" });
+    expect((await db.taskforceMember.findFirstOrThrow({ where: { taskforceId: tf.id } })).role).toBe("founder");
+    // Einladen: Fremde dürfen nicht, Gast nicht einladbar, Lead nur durch Gründer
+    expect(await f(inviteToTaskforce(db, await ctx(member), tf.id, "m2"))).toBeInstanceOf(ForbiddenError);
+    expect(await f(inviteToTaskforce(db, await ctx(mod), tf.id, "g1"))).toBeInstanceOf(ChatError);
+    const i1 = await inviteToTaskforce(db, await ctx(mod), tf.id, "m1", "reader");
+    const i2 = await inviteToTaskforce(db, await ctx(mod), tf.id, "m2", "lead");
+    expect((await listMyTaskforceInvites(db, "m1")).map((i) => i.role)).toEqual(["reader"]);
+    // nur der Eingeladene kann antworten; Ablehnen macht nicht zum Mitglied
+    expect(await f(respondTaskforceInvite(db, await ctx(member2), i1.id, true))).toBeInstanceOf(ChatError);
+    await respondTaskforceInvite(db, await ctx(member), i1.id, true);
+    await respondTaskforceInvite(db, await ctx(member2), i2.id, true);
+    expect(await f(respondTaskforceInvite(db, await ctx(member), i1.id, true))).toBeInstanceOf(ChatError);
+    const tfCh = await db.channel.findFirstOrThrow({ where: { taskforceId: tf.id } });
+    // Leser liest, schreibt aber nicht; Lead schreibt
+    expect(await f(listMessages(db, await ctx(member), { channelId: tfCh.id }))).toBeNull();
+    expect(await f(postMessage(db, await ctx(member), { channelId: tfCh.id, body: "x" }))).toBeInstanceOf(ForbiddenError);
+    await postMessage(db, await ctx(member2), { channelId: tfCh.id, body: "ok" });
+    // Rollen vergibt nur der Gründer (Lead darf nicht)
+    expect(await f(setTaskforceRole(db, await ctx(member2), tf.id, "m1", "member"))).toBeInstanceOf(ForbiddenError);
+    await setTaskforceRole(db, await ctx(mod), tf.id, "m1", "member");
+    await postMessage(db, await ctx(member), { channelId: tfCh.id, body: "jetzt darf ich" });
+    expect(await f(setTaskforceRole(db, await ctx(mod), tf.id, "mod", "member"))).toBeInstanceOf(ChatError); // Gründerrolle fest
+    // Lead kann Mitglieder entfernen, aber keinen Lead und nicht den Gründer; Gründer lässt sich nie entfernen
+    expect(await f(removeTaskforceMember(db, await ctx(member2), tf.id, "mod"))).toBeInstanceOf(ChatError);
+    await removeTaskforceMember(db, await ctx(member2), tf.id, "m1");
+    expect(await db.taskforceMember.count({ where: { taskforceId: tf.id, userId: "m1" } })).toBe(0);
+    // Archivieren: Lead darf nicht, Gründer darf
+    expect(await f(archiveTaskforce(db, await ctx(member2), tf.id))).toBeInstanceOf(ForbiddenError);
+    // Einladung zurückziehen; Mitglieder dürfen die Task-Force selbst verlassen
+    const i3 = await inviteToTaskforce(db, await ctx(mod), tf.id, "m1");
+    await revokeTaskforceInvite(db, await ctx(mod), i3.id);
+    expect(await f(respondTaskforceInvite(db, await ctx(member), i3.id, true))).toBeInstanceOf(ChatError);
+    await removeTaskforceMember(db, await ctx(member2), tf.id, "m2");
+    expect(await db.taskforceMember.count({ where: { taskforceId: tf.id } })).toBe(1);
+    await archiveTaskforce(db, await ctx(mod), tf.id);
   });
 });
 

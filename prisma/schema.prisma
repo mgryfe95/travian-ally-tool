@@ -346,13 +346,14 @@ model Taskforce {
   createdAt   DateTime          @default(now())
   archivedAt  DateTime?
   members     TaskforceMember[]
+  invites     TaskforceInvite[]
   channel     Channel?
 }
 
 model TaskforceMember {
   taskforceId Int
   userId      String
-  /// lead | member
+  /// founder | lead | member | reader
   role        String    @default("member")
   taskforce   Taskforce @relation(fields: [taskforceId], references: [id], onDelete: Cascade)
 
@@ -587,4 +588,21 @@ model AllianceCall {
   messageId    Int?
 
   @@index([status, at])
+}
+
+/// Einladung in eine Task-Force; der Eingeladene nimmt an oder lehnt ab. role = Rolle nach Annahme (lead nur vom Gründer vergeben).
+model TaskforceInvite {
+  id          Int       @id @default(autoincrement())
+  taskforceId Int
+  taskforce   Taskforce @relation(fields: [taskforceId], references: [id], onDelete: Cascade)
+  userId      String
+  invitedBy   String
+  role        String    @default("member")
+  /// pending | accepted | declined | revoked
+  status      String    @default("pending")
+  createdAt   DateTime  @default(now())
+  answeredAt  DateTime?
+
+  @@index([userId, status])
+  @@index([taskforceId, status])
 }

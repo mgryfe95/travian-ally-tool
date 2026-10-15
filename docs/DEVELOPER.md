@@ -73,3 +73,6 @@
 
 ## Allianz-Schedule
 `CallTemplate` (Art, Text, Standardkanal) und `AllianceCall` (Ziel aus `Village`/`Player` per Koordinate, `template` als Snapshot, Status draft|scheduled|sending|sent|cancelled). `lib/services/schedule.ts`: `createCall`, `sendCall`, `dispatchDueCalls` (von `server.ts` alle 30 s; Claim per `updateMany status→sending` verhindert Doppelversand), `renderCall` (Platzhalter, Link = `APP_URL/players/<id>`), `berlinToDate` (Eingabe Europe/Berlin → UTC). Posten geschieht im Server-Prozess, damit Socket.IO live zustellt. Rechte `schedule.view` (Member+), `schedule.manage` (Admin), Migration `schedule`. Der Autor der Kanalnachricht ist der Ersteller des Calls.
+
+## Task-Force-Rollen und Einladungen
+`TaskforceMember.role` = founder | lead | member | reader (Migration setzt den Ersteller auf founder); `TaskforceInvite` (pending|accepted|declined|revoked) – `createTaskforce(memberIds)` erzeugt Einladungen statt Mitgliedschaften. `ChatCtx.taskforceRoles` steuert `canWriteChannel` (Leser schreiben nicht; Admins immer). Services: `inviteToTaskforce`, `respondTaskforceInvite`, `revokeTaskforceInvite`, `setTaskforceRole` (nur Gründer/Admin), `removeTaskforceMember` (Lead entfernt keine Leads, Gründer nie, Selbst-Verlassen erlaubt), `archiveTaskforce` (nur Gründer/Admin). `addTaskforceMember` bleibt als Direktzuweisung für Verwalter/Tests.
