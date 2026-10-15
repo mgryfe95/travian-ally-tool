@@ -18,16 +18,16 @@ export function POST(req: Request) {
     const user = await getCurrentUser();
     if (!user) return unauthorized();
     const ctx = await chatCtx(db, user);
-    if (!hasPermission(ctx.role, "chat.upload", ctx.matrix)) throw new ForbiddenError("Fehlendes Recht chat.upload");
+    if (!hasPermission(ctx.role, "chat.upload", ctx.matrix)) throw new ForbiddenError("err.perm.missing", { perm: "chat.upload" });
     if (!uploadLimiter.check(user.id)) return tooMany();
     const cfg = env();
     const limits = { maxImageBytes: cfg.UPLOAD_MAX_IMAGE_MB * 1_048_576, maxFileBytes: cfg.UPLOAD_MAX_FILE_MB * 1_048_576 };
     const len = Number(req.headers.get("content-length") ?? 0);
-    if (len > limits.maxFileBytes * cfg.UPLOAD_MAX_FILES + 1_048_576) throw new UploadError("Anfrage zu groß", 413);
+    if (len > limits.maxFileBytes * cfg.UPLOAD_MAX_FILES + 1_048_576) throw new UploadError("err.upload.requestTooBig", undefined, 413);
     const form = await req.formData();
     const files = form.getAll("file").filter((f): f is File => f instanceof File);
-    if (files.length === 0) throw new UploadError("Keine Datei");
-    if (files.length > cfg.UPLOAD_MAX_FILES) throw new UploadError(`Maximal ${cfg.UPLOAD_MAX_FILES} Dateien`);
+    if (files.length === 0) throw new UploadError("err.upload.noFile");
+    if (files.length > cfg.UPLOAD_MAX_FILES) throw new UploadError("err.upload.maxFiles", { max: cfg.UPLOAD_MAX_FILES });
 
     const out = [];
     for (const file of files) {

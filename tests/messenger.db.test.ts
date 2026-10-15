@@ -70,6 +70,6 @@ describe("Rundnachrichten", () => {
     expect((await unreadCounts(db, "m1")).broadcast).toBe(1);
     await markBroadcastRead(db, "m1", b.id);
     expect((await unreadCounts(db, "m1")).broadcast).toBe(0);
-    expect((await listSent(db, "mod"))[0]).toMatchObject({ subject: "Info", recipients: 4, read: 1, audience: "Alle Mitglieder" });
+    expect((await listSent(db, "mod"))[0]).toMatchObject({ subject: "Info", recipients: 4, read: 1, audience: "All members" });
   });
 });

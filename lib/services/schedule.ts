@@ -2,12 +2,13 @@ import type { PrismaClient } from "@prisma/client";
 import { env } from "../env";
 import { ForbiddenError, hasPermission, type Permission } from "../permissions";
 import { publish } from "../realtime";
-import { audit, loadMatrix, type Actor } from "./context";
+import { audit, loadMatrix, userLocale, type Actor } from "./context";
 import { ChatError } from "./chat";
+import { DEFAULT_LOCALE, INTL_TAG, translate, type Locale, type MessageKey } from "../i18n";
 
 export const CALL_KINDS = ["ATTACK", "DEFF", "ATTACK_DAY", "OTHER"] as const;
 export type CallKind = (typeof CALL_KINDS)[number];
-export const KIND_LABEL: Record<CallKind, string> = { ATTACK: "Angriff", DEFF: "Deff-Unterstützung", ATTACK_DAY: "Angriffstag", OTHER: "Sonstiges" };
+export const KIND_KEY: Record<CallKind, MessageKey> = { ATTACK: "err.call.kind.ATTACK", DEFF: "err.call.kind.DEFF", ATTACK_DAY: "err.call.kind.ATTACK_DAY", OTHER: "err.call.kind.OTHER" };
 
 export const PLACEHOLDERS = ["{art}", "{titel}", "{spieler}", "{dorf}", "{koordinaten}", "{zeit}", "{link}", "{notiz}"] as const;
 
@@ -18,7 +19,7 @@ export const DEFAULT_TEMPLATES: { kind: CallKind; name: string; body: string }[]
 ];
 
 async function requirePerm(db: PrismaClient, actor: Actor, perm: Permission) {
-  if (!hasPermission(actor.role, perm, await loadMatrix(db))) throw new ForbiddenError(`Fehlendes Recht ${perm}`);
+  if (!hasPermission(actor.role, perm, await loadMatrix(db))) throw new ForbiddenError("err.perm.missing", { perm });
 }
 
 export async function seedSchedule(db: PrismaClient) {
@@ -54,17 +55,19 @@ export function berlinToDate(local: string): Date | null {
   return new Date(t);
 }
 
-const fmtTime = (d: Date | null) =>
-  d ? new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" }).format(d) + " Uhr" : "";
+const fmtTime = (d: Date | null, locale: Locale) =>
+  d ? translate(locale, "err.call.time", { time: new Intl.DateTimeFormat(INTL_TAG[locale], { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" }).format(d) }) : "";
 
 type CallLike = { kind: string; title: string; x: number | null; y: number | null; playerId: number | null; playerName: string | null; villageName: string | null; at: Date | null; template: string; note: string };
 
 /** Setzt Platzhalter ein; leere Zeilen (nicht belegte Platzhalter) werden entfernt. Link führt zur Spielerseite im Tool. */
-export function renderCall(c: CallLike, appUrl = env().APP_URL): string {
+export function renderCall(c: CallLike, appUrl = env().APP_URL, locale: Locale = DEFAULT_LOCALE): string {
   const vars: Record<string, string> = {
-    art: KIND_LABEL[c.kind as CallKind] ?? c.kind, titel: c.title, spieler: c.playerName ?? "", dorf: c.villageName ?? "",
-    koordinaten: c.x !== null && c.y !== null ? `(${c.x}|${c.y})` : "", zeit: fmtTime(c.at), link: c.playerId ? `${appUrl.replace(/\/+$/, "")}/players/${c.playerId}` : "", notiz: c.note,
+    art: c.kind in KIND_KEY ? translate(locale, KIND_KEY[c.kind as CallKind]) : c.kind, titel: c.title, spieler: c.playerName ?? "", dorf: c.villageName ?? "",
+    koordinaten: c.x !== null && c.y !== null ? `(${c.x}|${c.y})` : "", zeit: fmtTime(c.at, locale), link: c.playerId ? `${appUrl.replace(/\/+$/, "")}/players/${c.playerId}` : "", notiz: c.note,
   };
+  // Englische Aliase für dieselben Platzhalter ({type}, {title}, {player}, {village}, {coords}, {time}, {note})
+  Object.assign(vars, { type: vars.art, title: vars.titel, player: vars.spieler, village: vars.dorf, coords: vars.koordinaten, time: vars.zeit, note: vars.notiz });
   return c.template
     .replace(/\{(\w+)\}/g, (_, k: string) => vars[k] ?? "")
     .split("\n").map((l) => l.replace(/[ \t]+/g, " ").trimEnd()).filter((l, i, a) => l.trim() !== "" || (i > 0 && a[i - 1]!.trim() !== "" && i < a.length - 1))
@@ -82,21 +85,21 @@ export type CallInput = { kind: string; title?: string; coord?: string; at?: Dat
 
 export async function createCall(db: PrismaClient, actor: Actor, input: CallInput, now = new Date()) {
   await requirePerm(db, actor, "schedule.manage");
-  if (!(CALL_KINDS as readonly string[]).includes(input.kind)) throw new ChatError("Ungültige Art");
+  if (!(CALL_KINDS as readonly string[]).includes(input.kind)) throw new ChatError("err.call.invalidKind");
   const kind = input.kind as CallKind;
   let xy: [number, number] | null = null;
   if (input.coord?.trim()) {
     xy = parseCoord(input.coord);
-    if (!xy) throw new ChatError("Koordinaten bitte als x|y angeben (z. B. -3|-82)");
+    if (!xy) throw new ChatError("err.call.coordFormat");
   }
-  if ((kind === "ATTACK" || kind === "DEFF") && !xy) throw new ChatError("Für Angriff und Deff-Unterstützung werden Koordinaten gebraucht");
+  if ((kind === "ATTACK" || kind === "DEFF") && !xy) throw new ChatError("err.call.coordsRequired");
   const target = xy ? await resolveTarget(db, xy[0], xy[1]) : null;
-  if (xy && !target) throw new ChatError(`Auf (${xy[0]}|${xy[1]}) liegt laut letzter map.sql kein Dorf`);
+  if (xy && !target) throw new ChatError("err.call.noVillage", { x: xy[0], y: xy[1] });
   const tpl = input.templateId ? await db.callTemplate.findUnique({ where: { id: input.templateId } }) : await db.callTemplate.findFirst({ where: { kind }, orderBy: { sortOrder: "asc" } });
-  if (!tpl) throw new ChatError("Keine Vorlage für diese Art");
+  if (!tpl) throw new ChatError("err.call.noTemplate");
   const channelId = input.channelId ?? tpl.channelId ?? (await db.channel.findFirst({ where: { tree: "ALLY", archivedAt: null }, orderBy: { sortOrder: "asc" } }))?.id;
   const ch = channelId ? await db.channel.findUnique({ where: { id: channelId } }) : null;
-  if (!ch || ch.tree !== "ALLY" || ch.archivedAt) throw new ChatError("Zielkanal ungültig");
+  if (!ch || ch.tree !== "ALLY" || ch.archivedAt) throw new ChatError("err.call.channelInvalid");
   const at = input.at ?? null;
   const note = (input.note ?? "").trim().slice(0, 500);
   const call = await db.allianceCall.create({
@@ -111,16 +114,16 @@ export async function createCall(db: PrismaClient, actor: Actor, input: CallInpu
 }
 
 /** Postet den Call in den Zielkanal (Autor = Ersteller). Nur aus scheduled/draft. */
-async function dispatch(db: PrismaClient, id: number, now: Date) {
+async function dispatch(db: PrismaClient, id: number, now: Date, actorId?: string) {
   const claimed = await db.allianceCall.updateMany({ where: { id, status: { in: ["scheduled", "draft"] } }, data: { status: "sending" } });
   if (claimed.count === 0) return null;
   const call = await db.allianceCall.findUniqueOrThrow({ where: { id } });
   try {
-    const body = renderCall(call);
+    const body = renderCall(call, undefined, await userLocale(db, actorId ?? call.createdBy));
     const m = await db.message.create({ data: { channelId: call.channelId, authorId: call.createdBy, body }, include: { tags: { include: { tag: true } }, attachments: true, channel: { select: { name: true } } } });
     const author = await db.user.findUnique({ where: { id: call.createdBy }, select: { name: true, role: true } });
     publish(call.channelId, "message:new", {
-      id: m.id, channelId: m.channelId, channelName: m.channel.name, author: { id: call.createdBy, name: author?.name ?? "gelöscht", role: author?.role ?? "MEMBER" },
+      id: m.id, channelId: m.channelId, channelName: m.channel.name, author: { id: call.createdBy, name: author?.name ?? translate(DEFAULT_LOCALE, "err.deletedUser"), role: author?.role ?? "MEMBER" },
       body: m.body, createdAt: m.createdAt.toISOString(), editedAt: null, tags: [], attachments: [],
     });
     return await db.allianceCall.update({ where: { id }, data: { status: "sent", sentAt: now, messageId: m.id } });
@@ -132,8 +135,8 @@ async function dispatch(db: PrismaClient, id: number, now: Date) {
 
 export async function sendCall(db: PrismaClient, actor: Actor, id: number, now = new Date()) {
   await requirePerm(db, actor, "schedule.manage");
-  const sent = await dispatch(db, id, now);
-  if (!sent) throw new ChatError("Call ist schon gesendet oder abgebrochen");
+  const sent = await dispatch(db, id, now, actor.id);
+  if (!sent) throw new ChatError("err.call.alreadySent");
   await audit(db, actor.id, "call.send", `call:${id}`);
   return sent;
 }
@@ -155,7 +158,7 @@ export async function dispatchDueCalls(db: PrismaClient, now = new Date()): Prom
 export async function cancelCall(db: PrismaClient, actor: Actor, id: number) {
   await requirePerm(db, actor, "schedule.manage");
   const r = await db.allianceCall.updateMany({ where: { id, status: { in: ["scheduled", "draft"] } }, data: { status: "cancelled" } });
-  if (r.count === 0) throw new ChatError("Call lässt sich nicht mehr abbrechen");
+  if (r.count === 0) throw new ChatError("err.call.cannotCancel");
   await audit(db, actor.id, "call.cancel", `call:${id}`);
 }
 
@@ -168,15 +171,15 @@ export async function saveTemplate(db: PrismaClient, actor: Actor, input: { id?:
   await requirePerm(db, actor, "schedule.manage");
   const name = input.name.trim();
   const body = input.body.trim();
-  if (!(CALL_KINDS as readonly string[]).includes(input.kind)) throw new ChatError("Ungültige Art");
-  if (name.length < 2 || name.length > 40) throw new ChatError("Name: 2–40 Zeichen");
-  if (body.length < 3 || body.length > 2000) throw new ChatError("Text: 3–2000 Zeichen");
-  if (input.channelId && !(await db.channel.findFirst({ where: { id: input.channelId, tree: "ALLY" } }))) throw new ChatError("Kanal ungültig");
+  if (!(CALL_KINDS as readonly string[]).includes(input.kind)) throw new ChatError("err.call.invalidKind");
+  if (name.length < 2 || name.length > 40) throw new ChatError("err.chat.nameLength", { min: 2, max: 40 });
+  if (body.length < 3 || body.length > 2000) throw new ChatError("err.call.textLength", { min: 3, max: 2000 });
+  if (input.channelId && !(await db.channel.findFirst({ where: { id: input.channelId, tree: "ALLY" } }))) throw new ChatError("err.chat.channelInvalid");
   try {
     const data = { kind: input.kind, name, body, channelId: input.channelId ?? null };
     return input.id ? await db.callTemplate.update({ where: { id: input.id }, data }) : await db.callTemplate.create({ data });
   } catch {
-    throw new ChatError("Vorlage existiert bereits");
+    throw new ChatError("err.call.templateExists");
   }
 }
 

@@ -103,7 +103,8 @@ describe("Bestätigen: Dorfzuordnung", () => {
     const p = new VisionPipeline(db);
     const r1 = await p.confirm(shot.id, "vu");
     expect(r1.status).toBe("failed"); // Konto noch nicht mit dem Spieler verknüpft
-    expect(r1.reason).toContain("keinem deiner Dörfer");
+    expect(r1.reasonKey).toBe("err.vision.noVillageMatch");
+    expect(r1.reason).toContain("any of your villages");
     await db.playerLink.create({ data: { userId: "vu", travianPlayerId: 7, status: "verified", method: "admin" } });
     expect((await p.confirm(shot.id, "vu")).status).toBe("parsed");
     expect(((await db.villageState.findUniqueOrThrow({ where: { villageId: 9001 } })).buildings as unknown[]).length).toBe(20);

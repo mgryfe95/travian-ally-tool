@@ -1,20 +1,22 @@
 import Link from "next/link";
 import { ForgotForm } from "@/components/AuthForms";
+import { getT } from "@/lib/i18n/server";
 import { mailEnabled } from "@/lib/mail";
 
-export default function ForgotPage() {
+export default async function ForgotPage() {
+  const { t } = await getT();
   return (
     <>
-      <h1 style={{ fontSize: 22, marginBottom: 6 }}>Passwort vergessen?</h1>
+      <h1 style={{ fontSize: 22, marginBottom: 6 }}>{t("auth.forgot.title")}</h1>
       {mailEnabled() ? (
         <>
-          <p className="sub" style={{ margin: "0 0 16px" }}>Wir schicken dir einen Link zum Zurücksetzen an deine E-Mail-Adresse.</p>
+          <p className="sub" style={{ margin: "0 0 16px" }}>{t("auth.forgot.intro")}</p>
           <ForgotForm />
         </>
       ) : (
-        <p className="sub" style={{ margin: "0 0 16px" }}>E-Mail-Versand ist auf diesem Server nicht eingerichtet. Bitte einen Admin um Hilfe.</p>
+        <p className="sub" style={{ margin: "0 0 16px" }}>{t("auth.forgot.noMail")}</p>
       )}
-      <p style={{ marginTop: 16 }}><Link href="/login">Zurück zur Anmeldung</Link></p>
+      <p style={{ marginTop: 16 }}><Link href="/login">{t("auth.forgot.back")}</Link></p>
     </>
   );
 }

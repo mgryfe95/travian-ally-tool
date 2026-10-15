@@ -3,22 +3,24 @@ import type { PrismaClient } from "@prisma/client";
 import { loadRelations, ownGroupIds } from "../alliance-group";
 import { ForbiddenError, hasPermission, type Permission } from "../permissions";
 import { audit, loadMatrix, type Actor } from "./context";
+import { AppError } from "../i18n/errors";
+import { DEFAULT_LOCALE, translate, type Locale } from "../i18n";
 
 export const INVITE_TTL_MS = 7 * 86_400_000;
-export class VerificationError extends Error {}
+export class VerificationError extends AppError {}
 
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // ohne 0/O/1/I
 
 async function requirePerm(db: PrismaClient, actor: Actor, perm: Permission) {
-  if (!hasPermission(actor.role, perm, await loadMatrix(db))) throw new ForbiddenError(`Fehlendes Recht ${perm}`);
+  if (!hasPermission(actor.role, perm, await loadMatrix(db))) throw new ForbiddenError("err.perm.missing", { perm });
 }
 
 /** Spieler muss laut letztem Import zur eigenen Gruppe (eigene Allianz + Allianzen) gehören. */
 async function requireGroupPlayer(db: PrismaClient, playerId: number) {
   const player = await db.player.findUnique({ where: { id: playerId } });
-  if (!player) throw new VerificationError("Spieler nicht gefunden");
-  if (!ownGroupIds(await loadRelations(db)).has(player.allianceId)) throw new VerificationError("Spieler gehört nicht zur eigenen Allianz-Gruppe");
+  if (!player) throw new VerificationError("err.verify.playerNotFound");
+  if (!ownGroupIds(await loadRelations(db)).has(player.allianceId)) throw new VerificationError("err.verify.playerNotInGroup");
   return player;
 }
 
@@ -40,9 +42,9 @@ export async function createInvite(db: PrismaClient, actor: Actor, playerId: num
 }
 
 /** Fertiger Text für die Ingame-Nachricht. */
-export function inviteMessage(opts: { playerName: string; token: string; appUrl: string }) {
+export function inviteMessage(opts: { playerName: string; token: string; appUrl: string; locale?: Locale }) {
   const url = `${opts.appUrl.replace(/\/+$/, "")}/invite/${opts.token}`;
-  return `Hallo ${opts.playerName},\n\nunsere Allianz nutzt jetzt ein gemeinsames Koordinations-Tool. Hier ist dein persönlicher Einladungslink (7 Tage gültig, einmalig verwendbar):\n\n${url}\n\nBis gleich!`;
+  return translate(opts.locale ?? DEFAULT_LOCALE, "err.invite.message", { name: opts.playerName, url });
 }
 
 export async function findOpenInvite(db: PrismaClient, token: string, now = new Date()) {
@@ -54,12 +56,12 @@ export async function findOpenInvite(db: PrismaClient, token: string, now = new 
 /** Löst den Link für einen frisch registrierten User ein: PlayerLink verified, Rolle MEMBER. */
 export async function redeemInvite(db: PrismaClient, token: string, userId: string, now = new Date()) {
   const invite = await findOpenInvite(db, token, now);
-  if (!invite) throw new VerificationError("Einladung ungültig, abgelaufen oder bereits verwendet");
+  if (!invite) throw new VerificationError("err.verify.inviteInvalid");
   await requireGroupPlayer(db, invite.travianPlayerId);
   await db.$transaction(async (tx) => {
     // Atomar „einmalig“: nur wer usedAt von null auf gesetzt bringt, gewinnt.
     const claimed = await tx.invite.updateMany({ where: { id: invite.id, usedAt: null, revokedAt: null }, data: { usedAt: now, usedBy: userId } });
-    if (claimed.count !== 1) throw new VerificationError("Einladung bereits verwendet");
+    if (claimed.count !== 1) throw new VerificationError("err.verify.inviteUsed");
     await tx.playerLink.upsert({
       where: { userId_travianPlayerId: { userId, travianPlayerId: invite.travianPlayerId } },
       create: { userId, travianPlayerId: invite.travianPlayerId, status: "verified", method: "invite", verifiedBy: invite.createdBy, verifiedAt: now },
@@ -87,7 +89,7 @@ function newCode() {
 export async function startClaim(db: PrismaClient, userId: string, playerId: number) {
   await requireGroupPlayer(db, playerId);
   const existing = await db.playerLink.findUnique({ where: { userId_travianPlayerId: { userId, travianPlayerId: playerId } } });
-  if (existing?.status === "verified") throw new VerificationError("Bereits verifiziert");
+  if (existing?.status === "verified") throw new VerificationError("err.verify.alreadyVerified");
   let code = newCode();
   while (await db.playerLink.findFirst({ where: { claimCode: code } })) code = newCode();
   return db.playerLink.upsert({
@@ -126,7 +128,7 @@ export async function checkClaims(db: PrismaClient, now = new Date()): Promise<n
 export async function approveLink(db: PrismaClient, actor: Actor, linkId: number, now = new Date()) {
   await requirePerm(db, actor, "members.approve");
   const link = await db.playerLink.findUnique({ where: { id: linkId } });
-  if (!link) throw new VerificationError("Link nicht gefunden");
+  if (!link) throw new VerificationError("err.verify.linkNotFound");
   await requireGroupPlayer(db, link.travianPlayerId);
   await db.playerLink.update({ where: { id: linkId }, data: { status: "verified", method: "admin", verifiedBy: actor.id, verifiedAt: now } });
   await promoteGuest(db, link.userId);
@@ -136,7 +138,7 @@ export async function approveLink(db: PrismaClient, actor: Actor, linkId: number
 export async function rejectLink(db: PrismaClient, actor: Actor, linkId: number) {
   await requirePerm(db, actor, "members.approve");
   const link = await db.playerLink.findUnique({ where: { id: linkId } });
-  if (!link) throw new VerificationError("Link nicht gefunden");
+  if (!link) throw new VerificationError("err.verify.linkNotFound");
   await db.playerLink.update({ where: { id: linkId }, data: { status: "rejected", verifiedBy: actor.id, verifiedAt: null } });
   await audit(db, actor.id, "link.reject", `user:${link.userId}`, { status: link.status }, { status: "rejected" });
 }
@@ -145,7 +147,7 @@ export async function rejectLink(db: PrismaClient, actor: Actor, linkId: number)
 export async function assignPlayer(db: PrismaClient, actor: Actor, userId: string, playerId: number, now = new Date()) {
   await requirePerm(db, actor, "members.approve");
   const user = await db.user.findUnique({ where: { id: userId } });
-  if (!user) throw new VerificationError("Konto nicht gefunden");
+  if (!user) throw new VerificationError("err.verify.accountNotFound");
   await requireGroupPlayer(db, playerId);
   const prev = await db.playerLink.findUnique({ where: { userId_travianPlayerId: { userId, travianPlayerId: playerId } } });
   await db.playerLink.upsert({

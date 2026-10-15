@@ -1,16 +1,17 @@
+import { AppError } from "./i18n/errors";
 /** Eintrag je Einheit: im Dorf, unterwegs, Unterstützung (in fremden Dörfern). */
 export type TroopEntry = { unit: string; inVillage: number; away: number; support: number };
 
-export class TroopsError extends Error {}
+export class TroopsError extends AppError {}
 
 const MAX_ENTRIES = 60;
 const MAX_COUNT = 100_000_000;
 
-const num = (s: string | undefined, line: number, what: string) => {
+const num = (s: string | undefined, line: number, what: "InVillage" | "Away" | "Support") => {
   const t = (s ?? "").trim().replace(/\./g, "").replace(/\s/g, "");
   if (t === "") return 0;
   const n = Number(t);
-  if (!Number.isInteger(n) || n < 0 || n > MAX_COUNT) throw new TroopsError(`Zeile ${line}: „${what}“ muss eine ganze Zahl ≥ 0 sein`);
+  if (!Number.isInteger(n) || n < 0 || n > MAX_COUNT) throw new TroopsError(`err.troops.badNumber${what}`, { line });
   return n;
 };
 
@@ -25,15 +26,15 @@ export function parseTroopsText(text: string): TroopEntry[] {
     if (!line) return;
     const [name, a, b, c, extra] = line.split(/[;\t|]/);
     const unit = (name ?? "").trim();
-    if (!unit || unit.length > 40) throw new TroopsError(`Zeile ${i + 1}: Einheitenname fehlt oder ist zu lang`);
-    if (extra !== undefined) throw new TroopsError(`Zeile ${i + 1}: zu viele Spalten (Name; im Dorf; unterwegs; Unterstützung)`);
+    if (!unit || unit.length > 40) throw new TroopsError("err.troops.badName", { line: i + 1 });
+    if (extra !== undefined) throw new TroopsError("err.troops.tooManyColumns", { line: i + 1 });
     const e = map.get(unit.toLowerCase()) ?? { unit, inVillage: 0, away: 0, support: 0 };
-    e.inVillage += num(a, i + 1, "im Dorf");
-    e.away += num(b, i + 1, "unterwegs");
-    e.support += num(c, i + 1, "Unterstützung");
+    e.inVillage += num(a, i + 1, "InVillage");
+    e.away += num(b, i + 1, "Away");
+    e.support += num(c, i + 1, "Support");
     map.set(unit.toLowerCase(), e);
   });
-  if (map.size > MAX_ENTRIES) throw new TroopsError(`Maximal ${MAX_ENTRIES} Einheiten`);
+  if (map.size > MAX_ENTRIES) throw new TroopsError("err.troops.tooMany", { max: MAX_ENTRIES });
   return [...map.values()];
 }
 

@@ -2,6 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { getLocale } from "@/lib/i18n/server";
+import { localizeError } from "@/lib/i18n/errors";
 import { ForbiddenError } from "@/lib/permissions";
 import { saveAccountInstructions, saveVillageInstructions, VillageError } from "@/lib/services/villages";
 import { parseTroopsText, TroopsError } from "@/lib/troops";
@@ -13,7 +15,7 @@ async function run(back: string, anchor: string, fn: () => Promise<void>): Promi
   try {
     await fn();
   } catch (e) {
-    if (e instanceof ForbiddenError || e instanceof VillageError || e instanceof TroopsError) error = e.message;
+    if (e instanceof ForbiddenError || e instanceof VillageError || e instanceof TroopsError) error = localizeError(e, await getLocale());
     else throw e;
   }
   redirect(`${back}${error ? `?error=${encodeURIComponent(error)}` : "?saved=1"}#${anchor}`);

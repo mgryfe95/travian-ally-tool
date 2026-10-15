@@ -57,7 +57,7 @@ test("Chat: Nachricht mit Tag in Deff-Call erscheint im Sammelraum; Screenshot e
   await expect(page.locator("article.msg")).toHaveCount(1);
 
   // Ungeprüfter Zugriff: Anhang-URL ohne Anmeldung → 401; fremder Kontext → ebenfalls kein Zugriff.
-  const anon = await browser.newContext();
+  const anon = await browser.newContext({ locale: "de-DE" });
   const res = await anon.request.get("/api/attachments/1?v=thumb");
   expect(res.status()).toBe(401);
   await anon.close();
@@ -77,7 +77,7 @@ test("Task-Force-Kanal ist für Nicht-Mitglieder unsichtbar", async ({ page, bro
   await expect(page.locator("article.msg", { hasText: "geheimer Plan" })).toHaveCount(0);
 
   // Der eingeladene Member (aus invite.spec) ist kein Mitglied → sieht die TF nicht.
-  const ctx = await browser.newContext();
+  const ctx = await browser.newContext({ locale: "de-DE" });
   const m = await ctx.newPage();
   await login(m, "member@example.com");
   await m.goto("/chat?c=all");
@@ -90,7 +90,7 @@ test("Task-Force-Kanal ist für Nicht-Mitglieder unsichtbar", async ({ page, bro
 
 test("Realtime: neue Nachricht erscheint live, Ungelesen-Zähler in anderen Kanälen", async ({ page, browser }) => {
   await login(page, "boss@example.com");
-  const ctx = await browser.newContext();
+  const ctx = await browser.newContext({ locale: "de-DE" });
   const m = await ctx.newPage();
   await login(m, "member@example.com");
   await m.goto("/chat?c=all");
@@ -133,7 +133,7 @@ test("Anhänge: Typ-/Größenprüfung beim Upload, Auslieferung nur mit Kanal-Le
   expect(up.status()).toBe(201);
   const attId = (await up.json()).attachments[0].id as number;
   // Vor dem Senden darf nur der Uploader die Datei sehen.
-  const other = await browser.newContext();
+  const other = await browser.newContext({ locale: "de-DE" });
   const m = await other.newPage();
   await login(m, "member@example.com");
   expect((await m.request.get(`/api/attachments/${attId}?v=thumb`)).status()).toBe(403);

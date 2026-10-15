@@ -38,7 +38,7 @@ describe("Hilfsfunktionen", () => {
     expect(berlinToDate("kaputt")).toBeNull();
   });
   it("renderCall ersetzt Platzhalter und entfernt leere Zeilen", () => {
-    const text = renderCall({ kind: "DEFF", title: "", x: -3, y: -82, playerId: 7, playerName: "MG.RYFE", villageName: "MG Ryfe", at: new Date("2026-10-15T16:30:00Z"), note: "", template: "Deff für {spieler} {koordinaten}\n{zeit}\n{link}\n{notiz}" }, "https://humans-travian.com/");
+    const text = renderCall({ kind: "DEFF", title: "", x: -3, y: -82, playerId: 7, playerName: "MG.RYFE", villageName: "MG Ryfe", at: new Date("2026-10-15T16:30:00Z"), note: "", template: "Deff für {spieler} {koordinaten}\n{zeit}\n{link}\n{notiz}" }, "https://humans-travian.com/", "de");
     expect(text).toBe("Deff für MG.RYFE (-3|-82)\nDo., 15.10., 18:30 Uhr\nhttps://humans-travian.com/players/7");
   });
 });

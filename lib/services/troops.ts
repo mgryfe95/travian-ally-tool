@@ -8,7 +8,7 @@ import { getOwnVillage } from "./villages";
 
 /** Manuelle Eingabe der eigenen Truppen (bis die Screenshot-Erkennung aktiv ist). Setzt nur den Bereich „Truppen“ und dessen Zeitstempel. */
 export async function saveTroops(db: PrismaClient, userId: string, villageId: number, entries: TroopEntry[], now = new Date()) {
-  if (!(await getOwnVillage(db, userId, villageId))) throw new ForbiddenError("Dieses Dorf gehört nicht zu deinem Konto");
+  if (!(await getOwnVillage(db, userId, villageId))) throw new ForbiddenError("err.village.notOwn");
   const data = entries as unknown as object;
   await db.villageState.upsert({
     where: { villageId },
@@ -26,7 +26,7 @@ export type TroopsOverview = { members: MemberTroops[]; totals: UnitTotal[]; mem
  * Nur mit Recht `troops.view` (Moderator/Admin/Systemadmin); jede Einsicht wird im Audit-Log vermerkt.
  */
 export async function troopsOverview(db: PrismaClient, actor: Actor, now = new Date()): Promise<TroopsOverview> {
-  if (!hasPermission(actor.role, "troops.view", await loadMatrix(db))) throw new ForbiddenError("Fehlendes Recht troops.view");
+  if (!hasPermission(actor.role, "troops.view", await loadMatrix(db))) throw new ForbiddenError("err.perm.missing", { perm: "troops.view" });
   const players = await loadGroupPlayers(db);
   const links = await db.playerLink.findMany({ where: { status: "verified", travianPlayerId: { in: players.map((p) => p.id) } }, include: { user: { select: { name: true, banned: true } } } });
   const withAccount = new Set(links.map((l) => l.travianPlayerId));

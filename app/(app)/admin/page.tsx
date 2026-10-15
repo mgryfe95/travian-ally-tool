@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { getT } from "@/lib/i18n/server";
+import type { MessageKey } from "@/lib/i18n";
 import { hasPermission, type Permission } from "@/lib/permissions";
 import { loadMatrix } from "@/lib/services/context";
 import { requirePermission } from "@/lib/session";
@@ -12,31 +14,32 @@ import { UsersTab } from "./tabs/users";
 
 export const dynamic = "force-dynamic";
 
-const TABS: { id: string; label: string; perms: Permission[] }[] = [
-  { id: "members", label: "Mitglieder & Einladungen", perms: ["members.invite", "members.approve"] },
-  { id: "rights", label: "Rechte", perms: ["permissions.edit"] },
-  { id: "channels", label: "Kanäle & Tags", perms: ["tags.manage", "settings.edit"] },
-  { id: "alliances", label: "Allianzen", perms: ["alliances.classify"] },
-  { id: "users", label: "Konten", perms: ["roles.assign"] },
-  { id: "audit", label: "Audit-Log", perms: ["roles.assign", "permissions.edit"] },
+const TABS: { id: string; label: MessageKey; perms: Permission[] }[] = [
+  { id: "members", label: "admin.tab.members", perms: ["members.invite", "members.approve"] },
+  { id: "rights", label: "admin.tab.rights", perms: ["permissions.edit"] },
+  { id: "channels", label: "admin.tab.channels", perms: ["tags.manage", "settings.edit"] },
+  { id: "alliances", label: "admin.tab.alliances", perms: ["alliances.classify"] },
+  { id: "users", label: "admin.tab.users", perms: ["roles.assign"] },
+  { id: "audit", label: "admin.tab.audit", perms: ["roles.assign", "permissions.edit"] },
 ];
 
 export default async function AdminPage({ searchParams }: { searchParams: Promise<{ tab?: string; error?: string; q?: string }> }) {
+  const { t } = await getT();
   const user = await requirePermission("members.invite", "members.approve", "roles.assign", "permissions.edit", "alliances.classify");
   const { tab, error, q } = await searchParams;
   const matrix = await loadMatrix(db);
-  const allowed = TABS.filter((t) => t.perms.some((p) => hasPermission(user.role, p, matrix)));
-  const current = allowed.find((t) => t.id === tab) ?? allowed[0];
+  const allowed = TABS.filter((x) => x.perms.some((p) => hasPermission(user.role, p, matrix)));
+  const current = allowed.find((x) => x.id === tab) ?? allowed[0];
   return (
     <>
       <header>
-        <div className="sub">Verwaltung</div>
-        <h1>Admin</h1>
+        <div className="sub">{t("admin.page.eyebrow")}</div>
+        <h1>{t("admin.page.title")}</h1>
       </header>
-      <div role="tablist" aria-label="Bereiche" className="tabs">
-        {allowed.map((t) => (
-          <Link key={t.id} role="tab" aria-selected={t.id === current?.id} className={`tab ${t.id === current?.id ? "on" : ""}`} href={`/admin?tab=${t.id}`}>
-            {t.label}
+      <div role="tablist" aria-label={t("admin.page.tabsLabel")} className="tabs">
+        {allowed.map((x) => (
+          <Link key={x.id} role="tab" aria-selected={x.id === current?.id} className={`tab ${x.id === current?.id ? "on" : ""}`} href={`/admin?tab=${x.id}`}>
+            {t(x.label)}
           </Link>
         ))}
       </div>

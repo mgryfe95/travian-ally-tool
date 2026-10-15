@@ -1,8 +1,9 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { worldMismatches, type WorldProfile } from "../world-profile";
 import { gameDataSchema } from "./schema";
+import { AppError } from "../i18n/errors";
 
-export class GameDataError extends Error {}
+export class GameDataError extends AppError {}
 
 /**
  * Manuell ausgelöster Import: validiert die Datei strikt und legt eine neue `GameDataVersion` samt Zeilen an.
@@ -11,11 +12,11 @@ export class GameDataError extends Error {}
 export async function importGameData(db: PrismaClient, raw: unknown, world: WorldProfile) {
   const parsed = gameDataSchema.safeParse(raw);
   if (!parsed.success) {
-    throw new GameDataError(parsed.error.issues.slice(0, 10).map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`).join("\n"));
+    throw new GameDataError("err.gamedata.invalid", { issues: parsed.error.issues.slice(0, 10).map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`).join("\n") });
   }
   const d = parsed.data;
   const mismatch = worldMismatches(d, world);
-  if (mismatch.length) throw new GameDataError(`Spieldaten gehören nicht zu dieser Spielwelt – nichts importiert:\n${mismatch.join("\n")}`);
+  if (mismatch.length) throw new GameDataError("err.gamedata.worldMismatch", { details: mismatch.join("\n") });
   return db.$transaction(
     async (tx) => {
       const version = await tx.gameDataVersion.create({ data: { source: d.source, serverSpeed: d.serverSpeed, worldHost: world.host, gameVersion: world.version, notes: d.notes } });

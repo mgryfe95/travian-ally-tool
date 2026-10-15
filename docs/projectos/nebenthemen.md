@@ -58,5 +58,8 @@ Punkte, die Projekt, Aufbau oder andere Bereiche betreffen, aber nicht direkt zu
 - **Spieldaten – Stand 2026-10-15:** Die Entwicklungsumgebung erreicht travian.com nicht (DNS/Proxy blockiert); frei im Netz findbare Tabellen sind inoffiziell, versionsgemischt (Legends/Kingdoms) und widersprüchlich → nicht verwendbar. Nächster Schritt: `scripts/probe-knowledgebase.ts` auf dem Server ausführen, Rohdaten zurückgeben, dann Parser + Import. Halbjährlicher Scraper (`GAMEDATA_REFRESH_CRON`) erst danach, mit Welt-Bindung (`lib/world-profile.ts`) und Diff-Bericht statt Überschreiben; Erlaubnis von Travian Games weiterhin offen (To-do Max). Einheitennamen = Volk (aus map.sql) + Einheitenplatz → bis dahin „Einheit N“.
 - **Truppen-Spieldaten fehlen:** Die Legends-Wissensdatenbank kennt nur Gebäude und Helden-Ausrüstung. Für Einheitennamen/-werte (je Volk, Platz 1–10) braucht es eine andere Quelle (z. B. Support-Artikel/Hilfe-Seiten) oder eine händisch gepflegte Namensliste (nur Namen, keine Werte). Entscheidung offen.
 
-## 2026-10-15 · i18n
+## 2026-10-15 · i18n (umgesetzt, siehe CHANGELOG)
 - Englisch = Basissprache (Spieldaten sind englisch), Deutsch als Übersetzung; Sprache pro Nutzer am Konto, Default aus Browser. Eigener Extraktionsschritt, Pflicht für Beta.
+
+## 2026-10-15 · KI-Advisor
+- Advisor ist nur Stub (leere Liste, kein Cron, kein Stream). Offen: Datenbasis (Gebäude, Truppen, Dörfer, map.sql), Lauf 1–2×/Tag im Worker, gespeicherte Tipps + UI, Ausgabe in Nutzersprache (User.locale).

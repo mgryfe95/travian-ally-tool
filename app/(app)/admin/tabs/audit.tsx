@@ -1,13 +1,15 @@
 import { db } from "@/lib/db";
+import { getT } from "@/lib/i18n/server";
 
 export async function AuditTab() {
+  const { t } = await getT();
   const rows = await db.auditLog.findMany({ orderBy: { id: "desc" }, take: 200 });
   return (
     <section className="card flush">
-      <h2 style={{ margin: 12 }}>Audit-Log</h2>
+      <h2 style={{ margin: 12 }}>{t("admin.audit.title")}</h2>
       <div className="scroll">
         <table style={{ minWidth: 760, fontSize: 12 }}>
-          <thead><tr><th>Zeit</th><th>Akteur</th><th>Aktion</th><th>Ziel</th><th>Vorher → Nachher</th></tr></thead>
+          <thead><tr><th>{t("admin.audit.colTime")}</th><th>{t("admin.audit.colActor")}</th><th>{t("admin.audit.colAction")}</th><th>{t("admin.audit.colTarget")}</th><th>{t("admin.audit.colChange")}</th></tr></thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.id}>

@@ -13,7 +13,7 @@ const [file, flag] = process.argv.slice(2);
 if (!file) throw new Error("usage: tsx scripts/import-kb.ts <main.js> [--dry-run]");
 const world = worldProfile(env().TRAVIAN_SERVER_URL, { version: env().GAME_VERSION, speed: env().GAME_SPEED });
 try {
-  if (world.version !== "legends") throw new KbError(`Die Quelle ist die Legends-Wissensdatenbank, die Welt ist aber „${world.version}“ – kein Import`);
+  if (world.version !== "legends") throw new KbError("err.kb.notLegends", { version: world.version });
   const js = readFileSync(file, "utf8");
   const data = kbToGameData(parseKnowledgeBase(js), world, `https://knowledgebase.legends.travian.com/main.js (abgerufen ${new Date().toISOString().slice(0, 10)}, sha256 ${createHash("sha256").update(js).digest("hex").slice(0, 16)})`);
   const levels = data.buildings.reduce((n, b) => n + b.levels.length, 0);

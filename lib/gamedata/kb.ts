@@ -1,11 +1,12 @@
 import type { WorldProfile } from "../world-profile";
+import { AppError } from "../i18n/errors";
 
 /**
  * Liest die Legends-Wissensdatenbank (`main.js` der Seite, Datenteil) und wandelt sie in das Spieldaten-Importformat.
  * Die Datei ist nur Daten-Lieferant und wird NIE ausgeführt: ein eigener, strikter Parser liest nur Objekt-/Array-/String-/Zahl-Literale
  * und bricht bei allem anderen (Funktionen, Aufrufe, Variablen) ab.
  */
-export class KbError extends Error {}
+export class KbError extends AppError {}
 
 type Json = null | boolean | number | string | Json[] | { [k: string]: Json };
 
@@ -16,7 +17,7 @@ const ws = (s: string, i: number) => {
 
 /** Parst ein JS-Literal ab `i`; liefert [Wert, Position danach]. */
 export function parseLiteral(s: string, start: number, depth = 0): [Json, number] {
-  if (depth > 40) throw new KbError("zu tief verschachtelt");
+  if (depth > 40) throw new KbError("err.kb.tooDeep");
   let i = ws(s, start);
   const c = s[i];
   if (c === "{") {
@@ -27,18 +28,18 @@ export function parseLiteral(s: string, start: number, depth = 0): [Json, number
       if (s[i] === '"' || s[i] === "'") [key, i] = readString(s, i);
       else {
         const m = /^[A-Za-z0-9_$]+/.exec(s.slice(i, i + 80));
-        if (!m) throw new KbError(`Schlüssel erwartet bei ${i}: ${s.slice(i, i + 30)}`);
+        if (!m) throw new KbError("err.kb.keyExpected", { i, ctx: s.slice(i, i + 30) });
         key = m[0];
         i += key.length;
       }
       i = ws(s, i);
-      if (s[i] !== ":") throw new KbError(`':' erwartet bei ${i}`);
+      if (s[i] !== ":") throw new KbError("err.kb.colonExpected", { i });
       let v: Json;
       [v, i] = parseLiteral(s, i + 1, depth + 1);
       obj[key] = v;
       i = ws(s, i);
       if (s[i] === ",") i = ws(s, i + 1);
-      else if (s[i] !== "}") throw new KbError(`',' oder '}' erwartet bei ${i}`);
+      else if (s[i] !== "}") throw new KbError("err.kb.commaOrBrace", { i });
     }
     return [obj, i + 1];
   }
@@ -51,7 +52,7 @@ export function parseLiteral(s: string, start: number, depth = 0): [Json, number
       arr.push(v);
       i = ws(s, i);
       if (s[i] === ",") i = ws(s, i + 1);
-      else if (s[i] !== "]") throw new KbError(`',' oder ']' erwartet bei ${i}`);
+      else if (s[i] !== "]") throw new KbError("err.kb.commaOrBracket", { i });
     }
     return [arr, i + 1];
   }
@@ -59,7 +60,7 @@ export function parseLiteral(s: string, start: number, depth = 0): [Json, number
   const num = /^-?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/.exec(s.slice(i, i + 40));
   if (num) return [Number(num[0]), i + num[0].length];
   for (const [lit, val] of [["!0", true], ["!1", false], ["true", true], ["false", false], ["null", null]] as const) if (s.startsWith(lit, i)) return [val, i + lit.length];
-  throw new KbError(`Kein Literal bei ${i}: ${s.slice(i, i + 30)}`);
+  throw new KbError("err.kb.noLiteral", { i, ctx: s.slice(i, i + 30) });
 }
 
 function readString(s: string, i: number): [string, number] {
@@ -74,7 +75,7 @@ function readString(s: string, i: number): [string, number] {
       i += 2;
     } else out += s[i++];
   }
-  if (s[i] !== q) throw new KbError("String nicht beendet");
+  if (s[i] !== q) throw new KbError("err.kb.unterminated");
   return [out, i + 1];
 }
 
@@ -91,13 +92,13 @@ const lang = (o: Json, code: string, fallback?: string) => {
 
 export function parseKnowledgeBase(js: string): Kb {
   const a = js.indexOf("=[{gid:");
-  if (a < 0) throw new KbError("Gebäudedaten (`[{gid:…`) nicht gefunden – Seitenstruktur hat sich geändert");
+  if (a < 0) throw new KbError("err.kb.noBuildingData");
   const [arr] = parseLiteral(js, a + 1);
   const buildings = (arr as unknown as KbBuilding[]).filter((b) => b && typeof b.gid === "number" && b.levelData);
-  if (buildings.length < 10) throw new KbError(`Nur ${buildings.length} Gebäude gefunden – Seitenstruktur hat sich geändert`);
+  if (buildings.length < 10) throw new KbError("err.kb.fewBuildings", { n: buildings.length });
 
   const n = js.indexOf("={1:{");
-  if (n < 0) throw new KbError("Gebäudenamen nicht gefunden");
+  if (n < 0) throw new KbError("err.kb.noNames");
   const [dict] = parseLiteral(js, n + 1);
   const names: Kb["names"] = {};
   for (const [k, v] of Object.entries(dict as Record<string, Json>)) {
@@ -121,7 +122,7 @@ const slug = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g
  * (genau die Formel der Quelle, Hauptgebäude-Faktor 1); der Hauptgebäude-Einfluss kommt erst bei der Anzeige je Dorf.
  */
 export function kbToGameData(kb: Kb, world: WorldProfile, source: string) {
-  if (world.speed === null) throw new KbError("Server-Geschwindigkeit der eigenen Welt unbekannt (GAME_SPEED setzen)");
+  if (world.speed === null) throw new KbError("err.kb.speedUnknown");
   const speed = world.speed;
   const tribeKey = (id: number) => (kb.tribes[id] ? slug(kb.tribes[id]!.en) : `tribe_${id}`);
   const used = new Set<number>();
@@ -129,7 +130,7 @@ export function kbToGameData(kb: Kb, world: WorldProfile, source: string) {
     .sort((x, y) => x.gid - y.gid)
     .map((b) => {
       const name = kb.names[b.gid];
-      if (!name) throw new KbError(`Gebäude ${b.gid}: kein Name in der Quelle`);
+      if (!name) throw new KbError("err.kb.noName", { gid: b.gid });
       const tribeReq = b.prerequisites.find((p) => (p as { type?: string }).type === "Tribe") as { vid: number[] } | undefined;
       tribeReq?.vid.forEach((v) => used.add(v));
       const levels = Object.values(b.levelData)

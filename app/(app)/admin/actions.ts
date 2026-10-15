@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
+import { AppError, localizeError } from "@/lib/i18n/errors";
+import { getLocale, getT } from "@/lib/i18n/server";
 import { RELATIONS, type Relation } from "@/lib/alliance-group";
 import { ForbiddenError, PERMISSIONS, ROLES, type Permission, type Role } from "@/lib/permissions";
 import { classifyAlliance, deleteUser, setRolePermission, setUserBanned, setUserRole } from "@/lib/services/admin";
@@ -18,7 +20,7 @@ async function run(tab: string, fn: () => Promise<void>): Promise<never> {
   try {
     await fn();
   } catch (e) {
-    if (e instanceof ForbiddenError || e instanceof VerificationError || e instanceof ChatError) error = e.message;
+    if (e instanceof AppError || e instanceof ForbiddenError || e instanceof VerificationError || e instanceof ChatError) error = localizeError(e, await getLocale());
     else throw e;
   }
   redirect(`/admin?tab=${tab}${error ? `&error=${encodeURIComponent(error)}` : ""}`);
@@ -30,7 +32,7 @@ const int = (f: FormData, k: string) => Number(str(f, k));
 export async function classifyAllianceAction(f: FormData) {
   return run("alliances", async () => {
     const rel = str(f, "relation");
-    if (rel !== "CLEAR" && !RELATIONS.includes(rel as Relation)) throw new VerificationError("Ungültiger Typ");
+    if (rel !== "CLEAR" && !RELATIONS.includes(rel as Relation)) throw new AppError("admin.err.invalidType");
     await classifyAlliance(db, await requireUser(), int(f, "allianceId"), rel as Relation | "CLEAR", str(f, "note") || undefined);
   });
 }
@@ -38,7 +40,7 @@ export async function classifyAllianceAction(f: FormData) {
 export async function setRoleAction(f: FormData) {
   return run(str(f, "tab") || "members", async () => {
     const role = str(f, "role");
-    if (!ROLES.includes(role as Role)) throw new VerificationError("Ungültige Rolle");
+    if (!ROLES.includes(role as Role)) throw new AppError("admin.err.invalidRole");
     await setUserRole(db, await requireUser(), str(f, "userId"), role as Role);
   });
 }
@@ -55,7 +57,7 @@ export async function setPermissionAction(f: FormData) {
   return run("rights", async () => {
     const perm = str(f, "permission");
     const role = str(f, "role");
-    if (!(PERMISSIONS as readonly string[]).includes(perm) || !ROLES.includes(role as Role)) throw new VerificationError("Ungültige Eingabe");
+    if (!(PERMISSIONS as readonly string[]).includes(perm) || !ROLES.includes(role as Role)) throw new AppError("admin.err.invalidInput");
     await setRolePermission(db, await requireUser(), role as Role, perm as Permission, str(f, "enabled") === "1");
   });
 }
@@ -75,7 +77,7 @@ export async function revokeInviteAction(f: FormData) {
 
 export type InviteState = { error?: string; message?: string; items?: { player: string; message: string }[] };
 
-const abs = (token: string, name: string) => inviteMessage({ playerName: name, token, appUrl: env().APP_URL });
+const abs = async (token: string, name: string) => inviteMessage({ playerName: name, token, appUrl: env().APP_URL, locale: await getLocale() });
 
 /** Neuer Link (der alte offene wird widerrufen). Der Klartext-Token erscheint nur hier einmal. */
 export async function createInviteAction(_prev: InviteState, f: FormData): Promise<InviteState> {
@@ -84,9 +86,9 @@ export async function createInviteAction(_prev: InviteState, f: FormData): Promi
     const playerId = int(f, "playerId");
     await db.invite.updateMany({ where: { travianPlayerId: playerId, usedAt: null, revokedAt: null }, data: { revokedAt: new Date() } });
     const { token, player } = await createInvite(db, user, playerId);
-    return { message: abs(token, player.name) };
+    return { message: await abs(token, player.name) };
   } catch (e) {
-    if (e instanceof ForbiddenError || e instanceof VerificationError) return { error: e.message };
+    if (e instanceof AppError || e instanceof ForbiddenError || e instanceof VerificationError) return { error: localizeError(e, await getLocale()) };
     throw e;
   }
 }
@@ -96,15 +98,15 @@ export async function createBulkInvitesAction(): Promise<InviteState> {
   try {
     const user = await requireUser();
     const rows = (await loadMemberRows(db)).filter((r) => r.state === "none");
-    if (rows.length === 0) return { error: "Keine uneingeladenen Spieler." };
+    if (rows.length === 0) return { error: (await getT()).t("admin.err.noUninvited") };
     const items: NonNullable<InviteState["items"]> = [];
     for (const r of rows) {
       const { token, player } = await createInvite(db, user, r.player.id);
-      items.push({ player: player.name, message: abs(token, player.name) });
+      items.push({ player: player.name, message: await abs(token, player.name) });
     }
     return { items };
   } catch (e) {
-    if (e instanceof ForbiddenError || e instanceof VerificationError) return { error: e.message };
+    if (e instanceof AppError || e instanceof ForbiddenError || e instanceof VerificationError) return { error: localizeError(e, await getLocale()) };
     throw e;
   }
 }
@@ -150,7 +152,7 @@ async function runSchedule(fn: () => Promise<void>): Promise<never> {
   try {
     await fn();
   } catch (e) {
-    if (e instanceof ForbiddenError || e instanceof ChatError) error = e.message;
+    if (e instanceof AppError || e instanceof ForbiddenError || e instanceof ChatError) error = localizeError(e, await getLocale());
     else throw e;
   }
   redirect(`/schedule${error ? `?error=${encodeURIComponent(error)}` : ""}`);
@@ -159,7 +161,7 @@ export async function createCallAction(f: FormData) {
   return runSchedule(async () => {
     const atRaw = str(f, "at").trim();
     const at = atRaw ? berlinToDate(atRaw) : null;
-    if (atRaw && !at) throw new ChatError("Zeit ungültig");
+    if (atRaw && !at) throw new AppError("admin.err.invalidTime");
     await createCall(db, await requireUser(), {
       kind: str(f, "kind"), title: str(f, "title"), coord: str(f, "coord"), at, note: str(f, "note"),
       channelId: f.get("channelId") ? int(f, "channelId") : undefined, templateId: f.get("templateId") ? int(f, "templateId") : undefined, sendNow: f.get("sendNow") === "1",

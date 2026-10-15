@@ -1,10 +1,11 @@
 import type { PrismaClient } from "@prisma/client";
 import { ForbiddenError } from "../permissions";
 import { DEFAULT_STALE_DAYS } from "../reminders";
+import { AppError } from "../i18n/errors";
 
 export const MAX_INSTRUCTIONS = 4000;
 
-export class VillageError extends Error {}
+export class VillageError extends AppError {}
 
 export async function getStaleDays(db: PrismaClient): Promise<number> {
   const row = await db.setting.findUnique({ where: { key: "staleDays" } });
@@ -29,7 +30,7 @@ export async function getOwnVillage(db: PrismaClient, userId: string, villageId:
 
 function clean(text: string) {
   const t = text.replace(/\r\n?/g, "\n").trim();
-  if (t.length > MAX_INSTRUCTIONS) throw new VillageError(`Zu lang (max. ${MAX_INSTRUCTIONS} Zeichen)`);
+  if (t.length > MAX_INSTRUCTIONS) throw new VillageError("err.village.tooLong", { max: MAX_INSTRUCTIONS });
   return t;
 }
 
@@ -38,7 +39,7 @@ export async function saveAccountInstructions(db: PrismaClient, userId: string, 
 }
 
 export async function saveVillageInstructions(db: PrismaClient, userId: string, villageId: number, text: string) {
-  if (!(await getOwnVillage(db, userId, villageId))) throw new ForbiddenError("Dieses Dorf gehört nicht zu deinem Konto");
+  if (!(await getOwnVillage(db, userId, villageId))) throw new ForbiddenError("err.village.notOwn");
   const aiInstructions = clean(text);
   await db.villageProfile.upsert({ where: { villageId_userId: { villageId, userId } }, create: { villageId, userId, aiInstructions }, update: { aiInstructions } });
 }

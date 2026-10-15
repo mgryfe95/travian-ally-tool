@@ -9,7 +9,7 @@ export default defineConfig({
   workers: 1,
   timeout: 60_000,
   globalSetup: "./e2e/global-setup.ts",
-  use: { baseURL: `http://localhost:${PORT}`, launchOptions: chromium ? { executablePath: chromium } : {} },
+  use: { baseURL: `http://localhost:${PORT}`, locale: "de-DE", launchOptions: chromium ? { executablePath: chromium } : {} },
   webServer: {
     command: "npx prisma migrate deploy && npx next build && npx tsx server.ts",
     port: PORT,

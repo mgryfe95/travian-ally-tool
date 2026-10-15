@@ -22,7 +22,7 @@ describe("Einheitennamen aus dem Support-Artikel", () => {
     expect(() => mergeLanguages(parseUnitTables(en), parseUnitTables(short))).toThrow(UnitsError);
   });
   it("lehnt veränderte Seitenstruktur ab", () => {
-    expect(() => parseUnitTables("<html>nichts</html>")).toThrow(/Keine Völker-Tabellen/);
+    expect(() => parseUnitTables("<html>nichts</html>")).toThrow(/No tribe tables/);
   });
 });
 
@@ -33,10 +33,10 @@ describe("Händische Ergänzungen", () => {
     expect(r.find((x) => x.slot === 3)).toMatchObject({ nameEn: "Pathfinder", nameDe: "Späher" });
     expect(r.find((x) => x.slot === 7)).toMatchObject({ nameEn: "Battering Ram", nameDe: "Rammbock" });
     expect(r.some((x) => x.slot === 8)).toBe(false);
-    expect(() => applyOverrides(base, { "3": { "3": { en: "Scout" } } })).toThrow(/widerspricht/);
-    expect(() => applyOverrides(base, { "3": { "9": { de: "Häuptling" } } })).toThrow(/englischen Namen/);
-    expect(() => applyOverrides(base, { "3": { "11": { en: "x" } } })).toThrow(/ungültiger Platz/);
-    expect(() => applyOverrides(base, { "42": {} })).toThrow(/Unbekannte Volk-ID/);
+    expect(() => applyOverrides(base, { "3": { "3": { en: "Scout" } } })).toThrow(/contradicts/);
+    expect(() => applyOverrides(base, { "3": { "9": { de: "Häuptling" } } })).toThrow(/needs an English name/);
+    expect(() => applyOverrides(base, { "3": { "11": { en: "x" } } })).toThrow(/invalid slot/);
+    expect(() => applyOverrides(base, { "42": {} })).toThrow(/Unknown tribe ID/);
   });
   it("Vorlage enthält 10 Plätze mit englischen Namen und bekannten deutschen Namen", () => {
     const t = overridesTemplate(base, { "3": { "1": { de: "Phalanx" } } });

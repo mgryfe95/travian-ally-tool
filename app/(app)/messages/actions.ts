@@ -2,6 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { getT } from "@/lib/i18n/server";
+import { localizeError } from "@/lib/i18n/errors";
 import { ForbiddenError } from "@/lib/permissions";
 import { ChatError } from "@/lib/services/chat";
 import { getOrCreateThread, sendBroadcast, type Audience } from "@/lib/services/messenger";
@@ -14,7 +16,7 @@ async function run(back: string, fn: () => Promise<string | void>): Promise<neve
   try {
     target = (await fn()) ?? back;
   } catch (e) {
-    if (e instanceof ForbiddenError || e instanceof ChatError) target = `${back}${back.includes("?") ? "&" : "?"}error=${encodeURIComponent(e.message)}`;
+    if (e instanceof ForbiddenError || e instanceof ChatError) target = `${back}${back.includes("?") ? "&" : "?"}error=${encodeURIComponent(localizeError(e, (await getT()).locale))}`;
     else throw e;
   }
   redirect(target);

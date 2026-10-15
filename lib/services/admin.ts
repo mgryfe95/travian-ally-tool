@@ -5,10 +5,11 @@ import {
   type Permission, type Role, type StoredRole,
 } from "../permissions";
 import { audit, loadMatrix, type Actor } from "./context";
+import { AppError } from "../i18n/errors";
 
 async function loadTarget(db: PrismaClient, userId: string, sysadmins: readonly string[]) {
   const user = await db.user.findUnique({ where: { id: userId } });
-  if (!user) throw new Error("Nutzer nicht gefunden");
+  if (!user) throw new AppError("err.user.notFound");
   return { user, role: effectiveRole(user, sysadmins) as Role };
 }
 
@@ -17,7 +18,7 @@ export async function setUserRole(
 ) {
   const { user, role } = await loadTarget(db, userId, sysadmins);
   assertCanAssignRole(actor.role, role, newRole, await loadMatrix(db));
-  if (!(STORED_ROLES as readonly string[]).includes(newRole)) throw new ForbiddenError("Ungültige Rolle");
+  if (!(STORED_ROLES as readonly string[]).includes(newRole)) throw new ForbiddenError("err.role.invalid");
   await db.user.update({ where: { id: userId }, data: { role: newRole as StoredRole } });
   await audit(db, actor.id, "user.role", `user:${userId}`, { role: user.role }, { role: newRole });
 }
@@ -58,7 +59,7 @@ export async function classifyAlliance(
   db: PrismaClient, actor: Actor, allianceId: number, relation: import("../alliance-group").Relation | "CLEAR", note?: string,
 ) {
   const { hasPermission } = await import("../permissions");
-  if (!hasPermission(actor.role, "alliances.classify", await loadMatrix(db))) throw new ForbiddenError("Fehlendes Recht alliances.classify");
+  if (!hasPermission(actor.role, "alliances.classify", await loadMatrix(db))) throw new ForbiddenError("err.perm.missing", { perm: "alliances.classify" });
   const { setRelation, clearRelation } = await import("../alliance-group");
   const before = await db.allianceClassification.findUnique({ where: { allianceId } });
   if (relation === "CLEAR") await clearRelation(db, allianceId);

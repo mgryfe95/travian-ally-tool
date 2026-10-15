@@ -7,11 +7,19 @@ import { agreementOf, assess, type Assessment, type Issue } from "./validate";
 import { env } from "../env";
 import { ownVillages } from "../services/villages";
 import { storage } from "../storage";
+import { translate, type Locale, type MessageKey, type Params } from "../i18n";
+import { AppError } from "../i18n/errors";
 
-export type PipelineResult = { status: "uploaded" | "parsed" | "needs_review" | "failed"; reason?: string };
+/** `reason` ist englisch; `reasonKey`/`reasonParams` für die Anzeige in der Nutzersprache (siehe `reasonText`). */
+export type PipelineResult = { status: "uploaded" | "parsed" | "needs_review" | "failed"; reason?: string; reasonKey?: MessageKey; reasonParams?: Params };
+
+const withReason = (status: PipelineResult["status"], key: MessageKey, params?: Params): PipelineResult => ({ status, reason: translate("en", key, params), reasonKey: key, reasonParams: params });
+
+/** Hinweistext eines Ergebnisses in der Sprache des Nutzers (Fallback: englischer `reason`). */
+export const reasonText = (r: PipelineResult, locale: Locale): string | null => (r.reasonKey ? translate(locale, r.reasonKey, r.reasonParams) : r.reason ?? null);
 
 /** Was in Screenshot.parsed steht. */
-export type ParsedShot = { reading?: Reading; issues?: Issue[]; agreement?: number; error?: string; confirmedBy?: string; corrected?: boolean; applied?: { villageId: number; areas: string[] }[] };
+export type ParsedShot = { reading?: Reading; issues?: Issue[]; agreement?: number; error?: string; errorKey?: MessageKey; errorParams?: Params; confirmedBy?: string; corrected?: boolean; applied?: { villageId: number; areas: string[] }[] };
 
 const MAX_EXAMPLES = 6;
 const KEEP_EXAMPLES_PER_KIND = 30;
@@ -53,7 +61,7 @@ export class VisionPipeline {
 
   async process(screenshotId: number): Promise<PipelineResult> {
     const shot = await this.db.screenshot.findUnique({ where: { id: screenshotId } });
-    if (!shot) return { status: "failed", reason: "Screenshot nicht gefunden" };
+    if (!shot) return withReason("failed", "err.vision.screenshotNotFound");
     const image = await storage().get(shot.storageKey);
     const e = env();
     try {
@@ -62,7 +70,7 @@ export class VisionPipeline {
       const ok = runs.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
       if (ok.length === 0) {
         const err = runs.find((r) => r.status === "rejected") as PromiseRejectedResult;
-        if (err.reason instanceof NotImplementedError) return { status: "uploaded", reason: err.reason.message };
+        if (err.reason instanceof NotImplementedError) return withReason("uploaded", err.reason.key, err.reason.params);
         throw err.reason;
       }
       const reading = ok[0]!;
@@ -83,27 +91,28 @@ export class VisionPipeline {
       return { status };
     } catch (err) {
       const msg = (err as Error).message.slice(0, 300);
-      await this.db.screenshot.update({ where: { id: shot.id }, data: { status: "failed", parsed: { error: msg } } });
-      return { status: "failed", reason: msg };
+      const known = err instanceof AppError ? { errorKey: err.key, ...(err.params ? { errorParams: err.params } : {}) } : {};
+      await this.db.screenshot.update({ where: { id: shot.id }, data: { status: "failed", parsed: { error: msg, ...known } } });
+      return { status: "failed", reason: msg, ...(err instanceof AppError ? { reasonKey: err.key, reasonParams: err.params } : {}) };
     }
   }
 
   /** Nutzer bestätigt (optional korrigiert): übernehmen und als Lern-Beispiel speichern. */
   async confirm(screenshotId: number, userId: string, corrected?: unknown, villageId?: number): Promise<PipelineResult> {
     const shot = await this.db.screenshot.findUnique({ where: { id: screenshotId } });
-    if (!shot || shot.userId !== userId) return { status: "failed", reason: "Screenshot nicht gefunden" };
+    if (!shot || shot.userId !== userId) return withReason("failed", "err.vision.screenshotNotFound");
     const parsed = (shot.parsed ?? {}) as ParsedShot;
     const candidate = corrected ?? parsed.reading;
     const reading = readingSchema.safeParse(candidate);
-    if (!reading.success) return { status: "failed", reason: "Keine gültige Lesung zum Bestätigen" };
+    if (!reading.success) return withReason("failed", "err.vision.noValidReading");
     const known = await knownVillages(this.db, userId);
     const a = assess(reading.data, known);
-    if (reading.data.kind === "UNKNOWN") return { status: "failed", reason: "Art nicht erkannt – bitte Art korrigieren" };
+    if (reading.data.kind === "UNKNOWN") return withReason("failed", "err.vision.kindUnknown");
     const chosen = villageId !== undefined && known.some((k) => k.id === villageId) ? villageId : undefined;
     const applied = await applyReading(this.db, userId, shot.id, reading.data, known, chosen ?? shot.villageId ?? undefined, new Date(), chosen !== undefined);
     // Nur Arten, die in den Dorfzustand fließen, müssen ein Dorf treffen
     const writes = !["VILLAGE_TROOPS_PRESENT", "BATTLE_REPORT"].includes(reading.data.kind);
-    if (writes && applied.length === 0) return { status: "failed", reason: "Konnte keinem deiner Dörfer zugeordnet werden – bitte oben das Dorf wählen und erneut bestätigen." };
+    if (writes && applied.length === 0) return withReason("failed", "err.vision.noVillageMatch");
     await this.db.screenshot.update({
       where: { id: shot.id },
       data: { villageId: chosen ?? shot.villageId, status: "parsed", detectedKind: reading.data.kind, detectedDevice: reading.data.device, parsed: { ...parsed, reading: reading.data, issues: a.issues, confirmedBy: userId, corrected: corrected !== undefined, applied } as object },

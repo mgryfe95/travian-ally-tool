@@ -34,7 +34,7 @@ export async function purgeOldScreenshots(db: PrismaClient, days: number, now = 
   return del.length ? deleteScreenshotFiles(db, del) : 0;
 }
 
-export type MyFile = { type: "screenshot" | "attachment"; id: number; name: string; kind: string; sizeBytes: number; createdAt: Date; thumbUrl: string | null; url: string; note: string };
+export type MyFile = { type: "screenshot" | "attachment"; id: number; name: string; kind: string; sizeBytes: number; createdAt: Date; thumbUrl: string | null; url: string; note: string; channel?: string; channelDeleted?: boolean; unsent?: boolean };
 
 /** „Meine Bilder & Dateien“: eigene Screenshots und Chat-Anhänge. */
 export async function listMyFiles(db: PrismaClient, userId: string): Promise<{ files: MyFile[]; totalBytes: number }> {
@@ -44,7 +44,7 @@ export async function listMyFiles(db: PrismaClient, userId: string): Promise<{ f
   ]);
   const files: MyFile[] = [
     ...shots.map((s) => ({ type: "screenshot" as const, id: s.id, name: `Screenshot ${s.id}`, kind: s.detectedKind, sizeBytes: s.sizeBytes, createdAt: s.createdAt, thumbUrl: s.thumbKey ? `/api/screenshots/${s.id}/file?v=thumb` : null, url: `/api/screenshots/${s.id}/file`, note: s.status })),
-    ...atts.map((a) => ({ type: "attachment" as const, id: a.id, name: a.name, kind: a.kind, sizeBytes: a.sizeBytes, createdAt: a.createdAt, thumbUrl: a.thumbKey ? `/api/attachments/${a.id}?v=thumb` : null, url: `/api/attachments/${a.id}?v=dl`, note: a.message ? `Kanal ${a.message.channel.name}${a.message.deletedAt ? " (Nachricht gelöscht)" : ""}` : "nicht gesendet" })),
+    ...atts.map((a) => ({ type: "attachment" as const, id: a.id, name: a.name, kind: a.kind, sizeBytes: a.sizeBytes, createdAt: a.createdAt, thumbUrl: a.thumbKey ? `/api/attachments/${a.id}?v=thumb` : null, url: `/api/attachments/${a.id}?v=dl`, note: "", ...(a.message ? { channel: a.message.channel.name, channelDeleted: a.message.deletedAt !== null } : { unsent: true }) })),
   ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   return { files, totalBytes: files.reduce((s, f) => s + f.sizeBytes, 0) };
 }

@@ -6,6 +6,7 @@ import { env } from "../env";
  * (`@anthropic-ai/sdk`, Modell aus ENV `ANTHROPIC_MODEL`) folgen nach Freigabe von Datenquelle und Prompts.
  */
 export type { ReadingKind as ScreenshotKind } from "./reading";
+import { AppError } from "../i18n/errors";
 export type DeviceKind = "DESKTOP" | "MOBILE" | "UNKNOWN";
 
 export type AdviceInput = {
@@ -31,17 +32,13 @@ export interface AiClient {
   advise(input: AdviceInput): Promise<Advice[]>;
 }
 
-export class NotImplementedError extends Error {
-  constructor(what: string) {
-    super(`${what} ist in dieser Ausbaustufe noch nicht aktiv`);
-  }
-}
+export class NotImplementedError extends AppError {}
 
 /** Stub: klassifiziert nichts, berät nicht. Dient als Platzhalter und für Tests der Verdrahtung. */
 export class StubAiClient implements AiClient {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async read(_image?: Buffer, _opts?: ReadOptions): Promise<Reading> {
-    throw new NotImplementedError("Screenshot-Erkennung (ANTHROPIC_API_KEY fehlt)");
+    throw new NotImplementedError("err.ai.screenshotRecognition");
   }
   async advise(): Promise<Advice[]> {
     return [];

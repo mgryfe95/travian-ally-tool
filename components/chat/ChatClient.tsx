@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent, type DragEvent, type FormEvent } from "react";
+import { useT } from "@/lib/i18n/client";
 import type { ChannelView, MessageView, TagTypeView } from "@/lib/services/chat";
 import { Lightbox, type LightboxImage } from "./Lightbox";
 import { MessageItem } from "./Message";
@@ -30,6 +31,7 @@ async function api<T>(url: string, init?: RequestInit): Promise<{ ok: boolean; s
 export function ChatClient(props: ChatProps) {
   const { me, channels, tagTypes, current, caps, limits } = props;
   const router = useRouter();
+  const t = useT();
   const ally = useMemo(() => channels.filter((c) => c.tree === "ALLY"), [channels]);
   const tfs = useMemo(() => channels.filter((c) => c.tree === "TASKFORCE"), [channels]);
   const cur = typeof current === "number" ? channels.find((c) => c.id === current) : undefined;
@@ -159,7 +161,7 @@ export function ChatClient(props: ChatProps) {
     setError(undefined);
     const room = limits.maxFiles - pending.length;
     if (files.length > room) {
-      setError(`Maximal ${limits.maxFiles} Dateien pro Nachricht`);
+      setError(t("chat.upload.max", { n: limits.maxFiles }));
       files = files.slice(0, Math.max(room, 0));
     }
     const items: Pending[] = files.map((f) => ({ key: `${f.name}-${f.size}-${Math.random()}`, name: f.name, preview: f.type.startsWith("image/") ? URL.createObjectURL(f) : undefined }));
@@ -171,12 +173,12 @@ export function ChatClient(props: ChatProps) {
       p.flatMap((x) => {
         const idx = items.findIndex((i) => i.key === x.key);
         if (idx < 0) return [x];
-        if (!r.ok) return [{ ...x, error: r.data.error ?? "Upload fehlgeschlagen" }];
+        if (!r.ok) return [{ ...x, error: r.data.error ?? t("chat.upload.failed") }];
         const a = r.data.attachments[idx];
         return a ? [{ ...x, id: a.id, kind: a.kind }] : [];
       }),
     );
-    if (!r.ok) setError(r.data.error ?? "Upload fehlgeschlagen");
+    if (!r.ok) setError(r.data.error ?? t("chat.upload.failed"));
   }
 
   const onPaste = (e: ClipboardEvent) => {
@@ -196,10 +198,10 @@ export function ChatClient(props: ChatProps) {
     e.preventDefault();
     if (busy || !sendChannel) return;
     const ready = pending.filter((p) => p.id);
-    if (pending.some((p) => !p.id && !p.error)) return setError("Upload läuft noch …");
+    if (pending.some((p) => !p.id && !p.error)) return setError(t("chat.upload.pending"));
     if (!body.trim() && ready.length === 0) return;
     const missing = offered.find((t) => t.required && !(picked[t.id]?.length));
-    if (missing) return setError(`„${missing.name}“ ist Pflicht`);
+    if (missing) return setError(t("chat.tag.required", { name: missing.name }));
     setBusy(true);
     setError(undefined);
     const r = await api<MessageView>("/api/chat/messages", {
@@ -207,7 +209,7 @@ export function ChatClient(props: ChatProps) {
       body: JSON.stringify({ channelId: sendChannel, body, tagIds: offered.flatMap((t) => picked[t.id] ?? []), attachmentIds: ready.map((p) => p.id) }),
     });
     setBusy(false);
-    if (!r.ok) return setError(r.data.error ?? "Senden fehlgeschlagen");
+    if (!r.ok) return setError(r.data.error ?? t("chat.send.failed"));
     setBody("");
     setPending([]);
     setPicked({});
@@ -217,7 +219,7 @@ export function ChatClient(props: ChatProps) {
 
   const editMsg = async (id: number, text: string) => {
     const r = await api<MessageView>(`/api/chat/messages/${id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ body: text }) });
-    if (!r.ok) return r.data.error ?? "Fehlgeschlagen";
+    if (!r.ok) return r.data.error ?? t("chat.action.failed");
     setMessages((list) => list.map((x) => (x.id === id ? r.data : x)));
     return undefined;
   };
@@ -234,24 +236,24 @@ export function ChatClient(props: ChatProps) {
       {unread[c.id] ? <span className="badge mono">{unread[c.id]}</span> : c.tree === "TASKFORCE" ? <span className="sub" style={{ fontSize: 12 }}>{c.memberCount}</span> : null}
     </Link>
   );
-  const title = isAll ? "Alle Kanäle" : cur ? (cur.tree === "ALLY" ? `# ${cur.name}` : cur.name) : "Chat";
-  const subtitle = isAll ? "Sammelraum: Nachrichten aller Allianz-Kanäle, die du lesen darfst (ohne Task-Forces)" : cur?.tree === "TASKFORCE" ? "Task-Force · nur für Mitglieder sichtbar" : "Allianz-Kanal";
+  const title = isAll ? t("chat.title.all") : cur ? (cur.tree === "ALLY" ? `# ${cur.name}` : cur.name) : t("chat.title.chat");
+  const subtitle = isAll ? t("chat.subtitle.all") : cur?.tree === "TASKFORCE" ? t("chat.subtitle.taskforce") : t("chat.subtitle.ally");
   const hasFilter = tagFilter !== null || q.trim() !== "";
 
   return (
     <div className="chat">
-      <aside className="chat-aside" aria-label="Kanäle">
-        <div className="sect">Allianz</div>
+      <aside className="chat-aside" aria-label={t("chat.aside.label")}>
+        <div className="sect">{t("chat.aside.alliance")}</div>
         <Link className={`listbtn ${isAll ? "on" : ""}`} href="/chat?c=all" aria-current={isAll ? "page" : undefined}>
-          <span>Alle (Sammelraum)</span>{allUnread ? <span className="badge mono">{allUnread}</span> : null}
+          <span>{t("chat.aside.all")}</span>{allUnread ? <span className="badge mono">{allUnread}</span> : null}
         </Link>
         {ally.map((c) => chBtn(c, `# ${c.name}`))}
         <div className="sect">
-          Task-Forces
-          {caps.canCreateTf && <Link href="/chat/tf/new" aria-label="Task-Force anlegen" className="btn ghost sm" style={{ minHeight: 28, width: 28, padding: 0 }}>+</Link>}
+          {t("chat.aside.taskforces")}
+          {caps.canCreateTf && <Link href="/chat/tf/new" aria-label={t("chat.aside.newTf")} className="btn ghost sm" style={{ minHeight: 28, width: 28, padding: 0 }}>+</Link>}
         </div>
         {tfs.map((c) => chBtn(c, c.name))}
-        {tfs.length === 0 && <p className="sub" style={{ padding: "0 10px", fontSize: 12 }}>Keine Task-Force.</p>}
+        {tfs.length === 0 && <p className="sub" style={{ padding: "0 10px", fontSize: 12 }}>{t("chat.aside.noTf")}</p>}
       </aside>
 
       <section className="chat-main" onDragOver={(e) => { if (caps.canUpload) { e.preventDefault(); setDrag(true); } }} onDragLeave={() => setDrag(false)} onDrop={onDrop}
@@ -259,27 +261,27 @@ export function ChatClient(props: ChatProps) {
         <header className="row between" style={{ padding: "16px 24px", borderBottom: "1px solid #2c271f" }}>
           <div>
             <div className="chat-mobile-only">
-              <label className="lbl" htmlFor="mch" style={{ margin: 0 }}>Kanal</label>
+              <label className="lbl" htmlFor="mch" style={{ margin: 0 }}>{t("chat.channel")}</label>
               <select id="mch" value={String(current)} onChange={(e) => router.push(`/chat?c=${e.target.value}`)} style={{ minHeight: 44, background: "transparent", color: "var(--text)", border: 0, fontWeight: 600, fontSize: 18, padding: 0 }}>
-                <option value="all">Alle (Sammelraum)</option>
+                <option value="all">{t("chat.aside.all")}</option>
                 {ally.map((c) => <option key={c.id} value={c.id}># {c.name}{unread[c.id] ? ` (${unread[c.id]})` : ""}</option>)}
                 {tfs.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             <h1 style={{ fontSize: 19, margin: 0 }} className="chat-title">{title}</h1>
-            <div className="sub" style={{ fontSize: 12 }}>{subtitle}{cur?.tree === "TASKFORCE" && cur.taskforceId ? <> · <Link href={`/chat/tf/${cur.taskforceId}`}>Verwalten</Link></> : null}</div>
+            <div className="sub" style={{ fontSize: 12 }}>{subtitle}{cur?.tree === "TASKFORCE" && cur.taskforceId ? <> · <Link href={`/chat/tf/${cur.taskforceId}`}>{t("chat.manage")}</Link></> : null}</div>
           </div>
-          <div className="row" role="group" aria-label="Nach Tag filtern" style={{ gap: 8 }}>
-            <label className="sr" htmlFor="chat-q">Suchen</label>
-            <input id="chat-q" className="field" placeholder="Suchen …" value={q} onChange={(e) => setQ(e.target.value)} style={{ width: 150, minHeight: 32 }} />
-            <button type="button" className={`filterchip ${tagFilter === null ? "on" : ""}`} onClick={() => setTagFilter(null)}>Alle Tags</button>
+          <div className="row" role="group" aria-label={t("chat.filter.label")} style={{ gap: 8 }}>
+            <label className="sr" htmlFor="chat-q">{t("chat.search")}</label>
+            <input id="chat-q" className="field" placeholder={t("chat.search.placeholder")} value={q} onChange={(e) => setQ(e.target.value)} style={{ width: 150, minHeight: 32 }} />
+            <button type="button" className={`filterchip ${tagFilter === null ? "on" : ""}`} onClick={() => setTagFilter(null)}>{t("chat.filter.allTags")}</button>
             {allTags.map((t) => <button key={t.id} type="button" className={`filterchip ${tagFilter === t.id ? "on" : ""}`} onClick={() => setTagFilter(tagFilter === t.id ? null : t.id)}>{t.name}</button>)}
           </div>
         </header>
 
-        <div className="chat-msgs" ref={listRef} aria-live="polite" aria-label="Nachrichten">
-          {nextBefore && <button type="button" className="btn ghost sm" style={{ alignSelf: "center" }} onClick={loadOlder}>Ältere Nachrichten laden</button>}
-          {messages.length === 0 && <div className="sub" style={{ padding: "40px 0", textAlign: "center" }}>{hasFilter ? "Keine Treffer." : "Noch keine Nachrichten in diesem Kanal."}</div>}
+        <div className="chat-msgs" ref={listRef} aria-live="polite" aria-label={t("chat.messages")}>
+          {nextBefore && <button type="button" className="btn ghost sm" style={{ alignSelf: "center" }} onClick={loadOlder}>{t("chat.loadOlder")}</button>}
+          {messages.length === 0 && <div className="sub" style={{ padding: "40px 0", textAlign: "center" }}>{hasFilter ? t("chat.noMatches") : t("chat.empty")}</div>}
           {messages.map((m) => (
             <MessageItem key={m.id} m={m} showChannel={isAll} canEdit={m.author.id === me.id} canDelete={m.author.id === me.id || caps.canModerate}
               onEdit={editMsg} onDelete={delMsg} onOpenImage={(images, start) => setLightbox({ images, start })} />
@@ -289,14 +291,14 @@ export function ChatClient(props: ChatProps) {
         {canWriteHere ? (
           <form onSubmit={send} style={{ borderTop: "1px solid #2c271f", padding: "14px 24px" }}>
             {pending.length > 0 && (
-              <div className="row" style={{ marginBottom: 10, gap: 10 }} aria-label="Anhänge vor dem Senden">
+              <div className="row" style={{ marginBottom: 10, gap: 10 }} aria-label={t("chat.attachments.label")}>
                 {pending.map((p) => (
                   <div key={p.key} style={{ position: "relative" }}>
                     <div style={{ width: 64, height: 64, borderRadius: 8, border: `1px solid ${p.error ? "var(--warn)" : "var(--line)"}`, overflow: "hidden", background: "#221e18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "var(--muted)", textAlign: "center" }}>
                       {/* eslint-disable-next-line @next/next/no-img-element -- lokale Blob-URL */}
                       {p.preview ? <img src={p.preview} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: p.id ? 1 : 0.5 }} /> : <span>{p.kind ?? "…"}</span>}
                     </div>
-                    <button type="button" aria-label={`Anhang ${p.name} entfernen`} onClick={() => setPending((l) => l.filter((x) => x.key !== p.key))}
+                    <button type="button" aria-label={t("chat.attachments.remove", { name: p.name })} onClick={() => setPending((l) => l.filter((x) => x.key !== p.key))}
                       style={{ position: "absolute", top: -8, right: -8, width: 24, height: 24, borderRadius: 12, border: 0, background: "#403829", color: "var(--text)", cursor: "pointer" }}>×</button>
                     <div className="sub" style={{ fontSize: 10, maxWidth: 64, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.error ?? p.name}</div>
                   </div>
@@ -306,49 +308,49 @@ export function ChatClient(props: ChatProps) {
             <div className="row" style={{ alignItems: "flex-end", gap: 8 }}>
               {isAll && (
                 <div>
-                  <label className="lbl" htmlFor="chs">Kanal</label>
+                  <label className="lbl" htmlFor="chs">{t("chat.channel")}</label>
                   <select id="chs" className="field" style={{ width: "auto" }} value={target} onChange={(e) => setTarget(Number(e.target.value))}>
                     {writable.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
               )}
-              {offered.map((t) =>
-                t.multi ? (
-                  <fieldset key={t.id} style={{ border: 0, padding: 0, margin: 0 }}>
-                    <legend className="lbl">{t.name}{t.required ? " *" : ""}</legend>
+              {offered.map((tt) =>
+                tt.multi ? (
+                  <fieldset key={tt.id} style={{ border: 0, padding: 0, margin: 0 }}>
+                    <legend className="lbl">{tt.name}{tt.required ? " *" : ""}</legend>
                     <div className="row" style={{ gap: 6 }}>
-                      {t.tags.map((g) => (
-                        <button key={g.id} type="button" aria-pressed={(picked[t.id] ?? []).includes(g.id)} className={`filterchip ${(picked[t.id] ?? []).includes(g.id) ? "on" : ""}`} onClick={() => togglePick(t, g.id)}>{g.name}</button>
+                      {tt.tags.map((g) => (
+                        <button key={g.id} type="button" aria-pressed={(picked[tt.id] ?? []).includes(g.id)} className={`filterchip ${(picked[tt.id] ?? []).includes(g.id) ? "on" : ""}`} onClick={() => togglePick(tt, g.id)}>{g.name}</button>
                       ))}
                     </div>
                   </fieldset>
                 ) : (
-                  <div key={t.id}>
-                    <label className="lbl" htmlFor={`tt-${t.id}`}>{t.name}{t.required ? " *" : ""}</label>
-                    <select id={`tt-${t.id}`} aria-label={t.name} className="field" style={{ width: "auto" }} value={picked[t.id]?.[0] ?? ""} onChange={(e) => setPicked((p) => ({ ...p, [t.id]: e.target.value ? [Number(e.target.value)] : [] }))}>
-                      <option value="">— {t.required ? "bitte wählen" : "kein Tag"} —</option>
-                      {t.tags.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+                  <div key={tt.id}>
+                    <label className="lbl" htmlFor={`tt-${tt.id}`}>{tt.name}{tt.required ? " *" : ""}</label>
+                    <select id={`tt-${tt.id}`} aria-label={tt.name} className="field" style={{ width: "auto" }} value={picked[tt.id]?.[0] ?? ""} onChange={(e) => setPicked((p) => ({ ...p, [tt.id]: e.target.value ? [Number(e.target.value)] : [] }))}>
+                      <option value="">— {tt.required ? t("chat.tag.pick") : t("chat.tag.none")} —</option>
+                      {tt.tags.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
                     </select>
                   </div>
                 ),
               )}
               {caps.canUpload && (
                 <>
-                  <label className="btn ghost" style={{ padding: "0 12px" }} aria-label="Datei anhängen" title={`Bis zu ${limits.maxFiles} Dateien (Bild ${limits.maxImageMb} MB, sonst ${limits.maxFileMb} MB) – auch per Drag & Drop oder Strg+V`}>
+                  <label className="btn ghost" style={{ padding: "0 12px" }} aria-label={t("chat.attach.label")} title={t("chat.attach.title", { files: limits.maxFiles, image: limits.maxImageMb, file: limits.maxFileMb })}>
                     📎<input type="file" multiple accept={ACCEPT} className="sr" onChange={(e) => { void upload([...(e.target.files ?? [])]); e.target.value = ""; }} />
                   </label>
                 </>
               )}
               <div style={{ flex: "1 1 260px" }}>
-                <label className="lbl" htmlFor="msg">Nachricht</label>
-                <input id="msg" className="field" value={body} onChange={(e) => setBody(e.target.value)} onPaste={onPaste} maxLength={4000} autoComplete="off" placeholder="Nachricht schreiben – Koordinaten wie (12|-34) werden verlinkt" />
+                <label className="lbl" htmlFor="msg">{t("chat.message")}</label>
+                <input id="msg" className="field" value={body} onChange={(e) => setBody(e.target.value)} onPaste={onPaste} maxLength={4000} autoComplete="off" placeholder={t("chat.message.placeholder")} />
               </div>
-              <button className="btn" disabled={busy || !sendChannel}>Senden</button>
+              <button className="btn" disabled={busy || !sendChannel}>{t("chat.send")}</button>
             </div>
             {error && <p className="errtext" role="alert" style={{ marginTop: 6 }}>{error}</p>}
           </form>
         ) : (
-          <div className="sub" style={{ borderTop: "1px solid #2c271f", padding: "14px 24px" }}>{isAll ? "Zum Schreiben bitte einen Kanal wählen." : "Du hast hier nur Leserechte."}</div>
+          <div className="sub" style={{ borderTop: "1px solid #2c271f", padding: "14px 24px" }}>{isAll ? t("chat.pickChannel") : t("chat.readOnly")}</div>
         )}
       </section>
       {lightbox && <Lightbox images={lightbox.images} start={lightbox.start} onClose={() => setLightbox(undefined)} />}

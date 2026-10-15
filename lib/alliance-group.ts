@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { getAllianceIds } from "./settings";
+import { AppError } from "./i18n/errors";
 
 export const RELATIONS = ["OWN", "ALLIED", "NAP", "NEUTRAL", "ENEMY"] as const;
 export type Relation = (typeof RELATIONS)[number];
@@ -73,8 +74,8 @@ export async function loadGroupPlayers(db: PrismaClient, relations?: Map<number,
 
 /** Schreibt die Klassifizierung. Berechtigungsprüfung (alliances.classify) macht der Aufrufer (M3). */
 export async function setRelation(db: PrismaClient, allianceId: number, relation: Relation, opts: { note?: string; updatedBy?: string } = {}) {
-  if (!Number.isInteger(allianceId) || allianceId <= 0) throw new Error("Ungültige Allianz-ID");
-  if (!RELATIONS.includes(relation)) throw new Error("Ungültiger Typ");
+  if (!Number.isInteger(allianceId) || allianceId <= 0) throw new AppError("err.alliance.invalidId");
+  if (!RELATIONS.includes(relation)) throw new AppError("err.alliance.invalidRelation");
   return db.allianceClassification.upsert({
     where: { allianceId },
     create: { allianceId, relation, note: opts.note, updatedBy: opts.updatedBy },

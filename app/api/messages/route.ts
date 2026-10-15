@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createLimiter } from "@/lib/ratelimit";
 import { db } from "@/lib/db";
+import { getT } from "@/lib/i18n/server";
 import { handle, tooMany, unauthorized } from "@/lib/http";
 import { sendDm } from "@/lib/services/messenger";
 import { getCurrentUser } from "@/lib/session";
@@ -15,7 +16,7 @@ export function POST(req: Request) {
     if (!user) return unauthorized();
     if (!limiter.check(`dm:${user.id}`)) return tooMany();
     const b = (await req.json().catch(() => null)) as { threadId?: number; body?: string } | null;
-    if (!b || !Number.isInteger(b.threadId) || typeof b.body !== "string") return NextResponse.json({ error: "Ungültige Anfrage" }, { status: 400 });
+    if (!b || !Number.isInteger(b.threadId) || typeof b.body !== "string") return NextResponse.json({ error: (await getT()).t("messenger.api.invalidRequest") }, { status: 400 });
     const m = await sendDm(db, user, b.threadId as number, b.body);
     return NextResponse.json({ id: m.id }, { status: 201 });
   });

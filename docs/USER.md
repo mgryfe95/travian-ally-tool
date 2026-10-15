@@ -54,3 +54,6 @@ Menü **Nachrichten** (getrennt von den Kanälen, mit Ungelesen-Zähler in der N
 
 ## Meine Bilder & Dateien
 Link „Meine Bilder & Dateien“ links unten unter Deinem Namen. Dort siehst Du alle eigenen Screenshots und Chat-Anhänge mit Vorschau, Größe und Verwendung und kannst sie löschen (Screenshots samt daraus entstandener Lern-Beispiele). Bilder werden beim Hochladen komprimiert (WebP, ohne Metadaten; Screenshots in voller Auflösung, ca. 70–80 % kleiner). Screenshots löscht das System nach `SCREENSHOT_RETENTION_DAYS` (Standard 30) Tagen, außer sie sind Lern-Beispiele.
+
+## Sprache
+Unten in der Seitenleiste (und auf der Anmeldeseite) lässt sich zwischen Englisch und Deutsch wechseln. Die Wahl wird am Konto gespeichert; ohne Wahl gilt die Browsersprache, sonst Englisch.

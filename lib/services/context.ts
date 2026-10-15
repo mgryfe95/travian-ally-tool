@@ -1,8 +1,15 @@
 import type { PrismaClient } from "@prisma/client";
 import { defaultMatrix, PERMISSIONS, STORED_ROLES, type Matrix, type Permission, type Role, type StoredRole } from "../permissions";
+import { DEFAULT_LOCALE, isLocale, type Locale } from "../i18n";
 
 /** Wer handelt. `role` ist die bereits abgeleitete effektive Rolle (inkl. SYSTEMADMIN aus ENV). */
 export type Actor = { id: string; role: Role };
+
+/** Sprache des Nutzers (für persistierte Texte); unbekannt → Englisch. */
+export async function userLocale(db: Pick<PrismaClient, "user">, userId: string): Promise<Locale> {
+  const u = await db.user.findUnique({ where: { id: userId }, select: { locale: true } });
+  return u?.locale && isLocale(u.locale) ? u.locale : DEFAULT_LOCALE;
+}
 
 /** Lädt die Rechte-Matrix; solange die Tabelle leer ist (vor dem Seed), gelten die Defaults. */
 export async function loadMatrix(db: Pick<PrismaClient, "rolePermission">): Promise<Matrix> {

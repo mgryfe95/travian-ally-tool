@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { translate } from "../i18n";
 
 const nat = z.number().int().nonnegative();
-const key = z.string().regex(/^[a-z0-9_]+$/, "key: nur a-z, 0-9 und _");
+const key = z.string().regex(/^[a-z0-9_]+$/, translate("en", "err.gamedata.keyFormat"));
 
 export const levelSchema = z.object({
   level: z.number().int().positive(),
@@ -42,8 +43,8 @@ export const tribeSchema = z.object({ key, name: z.string().min(1), traits: z.re
  *  (Host, Spielversion, Geschwindigkeit) – sie müssen zur eigenen Welt passen, sonst wird nichts importiert. */
 export const gameDataSchema = z
   .object({
-    source: z.string().min(10, "source: URL + Abrufdatum angeben"),
-    world: z.object({ host: z.string().min(3, "world.host fehlt"), gameVersion: z.string().min(2, "world.gameVersion fehlt") }),
+    source: z.string().min(10, translate("en", "err.gamedata.source")),
+    world: z.object({ host: z.string().min(3, translate("en", "err.gamedata.worldHost")), gameVersion: z.string().min(2, translate("en", "err.gamedata.worldVersion")) }),
     serverSpeed: z.number().int().positive(),
     notes: z.string().default(""),
     tribes: z.array(tribeSchema).default([]),
@@ -52,23 +53,23 @@ export const gameDataSchema = z
   })
   .superRefine((d, ctx) => {
     const issue = (message: string) => ctx.addIssue({ code: "custom", message });
-    const dup = (items: string[], what: string) => {
+    const dup = (items: string[], what: "err.gamedata.dupTribe" | "err.gamedata.dupBuilding" | "err.gamedata.dupUnit") => {
       const seen = new Set<string>();
       for (const i of items) {
-        if (seen.has(i)) issue(`${what} doppelt: ${i}`);
+        if (seen.has(i)) issue(translate("en", what, { key: i }));
         seen.add(i);
       }
     };
-    dup(d.tribes.map((t) => t.key), "Volk");
-    dup(d.buildings.map((b) => b.key), "Gebäude");
-    dup(d.units.map((u) => `${u.tribe}/${u.key}`), "Einheit");
+    dup(d.tribes.map((t) => t.key), "err.gamedata.dupTribe");
+    dup(d.buildings.map((b) => b.key), "err.gamedata.dupBuilding");
+    dup(d.units.map((u) => `${u.tribe}/${u.key}`), "err.gamedata.dupUnit");
     const tribes = new Set(d.tribes.map((t) => t.key));
-    for (const u of d.units) if (!tribes.has(u.tribe)) issue(`Einheit ${u.key}: unbekanntes Volk ${u.tribe}`);
+    for (const u of d.units) if (!tribes.has(u.tribe)) issue(translate("en", "err.gamedata.unitUnknownTribe", { key: u.key, tribe: u.tribe }));
     for (const b of d.buildings) {
       const levels = b.levels.map((l) => l.level).sort((x, y) => x - y);
-      if (levels.some((l, i) => l !== i + 1)) issue(`Gebäude ${b.key}: Stufen müssen lückenlos bei 1 beginnen`);
-      if (levels.length > 0 && levels[levels.length - 1]! > b.maxLevel) issue(`Gebäude ${b.key}: Stufe über maxLevel`);
-      if (b.tribeRestriction && tribes.size > 0 && !tribes.has(b.tribeRestriction)) issue(`Gebäude ${b.key}: unbekanntes Volk ${b.tribeRestriction}`);
+      if (levels.some((l, i) => l !== i + 1)) issue(translate("en", "err.gamedata.levelsGap", { key: b.key }));
+      if (levels.length > 0 && levels[levels.length - 1]! > b.maxLevel) issue(translate("en", "err.gamedata.levelAboveMax", { key: b.key }));
+      if (b.tribeRestriction && tribes.size > 0 && !tribes.has(b.tribeRestriction)) issue(translate("en", "err.gamedata.buildingUnknownTribe", { key: b.key, tribe: b.tribeRestriction }));
     }
   });
 

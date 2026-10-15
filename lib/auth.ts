@@ -6,6 +6,7 @@ import { nextCookies } from "better-auth/next-js";
 import { db } from "./db";
 import { env } from "./env";
 import { resetMail, sendMail } from "./mail";
+import { matchLocale, translate } from "./i18n";
 
 /** Header, mit dem nur unsere eigene Registrierungs-Route (/api/register) den Sign-up von Better Auth aufrufen darf. */
 export const INTERNAL_HEADER = "x-internal-register";
@@ -23,7 +24,7 @@ export const auth = betterAuth({
     revokeSessionsOnPasswordReset: true,
     // Versandfehler werden nur geloggt und nie nach außen gemeldet (sonst ließe sich erraten, ob eine Adresse existiert).
     sendResetPassword: async ({ user, url }) => {
-      void sendMail(resetMail(user.email, user.name, url)).catch((e) => console.error("[mail] Reset-Mail fehlgeschlagen", e));
+      void sendMail(resetMail(user.email, user.name, url, (user as { locale?: string | null }).locale)).catch((e) => console.error("[mail] Reset-Mail fehlgeschlagen", e));
     },
     password: {
       hash: (password) => hash(password),
@@ -49,7 +50,7 @@ export const auth = betterAuth({
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
       if (ctx.path === "/sign-up/email" && ctx.headers?.get(INTERNAL_HEADER) !== internalSecret()) {
-        throw new APIError("FORBIDDEN", { message: "Registrierung nur über /register" });
+        throw new APIError("FORBIDDEN", { message: translate(matchLocale(ctx.headers?.get("accept-language")), "err.registerOnly") });
       }
     }),
   },

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { ageInDays, ageLabel, staleReminders, type VillageFreshness } from "./reminders";
+import { makeT } from "./i18n";
+
+const de = makeT("de");
+const en = makeT("en");
 
 const now = new Date("2026-10-14T12:00:00Z");
 const ago = (days: number) => new Date(now.getTime() - days * 86_400_000 - 1000);
@@ -23,6 +27,7 @@ describe("staleReminders", () => {
   });
   it("Alterslabel", () => {
     expect([ageInDays(ago(0), now), ageInDays(ago(3), now), ageInDays(null, now)]).toEqual([0, 3, null]);
-    expect([ageLabel(0), ageLabel(1), ageLabel(3), ageLabel(null)]).toEqual(["heute", "gestern", "vor 3 Tagen", "noch nie"]);
+    expect([ageLabel(0, de), ageLabel(1, de), ageLabel(3, de), ageLabel(null, de)]).toEqual(["heute", "gestern", "vor 3 Tagen", "noch nie"]);
+    expect([ageLabel(0, en), ageLabel(1, en), ageLabel(3, en), ageLabel(null, en)]).toEqual(["today", "yesterday", "3 days ago", "never"]);
   });
 });

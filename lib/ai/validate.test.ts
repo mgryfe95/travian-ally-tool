@@ -31,20 +31,20 @@ describe("Prüfungen", () => {
   it("Eigene Truppen: Summenzeile stimmt (inkl. Held)", () => {
     const r = load("stats-troops-own-desktop-de.gold.json");
     r.rows[1]!.cells[0] = 5;
-    expect(assess(r, known).issues.some((i) => i.message.startsWith("Summe Spalte 1"))).toBe(true);
+    expect(assess(r, known).issues.some((i) => i.message.startsWith("Column 1 sum"))).toBe(true);
   });
   it("verlesene Produktionsziffer fällt über die Summenzeile auf", () => {
     const r = res();
     r.rows[0]!.cells[4] = 2388;
     const a = assess(r, known);
-    expect(a.issues.some((i) => i.level === "hard" && i.message.startsWith("Summe"))).toBe(true);
+    expect(a.issues.some((i) => i.level === "hard" && i.message.startsWith("Column"))).toBe(true);
     expect(a.confidence).toBeLessThan(0.5);
   });
   it("falsche Spaltenzahl und fremde Dörfer werden gemeldet", () => {
     const r = res();
     r.rows[1]!.cells.pop();
-    expect(assess(r, known).issues.some((i) => i.message.includes("Spalten"))).toBe(true);
-    expect(assess(res(), [known[0]!]).issues.some((i) => i.message.includes("gehört nicht"))).toBe(true);
+    expect(assess(r, known).issues.some((i) => i.message.includes("columns"))).toBe(true);
+    expect(assess(res(), [known[0]!]).issues.some((i) => i.message.includes("does not belong"))).toBe(true);
   });
   it("Unsicherheit und Selbstauskunft senken die Konfidenz", () => {
     const r = res();

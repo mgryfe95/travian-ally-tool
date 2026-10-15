@@ -3,6 +3,7 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import { computePlayerMetrics, diffSnapshots, type PopPoint } from "../analytics";
 import { parseMapSql } from "../mapsql/parser";
 import type { MapRow } from "../mapsql/types";
+import { AppError } from "../i18n/errors";
 
 export type ImportResult = { status: "unchanged" } | { status: "imported"; snapshotId: number; rows: number; events: number };
 
@@ -21,7 +22,7 @@ const isoDate = (d: Date) => d.toISOString().slice(0, 10);
 /** Lädt `${serverUrl}/map.sql`. */
 export async function fetchMapSql(serverUrl: string, fetchImpl: typeof fetch = fetch): Promise<string> {
   const res = await fetchImpl(`${serverUrl.replace(/\/+$/, "")}/map.sql`, { signal: AbortSignal.timeout(60_000) });
-  if (!res.ok) throw new Error(`map.sql: HTTP ${res.status}`);
+  if (!res.ok) throw new AppError("err.import.http", { status: res.status });
   return res.text();
 }
 
@@ -62,7 +63,7 @@ export async function importMapSql(
   if (await db.snapshot.findUnique({ where: { hash }, select: { id: true } })) return { status: "unchanged" };
 
   const rows = parseMapSql(text);
-  if (rows.length === 0) throw new Error("map.sql enthält keine Zeilen — Import abgebrochen, bestehende Daten bleiben unverändert");
+  if (rows.length === 0) throw new AppError("err.import.empty");
   const now = opts.now ?? new Date();
   const today = isoDate(now);
   const { players, alliances } = aggregate(rows);

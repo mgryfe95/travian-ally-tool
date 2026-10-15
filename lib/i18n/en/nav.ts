@@ -1,2 +1,25 @@
-const en = {} as const;
+const en = {
+  "nav.main": "Main navigation",
+  "nav.mainMobile": "Main navigation (mobile)",
+  "nav.overview": "Overview",
+  "nav.myVillages": "My villages",
+  "nav.villages": "Villages",
+  "nav.inactive": "Inactive",
+  "nav.chat": "Chat",
+  "nav.taskForces": "Task forces",
+  "nav.messages": "Messages",
+  "nav.schedule": "Schedule",
+  "nav.troops": "Troops",
+  "nav.screenshots": "Screenshots",
+  "nav.admin": "Admin",
+  "nav.gameData": "Game data",
+  "nav.unread": "{n} unread",
+  "nav.myFiles": "My images & files",
+  "nav.logout": "Log out",
+  "nav.worldEnded": "The game world appears to have ended.",
+  "nav.worldEndedBody": "Map data has not been available since {date}. The last state stays visible as an archive and chat keeps working. An admin can start a new world (docs/DEPLOY.md).",
+  "nav.worldEndedUnknown": "a while",
+  "nav.forbiddenTitle": "No access",
+  "nav.forbiddenBody": "You lack the permission for this.",
+} as const;
 export default en;

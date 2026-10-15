@@ -38,7 +38,7 @@ describe("importGameData", () => {
     await expect(importGameData(db, bad)).rejects.toBeInstanceOf(GameDataError);
     const bad2 = valid();
     bad2.units[0]!.tribe = "unbekannt";
-    await expect(importGameData(db, bad2)).rejects.toThrow(/unbekanntes Volk/);
+    await expect(importGameData(db, bad2)).rejects.toThrow(/unknown tribe/);
     await expect(importGameData(db, { ...valid(), source: "x" })).rejects.toThrow(/source/);
     await expect(importGameData(db, { ...valid(), buildings: [{ ...valid().buildings[0]!, costWood: -1 }, { ...valid().buildings[0]!, levels: [{ ...lvl(1), costWood: -5 }] }] })).rejects.toBeInstanceOf(GameDataError);
     expect(await db.gameDataVersion.count()).toBe(0);
@@ -46,21 +46,21 @@ describe("importGameData", () => {
   it("doppelte Keys werden abgelehnt", async () => {
     const d = valid();
     d.buildings.push(d.buildings[0]!);
-    await expect(importGameData(db, d)).rejects.toThrow(/doppelt/);
+    await expect(importGameData(db, d)).rejects.toThrow(/Duplicate/);
   });
 });
 
 describe("Vertrags-Invariante: nur Werte der eigenen Welt", () => {
   it("lehnt andere Welt, andere Version und andere Geschwindigkeit ab – ohne etwas zu schreiben", async () => {
-    await expect(importGameData(db, { ...valid(), world: { host: "ts5.x3.europe.travian.com", gameVersion: "legends" } })).rejects.toThrow(/Welt/);
-    await expect(importGameData(db, { ...valid(), world: { host: "ts12.x1.europe.travian.com", gameVersion: "kingdoms" } })).rejects.toThrow(/Spielversion/);
-    await expect(importGameData(db, { ...valid(), serverSpeed: 3 })).rejects.toThrow(/Geschwindigkeit/);
+    await expect(importGameData(db, { ...valid(), world: { host: "ts5.x3.europe.travian.com", gameVersion: "legends" } })).rejects.toThrow(/game world/);
+    await expect(importGameData(db, { ...valid(), world: { host: "ts12.x1.europe.travian.com", gameVersion: "kingdoms" } })).rejects.toThrow(/Game version/);
+    await expect(importGameData(db, { ...valid(), serverSpeed: 3 })).rejects.toThrow(/speed/);
     await expect(importGameData(db, { ...valid(), serverSpeed: undefined })).rejects.toBeInstanceOf(GameDataError); // Geschwindigkeit muss angegeben sein
     await expect(importGameData(db, { ...valid(), world: undefined })).rejects.toBeInstanceOf(GameDataError);
     expect(await db.gameDataVersion.count()).toBe(0);
   });
   it("Host ohne Geschwindigkeit braucht GAME_SPEED; passende Datei wird mit Welt/Version gespeichert", async () => {
-    await expect(importGameData(db, valid(), worldProfile("https://ts9.europe.travian.com"))).rejects.toThrow(/GAME_SPEED|Welt/);
+    await expect(importGameData(db, valid(), worldProfile("https://ts9.europe.travian.com"))).rejects.toThrow(/GAME_SPEED|world/);
     const w = worldProfile("https://ts12.x1.europe.travian.com", { version: "Legends" });
     await importGameData(db, valid(), w);
     expect(await db.gameDataVersion.findFirstOrThrow()).toMatchObject({ worldHost: "ts12.x1.europe.travian.com", gameVersion: "legends", serverSpeed: 1 });

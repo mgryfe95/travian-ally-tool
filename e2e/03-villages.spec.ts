@@ -58,7 +58,7 @@ test("Meine Dörfer: Übersicht, KI-Instruktionen, Erinnerungen, Upload, Zugriff
   expect(advice.status()).toBe(200);
   expect((await advice.json()).recommendations).toEqual([]);
 
-  const other = await browser.newContext();
+  const other = await browser.newContext({ locale: "de-DE" });
   const b = await other.newPage();
   await login(b, "boss@example.com"); // ohne verifizierten Spieler, aber Systemadmin
   // Systemadmin sieht die Truppen des Mitglieds in der Übersicht

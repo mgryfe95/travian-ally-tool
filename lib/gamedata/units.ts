@@ -1,9 +1,10 @@
+import { AppError } from "../i18n/errors";
 /**
  * Einheitennamen je Volk aus dem Support-Artikel „Infantry and Cavalry Units comparison table“ (Travian: Legends Help Center).
  * Gelesen werden NUR die Namen (Spaltenköpfe in Spielreihenfolge). Kampfwerte, Kosten und Zeiten werden bewusst nicht übernommen: Die Quelle nennt
  * sie nur für Schmiede/Kaserne/Stall 20, nicht als Basiswerte; auch der „Crop“-Wert passt nicht zum Spiel (dort kostet jede Einheit 1 Getreide Unterhalt).
  */
-export class UnitsError extends Error {}
+export class UnitsError extends AppError {}
 
 /** Völker-IDs wie in map.sql / Wissensdatenbank. */
 export const TRIBE_VID: Record<string, number> = {
@@ -29,16 +30,16 @@ export function parseUnitTables(html: string): ParsedTribe[] {
     if (!vid) continue;
     const rows = [...t[0].matchAll(/<tr[\s\S]*?<\/tr>/gi)].map((r) => [...r[0].matchAll(/<t[hd][^>]*>([\s\S]*?)<\/t[hd]>/gi)].map((c) => clean(c[1] as string)));
     const header = rows[0];
-    if (!header || header.length < 3) throw new UnitsError(`Tabelle „${name}“: Kopfzeile fehlt`);
+    if (!header || header.length < 3) throw new UnitsError("err.units.noHeader", { name });
     // Spalte 0 ist die Zeilenbeschriftung; Spalten mit Klammerzusatz (z. B. „Legionnaire (Northern Legends)“) sind Varianten, keine Einheitenplätze
     const cols = header.map((h, i) => ({ h, i })).slice(1);
     const slotCols = cols.filter((c) => !/\(.+\)\s*$/.test(c.h));
     const variants = cols.filter((c) => /\(.+\)\s*$/.test(c.h)).map((c) => c.h);
     const units = slotCols.map((c, k) => ({ slot: k + 1, name: c.h }));
-    if (units.length < 4 || units.length > 10) throw new UnitsError(`Tabelle „${name}“: ${units.length} Einheiten – unerwartet`);
+    if (units.length < 4 || units.length > 10) throw new UnitsError("err.units.unexpectedCount", { name, n: units.length });
     out.push({ vid, units, variants });
   }
-  if (out.length === 0) throw new UnitsError("Keine Völker-Tabellen gefunden – Seitenstruktur hat sich geändert");
+  if (out.length === 0) throw new UnitsError("err.units.noTables");
   return out;
 }
 
@@ -49,8 +50,8 @@ export function mergeLanguages(en: ParsedTribe[], de?: ParsedTribe[]): UnitNameR
   const rows: UnitNameRow[] = [];
   for (const t of en) {
     const d = de?.find((x) => x.vid === t.vid);
-    if (de && !d) throw new UnitsError(`Volk ${t.vid}: in der deutschen Fassung nicht gefunden`);
-    if (d && d.units.length !== t.units.length) throw new UnitsError(`Volk ${t.vid}: ${t.units.length} Einheiten (EN) ≠ ${d.units.length} (DE)`);
+    if (de && !d) throw new UnitsError("err.units.notInDe", { vid: t.vid });
+    if (d && d.units.length !== t.units.length) throw new UnitsError("err.units.countMismatch", { vid: t.vid, en: t.units.length, de: d.units.length });
     for (const u of t.units) {
       const du = d?.units[u.slot - 1];
       rows.push({ tribeVid: t.vid, slot: u.slot, nameEn: u.name, nameDe: du?.name ?? null });
@@ -66,19 +67,19 @@ export function applyOverrides(rows: UnitNameRow[], overrides: NameOverrides): U
   const out = rows.map((r) => ({ ...r }));
   for (const [vidRaw, slots] of Object.entries(overrides)) {
     const vid = Number(vidRaw);
-    if (!Object.values(TRIBE_VID).includes(vid)) throw new UnitsError(`Unbekannte Volk-ID „${vidRaw}“`);
+    if (!Object.values(TRIBE_VID).includes(vid)) throw new UnitsError("err.units.unknownTribe", { vid: vidRaw });
     for (const [slotRaw, v] of Object.entries(slots)) {
       const slot = Number(slotRaw);
-      if (!Number.isInteger(slot) || slot < 1 || slot > 10) throw new UnitsError(`Volk ${vid}: ungültiger Platz „${slotRaw}“ (erlaubt 1–10)`);
+      if (!Number.isInteger(slot) || slot < 1 || slot > 10) throw new UnitsError("err.units.badSlot", { vid, slot: slotRaw });
       const de = v.de?.trim() || null;
       const en = v.en?.trim() || null;
       if (!de && !en) continue;
       const row = out.find((r) => r.tribeVid === vid && r.slot === slot);
       if (row) {
-        if (en && en !== row.nameEn) throw new UnitsError(`Volk ${vid}, Platz ${slot}: englischer Name „${en}“ widerspricht der Quelle („${row.nameEn}“)`);
+        if (en && en !== row.nameEn) throw new UnitsError("err.units.nameConflict", { vid, slot, en, src: row.nameEn });
         if (de) row.nameDe = de;
       } else {
-        if (!en) throw new UnitsError(`Volk ${vid}, Platz ${slot}: neuer Platz braucht einen englischen Namen („en“)`);
+        if (!en) throw new UnitsError("err.units.nameRequired", { vid, slot });
         out.push({ tribeVid: vid, slot, nameEn: en, nameDe: de });
       }
     }

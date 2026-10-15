@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { distance, type Coord } from "./geo";
 import type { PlayerStatus } from "./analytics";
+import type { MessageKey } from "./i18n";
 
 export type Candidate = {
   villageId: number;
@@ -79,7 +80,8 @@ export async function loadCandidates(db: PrismaClient, statuses: PlayerStatus[] 
   return out;
 }
 
-export const TRIBES: Record<number, string> = { 1: "Römer", 2: "Germanen", 3: "Gallier", 4: "Natur", 5: "Natars", 6: "Ägypter", 7: "Hunnen", 8: "Spartaner" };
+/** Volk-ID → Übersetzungsschlüssel (Anzeige mit `t(TRIBE_KEY[id])`). */
+export const TRIBE_KEY: Record<number, MessageKey> = { 1: "err.tribe.1", 2: "err.tribe.2", 3: "err.tribe.3", 4: "err.tribe.4", 5: "err.tribe.5", 6: "err.tribe.6", 7: "err.tribe.7", 8: "err.tribe.8" };
 
 /** Akzeptiert `(12|-34)`, `12|-34`, `12/-34` oder `12,-34`; Koordinaten müssen im Kartenbereich liegen. */
 export function parseCoord(input: string, radius = 200): Coord | undefined {

@@ -5,10 +5,12 @@ import { effectiveRole, ForbiddenError, hasPermission, rank, ROLES, type Role } 
 import { publish } from "../realtime";
 import { storage } from "../storage";
 import { audit, loadMatrix, type Actor } from "./context";
+import { AppError } from "../i18n/errors";
+import { DEFAULT_LOCALE, translate, type MessageKey, type Params } from "../i18n";
 
-export class ChatError extends Error {
-  constructor(message: string, readonly status = 400) {
-    super(message);
+export class ChatError extends AppError {
+  constructor(key: MessageKey, params?: Params, readonly status = 400) {
+    super(key, params);
   }
 }
 
@@ -78,7 +80,7 @@ export async function unreadCounts(db: PrismaClient, userId: string, channelIds:
 
 export async function markRead(db: PrismaClient, ctx: ChatCtx, channelId: number) {
   const ch = await db.channel.findUnique({ where: { id: channelId } });
-  if (!ch || !canReadChannel(ch, ctx)) throw new ForbiddenError("Kein Zugriff auf diesen Kanal");
+  if (!ch || !canReadChannel(ch, ctx)) throw new ForbiddenError("err.chat.noChannelAccess");
   const last = await db.message.findFirst({ where: { channelId }, orderBy: { id: "desc" }, select: { id: true } });
   if (!last) return;
   await db.channelRead.upsert({
@@ -111,7 +113,7 @@ async function toViews(db: PrismaClient, rows: MessageRow[]): Promise<MessageVie
     const u = byId.get(m.authorId);
     return {
       id: m.id, channelId: m.channelId, channelName: m.channel.name,
-      author: { id: m.authorId, name: u?.name ?? "gelöscht", role: u ? effectiveRole(u, env().SYSTEMADMIN_EMAILS) : "GUEST" },
+      author: { id: m.authorId, name: u?.name ?? translate(DEFAULT_LOCALE, "err.deletedUser"), role: u ? effectiveRole(u, env().SYSTEMADMIN_EMAILS) : "GUEST" },
       body: m.body, createdAt: m.createdAt.toISOString(), editedAt: m.editedAt?.toISOString() ?? null,
       tags: m.tags.map((t) => ({ id: t.tag.id, name: t.tag.name, color: t.tag.color })),
       attachments: m.attachments.map((a) => ({ id: a.id, kind: a.kind, mime: a.mime, name: a.name, sizeBytes: a.sizeBytes, width: a.width, height: a.height, hasThumb: !!a.thumbKey, snippet: a.snippet })),
@@ -130,16 +132,16 @@ async function loadView(db: PrismaClient, id: number) {
 async function validateTags(db: PrismaClient, ch: { id: number; tree: string }, tagIds: number[]) {
   const offered = await offeredTagTypes(db, ch);
   const tags = tagIds.length ? await db.tag.findMany({ where: { id: { in: tagIds } } }) : [];
-  if (tags.length !== tagIds.length) throw new ChatError("Unbekannter Tag");
+  if (tags.length !== tagIds.length) throw new ChatError("err.chat.unknownTag");
   const byType = new Map<number, number>();
   for (const t of tags) {
-    if (!offered.some((o) => o.id === t.tagTypeId)) throw new ChatError("Dieser Tag ist in diesem Kanal nicht verfügbar");
+    if (!offered.some((o) => o.id === t.tagTypeId)) throw new ChatError("err.chat.tagNotOffered");
     byType.set(t.tagTypeId, (byType.get(t.tagTypeId) ?? 0) + 1);
   }
   for (const o of offered) {
     const n = byType.get(o.id) ?? 0;
-    if (!o.multi && n > 1) throw new ChatError(`„${o.name}“: nur ein Tag erlaubt`);
-    if (o.required && n === 0) throw new ChatError(`„${o.name}“ ist Pflicht`);
+    if (!o.multi && n > 1) throw new ChatError("err.chat.tagSingle", { name: o.name });
+    if (o.required && n === 0) throw new ChatError("err.chat.tagRequired", { name: o.name });
   }
 }
 
@@ -165,19 +167,19 @@ export async function postMessage(
   db: PrismaClient, ctx: ChatCtx, input: { channelId: number; body: string; tagIds?: number[]; attachmentIds?: number[] },
 ): Promise<MessageView> {
   const ch = await db.channel.findUnique({ where: { id: input.channelId } });
-  if (!ch || !canWriteChannel(ch, ctx)) throw new ForbiddenError("Kein Schreibrecht in diesem Kanal");
+  if (!ch || !canWriteChannel(ch, ctx)) throw new ForbiddenError("err.chat.noWriteAccess");
   const body = input.body.trim();
   const attachmentIds = [...new Set(input.attachmentIds ?? [])];
-  if (!body && attachmentIds.length === 0) throw new ChatError("Nachricht ist leer");
-  if (body.length > MAX_BODY) throw new ChatError(`Nachricht zu lang (max. ${MAX_BODY} Zeichen)`);
-  if (attachmentIds.length > env().UPLOAD_MAX_FILES) throw new ChatError(`Maximal ${env().UPLOAD_MAX_FILES} Dateien pro Nachricht`);
-  if (attachmentIds.length > 0 && !hasPermission(ctx.role, "chat.upload", ctx.matrix)) throw new ForbiddenError("Fehlendes Recht chat.upload");
+  if (!body && attachmentIds.length === 0) throw new ChatError("err.chat.empty");
+  if (body.length > MAX_BODY) throw new ChatError("err.chat.tooLong", { max: MAX_BODY });
+  if (attachmentIds.length > env().UPLOAD_MAX_FILES) throw new ChatError("err.chat.maxFiles", { max: env().UPLOAD_MAX_FILES });
+  if (attachmentIds.length > 0 && !hasPermission(ctx.role, "chat.upload", ctx.matrix)) throw new ForbiddenError("err.perm.missing", { perm: "chat.upload" });
   const tagIds = [...new Set(input.tagIds ?? [])];
   await validateTags(db, ch, tagIds);
 
   const id = await db.$transaction(async (tx) => {
     const own = attachmentIds.length ? await tx.attachment.findMany({ where: { id: { in: attachmentIds }, uploaderId: ctx.userId, messageId: null } }) : [];
-    if (own.length !== attachmentIds.length) throw new ChatError("Ungültiger Anhang");
+    if (own.length !== attachmentIds.length) throw new ChatError("err.chat.invalidAttachment");
     const m = await tx.message.create({ data: { channelId: ch.id, authorId: ctx.userId, body, tags: { create: tagIds.map((tagId) => ({ tagId })) } } });
     if (attachmentIds.length) await tx.attachment.updateMany({ where: { id: { in: attachmentIds } }, data: { messageId: m.id } });
     await tx.channelRead.upsert({ where: { userId_channelId: { userId: ctx.userId, channelId: ch.id } }, create: { userId: ctx.userId, channelId: ch.id, lastReadMsgId: m.id }, update: { lastReadMsgId: m.id } });
@@ -190,11 +192,11 @@ export async function postMessage(
 
 export async function editMessage(db: PrismaClient, ctx: ChatCtx, messageId: number, bodyRaw: string): Promise<MessageView> {
   const m = await db.message.findUnique({ where: { id: messageId }, include: { channel: true } });
-  if (!m || m.deletedAt) throw new ChatError("Nachricht nicht gefunden", 404);
-  if (!canReadChannel(m.channel, ctx)) throw new ForbiddenError("Kein Zugriff");
-  if (!canEditMessage(m.authorId, ctx)) throw new ForbiddenError("Nur der Autor kann bearbeiten");
+  if (!m || m.deletedAt) throw new ChatError("err.chat.messageNotFound", undefined, 404);
+  if (!canReadChannel(m.channel, ctx)) throw new ForbiddenError("err.noAccess");
+  if (!canEditMessage(m.authorId, ctx)) throw new ForbiddenError("err.chat.onlyAuthorEdits");
   const body = bodyRaw.trim();
-  if (!body || body.length > MAX_BODY) throw new ChatError("Ungültiger Text");
+  if (!body || body.length > MAX_BODY) throw new ChatError("err.chat.invalidText");
   await db.message.update({ where: { id: messageId }, data: { body, editedAt: new Date() } });
   const view = (await loadView(db, messageId))!;
   publish(m.channelId, "message:edit", view);
@@ -204,9 +206,9 @@ export async function editMessage(db: PrismaClient, ctx: ChatCtx, messageId: num
 /** Löschen (Autor oder chat.moderate): Nachricht wird markiert, Anhänge werden samt Dateien entfernt. */
 export async function deleteMessage(db: PrismaClient, ctx: ChatCtx, messageId: number) {
   const m = await db.message.findUnique({ where: { id: messageId }, include: { channel: true, attachments: true } });
-  if (!m || m.deletedAt) throw new ChatError("Nachricht nicht gefunden", 404);
-  if (!canReadChannel(m.channel, ctx)) throw new ForbiddenError("Kein Zugriff");
-  if (!canDeleteMessage(m.authorId, ctx)) throw new ForbiddenError("Fehlendes Recht chat.moderate");
+  if (!m || m.deletedAt) throw new ChatError("err.chat.messageNotFound", undefined, 404);
+  if (!canReadChannel(m.channel, ctx)) throw new ForbiddenError("err.noAccess");
+  if (!canDeleteMessage(m.authorId, ctx)) throw new ForbiddenError("err.perm.missing", { perm: "chat.moderate" });
   await db.$transaction([db.message.update({ where: { id: messageId }, data: { deletedAt: new Date() } }), db.attachment.deleteMany({ where: { messageId } })]);
   await Promise.all(m.attachments.flatMap((a) => [a.storageKey, a.thumbKey, a.previewKey].filter((k): k is string => !!k).map((k) => storage().delete(k))));
   if (m.authorId !== ctx.userId) await audit(db, ctx.userId, "message.moderate_delete", `message:${messageId}`, { channelId: m.channelId, authorId: m.authorId });
@@ -224,7 +226,7 @@ export async function listMessages(db: PrismaClient, ctx: ChatCtx, query: Messag
     channelIds = all.filter((c) => canReadChannel(c, ctx)).map((c) => c.id);
   } else {
     const ch = await db.channel.findUnique({ where: { id: query.channelId } });
-    if (!ch || !canReadChannel(ch, ctx)) throw new ForbiddenError("Kein Zugriff auf diesen Kanal");
+    if (!ch || !canReadChannel(ch, ctx)) throw new ForbiddenError("err.chat.noChannelAccess");
     channelIds = [ch.id];
   }
   if (channelIds.length === 0) return { messages: [], nextBefore: null };
@@ -256,13 +258,12 @@ export async function listMessages(db: PrismaClient, ctx: ChatCtx, query: Messag
 // ───────── Task-Forces ─────────
 
 export type TfRole = "founder" | "lead" | "member" | "reader";
-export const TF_ROLE_LABEL: Record<TfRole, string> = { founder: "Gründer", lead: "Lead", member: "Mitglied", reader: "Leser" };
 
 /** Legt Task-Force + Kanal an. Der Ersteller ist Gründer; `memberIds` bekommen eine Einladung (Annahme nötig). */
 export async function createTaskforce(db: PrismaClient, ctx: ChatCtx, input: { name: string; description?: string; memberIds?: string[] }) {
-  if (!hasPermission(ctx.role, "taskforce.create", ctx.matrix)) throw new ForbiddenError("Fehlendes Recht taskforce.create");
+  if (!hasPermission(ctx.role, "taskforce.create", ctx.matrix)) throw new ForbiddenError("err.perm.missing", { perm: "taskforce.create" });
   const name = input.name.trim();
-  if (name.length < 2 || name.length > 60) throw new ChatError("Name: 2–60 Zeichen");
+  if (name.length < 2 || name.length > 60) throw new ChatError("err.chat.nameLength", { min: 2, max: 60 });
   const memberIds = [...new Set((input.memberIds ?? []).filter((id) => id !== ctx.userId))];
   const valid = memberIds.length ? await db.user.findMany({ where: { id: { in: memberIds }, banned: false, role: { not: "GUEST" } }, select: { id: true } }) : [];
   const tf = await db.$transaction(async (tx) => {
@@ -285,13 +286,13 @@ async function myRole(db: PrismaClient, ctx: ChatCtx, taskforceId: number) {
 /** Einladen/Entfernen: Gründer, Lead, Admin. */
 async function requireManage(db: PrismaClient, ctx: ChatCtx, taskforceId: number) {
   const r = await myRole(db, ctx, taskforceId);
-  if (!canManageTaskforce(ctx, r === "founder" || r === "lead")) throw new ForbiddenError("Nur Gründer, Leads und Admins verwalten Task-Forces");
+  if (!canManageTaskforce(ctx, r === "founder" || r === "lead")) throw new ForbiddenError("err.chat.tfManageOnly");
   return r;
 }
 
 /** Rollen vergeben: nur der Gründer (und Admins als Notausgang). */
 async function requireFounder(db: PrismaClient, ctx: ChatCtx, taskforceId: number) {
-  if ((await myRole(db, ctx, taskforceId)) !== "founder" && !isAdminish(ctx)) throw new ForbiddenError("Rollen vergibt nur der Gründer der Task-Force");
+  if ((await myRole(db, ctx, taskforceId)) !== "founder" && !isAdminish(ctx)) throw new ForbiddenError("err.chat.tfRolesFounder");
 }
 
 /** Direktes Hinzufügen (ohne Annahme) – für Admins/Gründer/Leads; im UI läuft der Normalfall über Einladungen. */
@@ -299,9 +300,9 @@ export async function addTaskforceMember(db: PrismaClient, ctx: ChatCtx, taskfor
   await requireManage(db, ctx, taskforceId);
   if (role === "lead") await requireFounder(db, ctx, taskforceId);
   const u = await db.user.findUnique({ where: { id: userId } });
-  if (!u || u.banned || u.role === "GUEST") throw new ChatError("Nutzer kann nicht hinzugefügt werden");
+  if (!u || u.banned || u.role === "GUEST") throw new ChatError("err.chat.userCannotAdd");
   const existing = await db.taskforceMember.findUnique({ where: { taskforceId_userId: { taskforceId, userId } } });
-  if (existing?.role === "founder") throw new ChatError("Die Rolle des Gründers lässt sich nicht ändern");
+  if (existing?.role === "founder") throw new ChatError("err.chat.founderRoleLocked");
   await db.taskforceMember.upsert({ where: { taskforceId_userId: { taskforceId, userId } }, create: { taskforceId, userId, role }, update: { role } });
   await audit(db, ctx.userId, "taskforce.member_add", `taskforce:${taskforceId}`, undefined, { userId, role });
 }
@@ -310,10 +311,10 @@ export async function inviteToTaskforce(db: PrismaClient, ctx: ChatCtx, taskforc
   await requireManage(db, ctx, taskforceId);
   if (role === "lead") await requireFounder(db, ctx, taskforceId);
   const tf = await db.taskforce.findUnique({ where: { id: taskforceId } });
-  if (!tf || tf.archivedAt) throw new ChatError("Task-Force nicht gefunden");
+  if (!tf || tf.archivedAt) throw new ChatError("err.chat.tfNotFound");
   const u = await db.user.findUnique({ where: { id: userId } });
-  if (!u || u.banned || u.role === "GUEST") throw new ChatError("Nutzer kann nicht eingeladen werden");
-  if (await db.taskforceMember.findUnique({ where: { taskforceId_userId: { taskforceId, userId } } })) throw new ChatError("Ist schon Mitglied");
+  if (!u || u.banned || u.role === "GUEST") throw new ChatError("err.chat.userCannotInvite");
+  if (await db.taskforceMember.findUnique({ where: { taskforceId_userId: { taskforceId, userId } } })) throw new ChatError("err.chat.alreadyMember");
   const open = await db.taskforceInvite.findFirst({ where: { taskforceId, userId, status: "pending" } });
   const inv = open
     ? await db.taskforceInvite.update({ where: { id: open.id }, data: { role, invitedBy: ctx.userId } })
@@ -324,7 +325,7 @@ export async function inviteToTaskforce(db: PrismaClient, ctx: ChatCtx, taskforc
 
 export async function revokeTaskforceInvite(db: PrismaClient, ctx: ChatCtx, inviteId: number) {
   const inv = await db.taskforceInvite.findUnique({ where: { id: inviteId } });
-  if (!inv) throw new ChatError("Einladung nicht gefunden");
+  if (!inv) throw new ChatError("err.chat.inviteNotFound");
   await requireManage(db, ctx, inv.taskforceId);
   await db.taskforceInvite.updateMany({ where: { id: inviteId, status: "pending" }, data: { status: "revoked", answeredAt: new Date() } });
 }
@@ -339,12 +340,12 @@ export async function listMyTaskforceInvites(db: PrismaClient, userId: string) {
 /** Eingeladener nimmt an (→ Mitglied mit der eingeladenen Rolle) oder lehnt ab. */
 export async function respondTaskforceInvite(db: PrismaClient, ctx: ChatCtx, inviteId: number, accept: boolean) {
   const inv = await db.taskforceInvite.findUnique({ where: { id: inviteId } });
-  if (!inv || inv.userId !== ctx.userId || inv.status !== "pending") throw new ChatError("Einladung nicht gefunden");
+  if (!inv || inv.userId !== ctx.userId || inv.status !== "pending") throw new ChatError("err.chat.inviteNotFound");
   const claimed = await db.taskforceInvite.updateMany({ where: { id: inviteId, status: "pending" }, data: { status: accept ? "accepted" : "declined", answeredAt: new Date() } });
-  if (claimed.count === 0) throw new ChatError("Einladung nicht gefunden");
+  if (claimed.count === 0) throw new ChatError("err.chat.inviteNotFound");
   if (!accept) return null;
   const tf = await db.taskforce.findUnique({ where: { id: inv.taskforceId }, include: { channel: true } });
-  if (!tf || tf.archivedAt) throw new ChatError("Task-Force existiert nicht mehr");
+  if (!tf || tf.archivedAt) throw new ChatError("err.chat.tfGone");
   await db.taskforceMember.upsert({ where: { taskforceId_userId: { taskforceId: inv.taskforceId, userId: ctx.userId } }, create: { taskforceId: inv.taskforceId, userId: ctx.userId, role: inv.role }, update: {} });
   await audit(db, ctx.userId, "taskforce.join", `taskforce:${inv.taskforceId}`, undefined, { role: inv.role });
   return tf.channel?.id ?? null;
@@ -353,10 +354,10 @@ export async function respondTaskforceInvite(db: PrismaClient, ctx: ChatCtx, inv
 /** Rolle ändern (lead | member | reader): nur Gründer. Die Gründer-Rolle ist fest. */
 export async function setTaskforceRole(db: PrismaClient, ctx: ChatCtx, taskforceId: number, userId: string, role: "lead" | "member" | "reader") {
   await requireFounder(db, ctx, taskforceId);
-  if (!["lead", "member", "reader"].includes(role)) throw new ChatError("Ungültige Rolle");
+  if (!["lead", "member", "reader"].includes(role)) throw new ChatError("err.role.invalid");
   const target = await db.taskforceMember.findUnique({ where: { taskforceId_userId: { taskforceId, userId } } });
-  if (!target) throw new ChatError("Kein Mitglied");
-  if (target.role === "founder") throw new ChatError("Die Rolle des Gründers lässt sich nicht ändern");
+  if (!target) throw new ChatError("err.chat.notMember");
+  if (target.role === "founder") throw new ChatError("err.chat.founderRoleLocked");
   await db.taskforceMember.update({ where: { taskforceId_userId: { taskforceId, userId } }, data: { role } });
   await audit(db, ctx.userId, "taskforce.role", `taskforce:${taskforceId}`, { userId, role: target.role }, { role });
 }
@@ -365,10 +366,10 @@ export async function setTaskforceRole(db: PrismaClient, ctx: ChatCtx, taskforce
 export async function removeTaskforceMember(db: PrismaClient, ctx: ChatCtx, taskforceId: number, userId: string) {
   const target = await db.taskforceMember.findUnique({ where: { taskforceId_userId: { taskforceId, userId } } });
   if (!target) return;
-  if (target.role === "founder") throw new ChatError("Der Gründer kann nicht entfernt werden – Task-Force archivieren");
+  if (target.role === "founder") throw new ChatError("err.chat.founderCannotRemove");
   if (userId !== ctx.userId) {
     const r = await requireManage(db, ctx, taskforceId);
-    if (r === "lead" && target.role === "lead" && !isAdminish(ctx)) throw new ForbiddenError("Leads können keine anderen Leads entfernen");
+    if (r === "lead" && target.role === "lead" && !isAdminish(ctx)) throw new ForbiddenError("err.chat.leadsCannotRemoveLeads");
   }
   await db.taskforceMember.deleteMany({ where: { taskforceId, userId } });
   await audit(db, ctx.userId, "taskforce.member_remove", `taskforce:${taskforceId}`, { userId });
@@ -384,16 +385,16 @@ export async function archiveTaskforce(db: PrismaClient, ctx: ChatCtx, taskforce
 // ───────── Kanäle & Tags verwalten (Admin) ─────────
 
 function requireSettings(ctx: ChatCtx) {
-  if (!hasPermission(ctx.role, "settings.edit", ctx.matrix)) throw new ForbiddenError("Fehlendes Recht settings.edit");
+  if (!hasPermission(ctx.role, "settings.edit", ctx.matrix)) throw new ForbiddenError("err.perm.missing", { perm: "settings.edit" });
 }
 const checkRole = (r: string) => {
-  if (!(ROLES as readonly string[]).includes(r) || r === "SYSTEMADMIN") throw new ChatError("Ungültige Rolle");
+  if (!(ROLES as readonly string[]).includes(r) || r === "SYSTEMADMIN") throw new ChatError("err.role.invalid");
 };
 
 export async function createChannel(db: PrismaClient, ctx: ChatCtx, input: { name: string; minReadRole?: string; minWriteRole?: string }) {
   requireSettings(ctx);
   const name = input.name.trim();
-  if (name.length < 2 || name.length > 40) throw new ChatError("Name: 2–40 Zeichen");
+  if (name.length < 2 || name.length > 40) throw new ChatError("err.chat.nameLength", { min: 2, max: 40 });
   const minRead = input.minReadRole ?? "MEMBER";
   const minWrite = input.minWriteRole ?? "MEMBER";
   checkRole(minRead);
@@ -409,11 +410,11 @@ export async function createChannel(db: PrismaClient, ctx: ChatCtx, input: { nam
 export async function updateChannel(db: PrismaClient, ctx: ChatCtx, id: number, patch: { name?: string; minReadRole?: string; minWriteRole?: string; archived?: boolean }) {
   requireSettings(ctx);
   const ch = await db.channel.findUnique({ where: { id } });
-  if (!ch || ch.tree !== "ALLY") throw new ChatError("Kanal nicht gefunden", 404);
+  if (!ch || ch.tree !== "ALLY") throw new ChatError("err.chat.channelNotFound", undefined, 404);
   const data: Prisma.ChannelUpdateInput = {};
   if (patch.name !== undefined) {
     const n = patch.name.trim();
-    if (n.length < 2 || n.length > 40) throw new ChatError("Name: 2–40 Zeichen");
+    if (n.length < 2 || n.length > 40) throw new ChatError("err.chat.nameLength", { min: 2, max: 40 });
     data.name = n;
   }
   if (patch.minReadRole) {
@@ -442,21 +443,21 @@ export async function moveChannel(db: PrismaClient, ctx: ChatCtx, id: number, di
 }
 
 function requireTags(ctx: ChatCtx) {
-  if (!hasPermission(ctx.role, "tags.manage", ctx.matrix)) throw new ForbiddenError("Fehlendes Recht tags.manage");
+  if (!hasPermission(ctx.role, "tags.manage", ctx.matrix)) throw new ForbiddenError("err.perm.missing", { perm: "tags.manage" });
 }
 
 export async function saveTag(db: PrismaClient, ctx: ChatCtx, input: { id?: number; tagTypeId?: number; name: string; color: string }) {
   requireTags(ctx);
   const name = input.name.trim();
-  if (name.length < 2 || name.length > 24) throw new ChatError("Name: 2–24 Zeichen");
-  if (!(TAG_COLORS as readonly string[]).includes(input.color)) throw new ChatError("Ungültige Farbe");
+  if (name.length < 2 || name.length > 24) throw new ChatError("err.chat.nameLength", { min: 2, max: 24 });
+  if (!(TAG_COLORS as readonly string[]).includes(input.color)) throw new ChatError("err.chat.invalidColor");
   try {
     if (input.id) return await db.tag.update({ where: { id: input.id }, data: { name, color: input.color } });
-    if (!input.tagTypeId || !(await db.tagType.findUnique({ where: { id: input.tagTypeId } }))) throw new ChatError("Tag-Typ fehlt");
+    if (!input.tagTypeId || !(await db.tagType.findUnique({ where: { id: input.tagTypeId } }))) throw new ChatError("err.chat.tagTypeMissing");
     return await db.tag.create({ data: { tagTypeId: input.tagTypeId, name, color: input.color, createdBy: ctx.userId } });
   } catch (e) {
     if (e instanceof ChatError) throw e;
-    throw new ChatError("Tag existiert in diesem Typ bereits");
+    throw new ChatError("err.chat.tagExists");
   }
 }
 
@@ -470,9 +471,9 @@ export async function saveTagType(
 ) {
   requireTags(ctx);
   const name = input.name.trim();
-  if (name.length < 2 || name.length > 24) throw new ChatError("Name: 2–24 Zeichen");
+  if (name.length < 2 || name.length > 24) throw new ChatError("err.chat.nameLength", { min: 2, max: 24 });
   const channelIds = [...new Set(input.channelIds)];
-  if (channelIds.length && (await db.channel.count({ where: { id: { in: channelIds }, tree: "ALLY" } })) !== channelIds.length) throw new ChatError("Unbekannter Kanal");
+  if (channelIds.length && (await db.channel.count({ where: { id: { in: channelIds }, tree: "ALLY" } })) !== channelIds.length) throw new ChatError("err.chat.unknownChannel");
   const data = { name, multi: input.multi, required: input.required, forTaskforces: input.forTaskforces };
   try {
     return await db.$transaction(async (tx) => {
@@ -482,12 +483,12 @@ export async function saveTagType(
       return t;
     });
   } catch {
-    throw new ChatError("Tag-Typ existiert bereits");
+    throw new ChatError("err.chat.tagTypeExists");
   }
 }
 
 export async function deleteTagType(db: PrismaClient, ctx: ChatCtx, id: number) {
   requireTags(ctx);
-  if ((await db.tag.count({ where: { tagTypeId: id } })) > 0) throw new ChatError("Erst die Tags dieses Typs löschen");
+  if ((await db.tag.count({ where: { tagTypeId: id } })) > 0) throw new ChatError("err.chat.deleteTagsFirst");
   await db.tagType.deleteMany({ where: { id } });
 }

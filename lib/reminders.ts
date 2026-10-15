@@ -1,3 +1,5 @@
+import type { MessageKey, T } from "./i18n";
+
 export const DEFAULT_STALE_DAYS = 2;
 
 export type StateArea = "troops" | "resources" | "buildings";
@@ -12,10 +14,11 @@ export type VillageFreshness = {
 
 export type Reminder = { villageId: number; villageName: string; area: StateArea; ageDays: number | null };
 
-export const AREA_LABEL: Record<StateArea, { what: string; action: string; upload: string }> = {
-  troops: { what: "die Truppen", action: "Versammlungsplatz hochladen", upload: "rally_point" },
-  resources: { what: "die Ressourcen", action: "Ressourcenfelder hochladen", upload: "resource_view" },
-  buildings: { what: "die Dorfansicht", action: "Dorfansicht hochladen", upload: "village_view" },
+/** `what`/`action` sind Übersetzungsschlüssel (Anzeige mit `t(...)`). */
+export const AREA_LABEL: Record<StateArea, { what: MessageKey; action: MessageKey; upload: string }> = {
+  troops: { what: "err.reminder.troopsWhat", action: "err.reminder.troopsAction", upload: "rally_point" },
+  resources: { what: "err.reminder.resourcesWhat", action: "err.reminder.resourcesAction", upload: "resource_view" },
+  buildings: { what: "err.reminder.buildingsWhat", action: "err.reminder.buildingsAction", upload: "village_view" },
 };
 
 const DAY = 86_400_000;
@@ -38,10 +41,10 @@ export function staleReminders(villages: VillageFreshness[], thresholdDays: numb
   return out.sort((a, b) => (b.ageDays ?? Infinity) - (a.ageDays ?? Infinity) || a.villageName.localeCompare(b.villageName));
 }
 
-/** „vor 3 Tagen“ / „heute“ / „gestern“ / „noch nie“ */
-export function ageLabel(age: number | null): string {
-  if (age === null) return "noch nie";
-  if (age <= 0) return "heute";
-  if (age === 1) return "gestern";
-  return `vor ${age} Tagen`;
+/** „vor 3 Tagen“ / „heute“ / „gestern“ / „noch nie“ (bzw. englisch) */
+export function ageLabel(age: number | null, t: T): string {
+  if (age === null) return t("err.reminder.never");
+  if (age <= 0) return t("err.reminder.today");
+  if (age === 1) return t("err.reminder.yesterday");
+  return t("err.reminder.daysAgo", { n: age });
 }

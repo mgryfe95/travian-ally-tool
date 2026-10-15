@@ -1,13 +1,16 @@
 import { notFound } from "next/navigation";
 import { canManageTaskforce, canReadChannel } from "@/lib/chat/access";
 import { db } from "@/lib/db";
-import { chatCtx, TF_ROLE_LABEL, type TfRole } from "@/lib/services/chat";
+import { tfRoleLabel } from "@/components/chat/roles";
+import { getT } from "@/lib/i18n/server";
+import { chatCtx } from "@/lib/services/chat";
 import { requirePermission } from "@/lib/session";
 import { archiveTaskforceAction, inviteMemberAction, leaveTaskforceAction, removeMemberAction, revokeInviteAction, setRoleAction } from "../../actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function TaskforcePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string }> }) {
+  const { t } = await getT();
   const user = await requirePermission("chat.read");
   const id = Number((await params).id);
   const { error } = await searchParams;
@@ -24,12 +27,12 @@ export default async function TaskforcePage({ params, searchParams }: { params: 
   const candidates = users.filter((u) => !tf.members.some((m) => m.userId === u.id) && !invites.some((i) => i.userId === u.id));
   return (
     <div style={{ padding: "28px clamp(16px,3vw,40px)", maxWidth: 720 }}>
-      <a href={`/chat?c=${tf.channel.id}`} style={{ fontSize: 13 }}>← Zum Kanal</a>
+      <a href={`/chat?c=${tf.channel.id}`} style={{ fontSize: 13 }}>{t("chat.tf.back")}</a>
       <h1>{tf.name}</h1>
       {tf.description && <p className="sub" style={{ margin: "4px 0 16px" }}>{tf.description}</p>}
       {error && <p className="errtext" role="alert">{error}</p>}
       <section className="card flush" style={{ marginTop: 12 }}>
-        <h2 style={{ margin: "12px 12px 8px" }}>Mitglieder ({tf.members.length})</h2>
+        <h2 style={{ margin: "12px 12px 8px" }}>{t("chat.tf.members", { n: tf.members.length })}</h2>
         <table>
           <tbody>
             {tf.members.map((m) => {
@@ -41,14 +44,14 @@ export default async function TaskforcePage({ params, searchParams }: { params: 
                     {isFounder && m.role !== "founder" ? (
                       <form action={setRoleAction} className="row" style={{ flexWrap: "nowrap", gap: 6 }}>
                         <input type="hidden" name="taskforceId" value={tf.id} /><input type="hidden" name="userId" value={m.userId} />
-                        <select name="role" defaultValue={m.role} className="field" style={{ width: "auto", minHeight: 32 }} aria-label={`Rolle von ${name.get(m.userId) ?? m.userId}`}>
-                          {(["lead", "member", "reader"] as const).map((r) => <option key={r} value={r}>{TF_ROLE_LABEL[r]}</option>)}
+                        <select name="role" defaultValue={m.role} className="field" style={{ width: "auto", minHeight: 32 }} aria-label={t("chat.tf.roleOf", { name: name.get(m.userId) ?? m.userId })}>
+                          {(["lead", "member", "reader"] as const).map((r) => <option key={r} value={r}>{tfRoleLabel(t, r)}</option>)}
                         </select>
-                        <button className="btn ghost sm">Ändern</button>
+                        <button className="btn ghost sm">{t("chat.tf.change")}</button>
                       </form>
-                    ) : <span className={`pill ${m.role === "founder" || m.role === "lead" ? "p-ok" : "p-none"}`}>{TF_ROLE_LABEL[m.role as TfRole] ?? m.role}</span>}
+                    ) : <span className={`pill ${m.role === "founder" || m.role === "lead" ? "p-ok" : "p-none"}`}>{tfRoleLabel(t, m.role)}</span>}
                   </td>
-                  <td className="r">{canRemove && <form action={removeMemberAction}><input type="hidden" name="taskforceId" value={tf.id} /><input type="hidden" name="userId" value={m.userId} /><button className="btn ghost sm">Entfernen</button></form>}</td>
+                  <td className="r">{canRemove && <form action={removeMemberAction}><input type="hidden" name="taskforceId" value={tf.id} /><input type="hidden" name="userId" value={m.userId} /><button className="btn ghost sm">{t("chat.tf.remove")}</button></form>}</td>
                 </tr>
               );
             })}
@@ -59,29 +62,29 @@ export default async function TaskforcePage({ params, searchParams }: { params: 
         <>
           <form action={inviteMemberAction} className="card row" style={{ marginTop: 16 }}>
             <input type="hidden" name="taskforceId" value={tf.id} />
-            <label className="sr" htmlFor="u">Allianzmitglied einladen</label>
+            <label className="sr" htmlFor="u">{t("chat.tf.inviteMember")}</label>
             <select id="u" name="userId" className="field" style={{ width: "auto" }} required>
-              <option value="">Allianzmitglied einladen …</option>
+              <option value="">{t("chat.tf.inviteMemberOpt")}</option>
               {candidates.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
             </select>
-            <select name="role" className="field" style={{ width: "auto" }} aria-label="Rolle nach Annahme">
-              <option value="member">Mitglied</option><option value="reader">Leser (nur lesen)</option>{isFounder && <option value="lead">Lead</option>}
+            <select name="role" className="field" style={{ width: "auto" }} aria-label={t("chat.tf.roleAfterAccept")}>
+              <option value="member">{t("chat.role.member")}</option><option value="reader">{t("chat.tf.readerOnly")}</option>{isFounder && <option value="lead">{t("chat.role.lead")}</option>}
             </select>
-            <button className="btn">Einladen</button>
+            <button className="btn">{t("chat.tf.invite")}</button>
           </form>
           {invites.length > 0 && (
             <section className="card flush" style={{ marginTop: 12 }}>
-              <h2 style={{ margin: "12px 12px 8px" }}>Offene Einladungen ({invites.length})</h2>
+              <h2 style={{ margin: "12px 12px 8px" }}>{t("chat.tf.openInvites", { n: invites.length })}</h2>
               <table><tbody>{invites.map((i) => (
-                <tr key={i.id}><td>{name.get(i.userId) ?? i.userId}</td><td><span className="pill p-wait">{TF_ROLE_LABEL[i.role as TfRole] ?? i.role}</span></td>
-                  <td className="r"><form action={revokeInviteAction}><input type="hidden" name="taskforceId" value={tf.id} /><input type="hidden" name="inviteId" value={i.id} /><button className="btn ghost sm">Zurückziehen</button></form></td></tr>
+                <tr key={i.id}><td>{name.get(i.userId) ?? i.userId}</td><td><span className="pill p-wait">{tfRoleLabel(t, i.role)}</span></td>
+                  <td className="r"><form action={revokeInviteAction}><input type="hidden" name="taskforceId" value={tf.id} /><input type="hidden" name="inviteId" value={i.id} /><button className="btn ghost sm">{t("chat.tf.revoke")}</button></form></td></tr>
               ))}</tbody></table>
             </section>
           )}
           {isFounder && (
             <form action={archiveTaskforceAction} style={{ marginTop: 16 }}>
               <input type="hidden" name="taskforceId" value={tf.id} />
-              <button className="btn ghost">Task-Force archivieren</button>
+              <button className="btn ghost">{t("chat.tf.archive")}</button>
             </form>
           )}
         </>
@@ -89,7 +92,7 @@ export default async function TaskforcePage({ params, searchParams }: { params: 
       {me && me.role !== "founder" && (
         <form action={leaveTaskforceAction} style={{ marginTop: 16 }}>
           <input type="hidden" name="taskforceId" value={tf.id} />
-          <button className="btn ghost">Task-Force verlassen</button>
+          <button className="btn ghost">{t("chat.tf.leave")}</button>
         </form>
       )}
     </div>

@@ -4,10 +4,12 @@ import { auth, INTERNAL_HEADER, internalSecret } from "../auth";
 import { db } from "../db";
 import { env } from "../env";
 import { findOpenInvite, redeemInvite, VerificationError } from "./verification";
+import { AppError } from "../i18n/errors";
+import type { MessageKey, Params } from "../i18n";
 
-export class RegisterError extends Error {
-  constructor(message: string, readonly status = 400) {
-    super(message);
+export class RegisterError extends AppError {
+  constructor(key: MessageKey, params?: Params, readonly status = 400) {
+    super(key, params);
   }
 }
 
@@ -29,21 +31,21 @@ const safeEqual = (a: string, b: string) => timingSafeEqual(digest(a), digest(b)
  */
 export async function registerUser(raw: unknown) {
   const parsed = registerSchema.safeParse(raw);
-  if (!parsed.success) throw new RegisterError("Eingaben ungültig (Passwort mind. 10 Zeichen)");
+  if (!parsed.success) throw new RegisterError("err.register.invalidInput");
   const { email, password, inviteToken, setupCode } = parsed.data;
   let name = parsed.data.name;
   const cfg = env();
 
   if (cfg.SYSTEMADMIN_EMAILS.includes(email)) {
     const expected = cfg.SYSTEMADMIN_SETUP_CODE ?? cfg.AUTH_SECRET;
-    if (!setupCode || !safeEqual(setupCode, expected)) throw new RegisterError("Setup-Code erforderlich oder falsch", 403);
+    if (!setupCode || !safeEqual(setupCode, expected)) throw new RegisterError("err.register.setupCode", undefined, 403);
   }
   if (inviteToken) {
     const invite = await findOpenInvite(db, inviteToken);
-    if (!invite) throw new RegisterError("Einladung ungültig, abgelaufen oder bereits verwendet. Bitte einen Admin um einen neuen Link bitten.");
+    if (!invite) throw new RegisterError("err.register.inviteInvalid");
     name ??= (await db.player.findUnique({ where: { id: invite.travianPlayerId }, select: { name: true } }))?.name;
   }
-  if (!name) throw new RegisterError("Bitte einen Anzeigenamen angeben");
+  if (!name) throw new RegisterError("err.register.nameRequired");
 
   let result;
   try {
@@ -54,11 +56,12 @@ export async function registerUser(raw: unknown) {
     });
   } catch {
     // Keine Unterscheidung „E-Mail existiert“ vs. sonstiger Fehler nach außen.
-    throw new RegisterError("Registrierung nicht möglich (E-Mail bereits vergeben?)");
+    throw new RegisterError("err.register.failed");
   }
   const userId = result.response.user.id;
   let verified = false;
   let warning: string | undefined;
+  let warningError: AppError | undefined;
   if (inviteToken) {
     try {
       await redeemInvite(db, inviteToken, userId);
@@ -66,7 +69,8 @@ export async function registerUser(raw: unknown) {
     } catch (e) {
       if (!(e instanceof VerificationError)) throw e;
       warning = e.message;
+      warningError = e;
     }
   }
-  return { userId, verified, warning, setCookie: result.headers.getSetCookie() };
+  return { userId, verified, warning, warningError, setCookie: result.headers.getSetCookie() };
 }

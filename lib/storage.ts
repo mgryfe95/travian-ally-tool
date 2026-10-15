@@ -1,6 +1,7 @@
 import { mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { env } from "./env";
+import { AppError } from "./i18n/errors";
 
 /** Ablage für Anhänge. Lokal jetzt, später S3/MinIO hinter derselben Schnittstelle. */
 export interface StorageAdapter {
@@ -16,9 +17,9 @@ export class LocalStorage implements StorageAdapter {
   constructor(private readonly root: string) {}
 
   private resolve(key: string) {
-    if (!KEY_RE.test(key) || key.includes("..")) throw new Error("Ungültiger Storage-Key");
+    if (!KEY_RE.test(key) || key.includes("..")) throw new AppError("err.storage.invalidKey");
     const full = path.resolve(this.root, key);
-    if (!full.startsWith(path.resolve(this.root) + path.sep)) throw new Error("Ungültiger Storage-Key");
+    if (!full.startsWith(path.resolve(this.root) + path.sep)) throw new AppError("err.storage.invalidKey");
     return full;
   }
   async put(key: string, data: Buffer) {

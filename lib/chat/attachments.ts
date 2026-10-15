@@ -5,12 +5,14 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { fileTypeFromBuffer } from "file-type";
 import sharp from "sharp";
+import { AppError } from "../i18n/errors";
+import type { MessageKey, Params } from "../i18n";
 
 const run = promisify(execFile);
 
-export class UploadError extends Error {
-  constructor(message: string, readonly status = 400) {
-    super(message);
+export class UploadError extends AppError {
+  constructor(key: MessageKey, params?: Params, readonly status = 400) {
+    super(key, params);
   }
 }
 
@@ -87,30 +89,30 @@ function asText(data: Buffer): string | undefined {
 export async function processUpload(input: { name: string; data: Buffer }, limits: UploadLimits): Promise<Processed> {
   const { data } = input;
   const name = cleanName(input.name);
-  if (data.length === 0) throw new UploadError("Leere Datei");
+  if (data.length === 0) throw new UploadError("err.upload.empty");
   const sniff = await fileTypeFromBuffer(data);
 
   if (sniff && IMAGE_MIMES[sniff.mime]) {
-    if (data.length > limits.maxImageBytes) throw new UploadError(`Bild zu groß (max. ${Math.round(limits.maxImageBytes / 1048576)} MB)`, 413);
+    if (data.length > limits.maxImageBytes) throw new UploadError("err.upload.imageTooBig", { mb: Math.round(limits.maxImageBytes / 1048576) }, 413);
     try {
       const img = await processImage(data, sniff.mime);
       return { kind: "image", mime: sniff.mime, name, origExt: IMAGE_MIMES[sniff.mime] as string, ...img };
     } catch {
-      throw new UploadError("Bild nicht lesbar");
+      throw new UploadError("err.upload.imageUnreadable");
     }
   }
   if (sniff?.mime === "application/pdf") {
-    if (data.length > limits.maxFileBytes) throw new UploadError(`Datei zu groß (max. ${Math.round(limits.maxFileBytes / 1048576)} MB)`, 413);
+    if (data.length > limits.maxFileBytes) throw new UploadError("err.upload.fileTooBig", { mb: Math.round(limits.maxFileBytes / 1048576) }, 413);
     const prev = await pdfPreview(data);
     return { kind: "pdf", mime: "application/pdf", name, orig: data, origExt: "pdf", ...prev };
   }
   const ext = path.extname(name).toLowerCase();
   if (!sniff && TEXT_EXT[ext]) {
-    if (data.length > limits.maxFileBytes) throw new UploadError(`Datei zu groß (max. ${Math.round(limits.maxFileBytes / 1048576)} MB)`, 413);
+    if (data.length > limits.maxFileBytes) throw new UploadError("err.upload.fileTooBig", { mb: Math.round(limits.maxFileBytes / 1048576) }, 413);
     const text = asText(data);
-    if (text === undefined) throw new UploadError("Keine gültige Textdatei");
-    if (HTMLISH.test(text)) throw new UploadError("HTML/SVG ist nicht erlaubt");
+    if (text === undefined) throw new UploadError("err.upload.notText");
+    if (HTMLISH.test(text)) throw new UploadError("err.upload.html");
     return { kind: "text", mime: TEXT_EXT[ext] as string, name, orig: data, origExt: ext.slice(1), snippet: text.split("\n").slice(0, 20).join("\n").slice(0, 2000) };
   }
-  throw new UploadError("Dateityp nicht erlaubt (erlaubt: PNG, JPG, WebP, GIF, PDF, TXT, CSV, LOG)", 415);
+  throw new UploadError("err.upload.type", undefined, 415);
 }

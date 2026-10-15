@@ -1,3 +1,4 @@
+import { translate } from "./i18n";
 /**
  * Profil der eigenen Spielwelt – Vertrags-Invariante für Spieldaten: Es werden ausschließlich Werte übernommen, die für
  * genau diese Welt gelten (Host, Spielversion, Server-Geschwindigkeit). Nichts wird umgerechnet oder aus anderen Welten ergänzt.
@@ -24,9 +25,9 @@ export function worldProfile(serverUrl: string, opts: { version?: string; speed?
 /** Prüft, ob eine Spieldaten-Datei zu dieser Welt gehört; liefert die Abweichungen (leer = passt). */
 export function worldMismatches(file: { world: { host: string; gameVersion: string }; serverSpeed: number }, p: WorldProfile): string[] {
   const out: string[] = [];
-  if (file.world.host.trim().toLowerCase() !== p.host) out.push(`Welt: Datei „${file.world.host}“ ≠ eigene Welt „${p.host}“`);
-  if (file.world.gameVersion.trim().toLowerCase() !== p.version) out.push(`Spielversion: Datei „${file.world.gameVersion}“ ≠ eigene Version „${p.version}“`);
-  if (p.speed === null) out.push("Server-Geschwindigkeit der eigenen Welt unbekannt – GAME_SPEED in der .env setzen");
-  else if (file.serverSpeed !== p.speed) out.push(`Server-Geschwindigkeit: Datei x${file.serverSpeed} ≠ eigene Welt x${p.speed}`);
+  if (file.world.host.trim().toLowerCase() !== p.host) out.push(translate("en", "err.gamedata.mismatchHost", { file: file.world.host, own: p.host }));
+  if (file.world.gameVersion.trim().toLowerCase() !== p.version) out.push(translate("en", "err.gamedata.mismatchVersion", { file: file.world.gameVersion, own: p.version }));
+  if (p.speed === null) out.push(translate("en", "err.gamedata.speedUnknown"));
+  else if (file.serverSpeed !== p.speed) out.push(translate("en", "err.gamedata.mismatchSpeed", { file: file.serverSpeed, own: p.speed }));
   return out;
 }

@@ -17,7 +17,7 @@ const [enFile, deFile] = args.filter((a) => !a.startsWith("--"));
 if (!enFile) throw new Error("usage: tsx scripts/import-unit-names.ts <en.html> [de.html] [--dry-run]");
 try {
   const world = worldProfile(env().TRAVIAN_SERVER_URL, { version: env().GAME_VERSION, speed: env().GAME_SPEED });
-  if (world.version !== "legends") throw new UnitsError(`Die Quelle ist das Legends Help Center, die Welt ist aber „${world.version}“ – kein Import`);
+  if (world.version !== "legends") throw new UnitsError("err.units.notLegends", { version: world.version });
   let rows = mergeLanguages(parseUnitTables(readFileSync(enFile, "utf8")), deFile ? parseUnitTables(readFileSync(deFile, "utf8")) : undefined);
   if (templateFile) {
     writeFileSync(templateFile, JSON.stringify(overridesTemplate(rows, overridesFile ? (JSON.parse(readFileSync(overridesFile, "utf8")) as NameOverrides) : {}), null, 1));

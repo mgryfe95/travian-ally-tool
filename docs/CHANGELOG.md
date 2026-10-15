@@ -67,3 +67,10 @@ Was & Warum: Einheitennamen je Volk (Plätze 1–6 für alle 7 Völker) aus dem 
 - Keine fremden E-Mail-Adressen mehr im Frontend (auch nicht für Admins): Spalte aus Admin→Konten entfernt, Admin→Mitglieder zeigt den Namen; `email` verlässt `loadMemberRows`/`MemberRow` nicht mehr, `maskEmail` entfernt.
 - Rolle „Systemadmin“ ist im UI nicht mehr sichtbar (Anzeige „Admin“, 🔒 nicht änderbar); Rechte-Matrix ohne Systemadmin-Spalte. Backend-Logik und `SYSTEMADMIN_EMAILS` unverändert.
 - Entscheidung: Englisch ist Pflicht für die Beta und wird Basissprache (i18n-Dateien, Nutzersprache am Konto) – nächster Schritt.
+
+## 2026-10-15 · i18n (EN Basis, DE Übersetzung) · Notion-Root 3f912988-7097-813a-be0b-e9ee8831f987
+- UI komplett zweisprachig: Wörterbücher `lib/i18n/{en,de}/<namespace>.ts` (ca. 1000 Schlüssel, Typ erzwingt Parität; Test `lib/i18n/i18n.test.ts`). Englisch ist Quelle/Fallback.
+- Sprache pro Konto (`User.locale`, Migration `user_locale`), Reihenfolge Konto > Cookie `lang` > Browser > Englisch. Umschalter in Sidebar und auf Login-/Registrierungsseiten.
+- Fehler: alle Fehlerklassen erben von `AppError(key, params)`; `message` ist Englisch, Anzeige per `localizeError`. Mails, Einladungstext, Call-Texte nutzen die Sprache des Empfängers/Auslösers.
+- `fmt/delta` brauchen jetzt die Locale; `fmtDate` (Europe/Berlin). E2E laufen mit `de-DE`.
+- Noch nicht übersetzt: KI-Prompts, Seed-Vorlagen/-Kanäle, Audit-Rohwerte, gelöschter Nutzer in Listen (immer „deleted“), Better-Auth-Eigentexte.

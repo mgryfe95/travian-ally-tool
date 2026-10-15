@@ -47,7 +47,7 @@ describe("Wissensdatenbank → Spieldaten", () => {
     expect(d.buildings.find((x) => x.gid === 11)!.prerequisites).toEqual([{ type: "Tribe", vid: [1, 2] }]);
   });
   it("lehnt veränderte Seitenstruktur und unbekannte Geschwindigkeit ab", () => {
-    expect(() => parseKnowledgeBase("nichts hier")).toThrow(/nicht gefunden/);
-    expect(() => kbToGameData(parseKnowledgeBase(js()), worldProfile("https://ts9.europe.travian.com"), "s")).toThrow(/Geschwindigkeit/);
+    expect(() => parseKnowledgeBase("nichts hier")).toThrow(/not found/);
+    expect(() => kbToGameData(parseKnowledgeBase(js()), worldProfile("https://ts9.europe.travian.com"), "s")).toThrow(/speed/);
   });
 });

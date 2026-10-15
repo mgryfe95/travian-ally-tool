@@ -1,5 +1,7 @@
 import nodemailer, { type Transporter } from "nodemailer";
 import { env } from "./env";
+import { DEFAULT_LOCALE, isLocale, translate } from "./i18n";
+import { AppError } from "./i18n/errors";
 
 export type Mail = { to: string; subject: string; text: string };
 
@@ -22,12 +24,12 @@ function getTransport(): Transporter {
 }
 
 export async function sendMail(mail: Mail): Promise<void> {
-  if (!mailEnabled()) throw new Error("SMTP ist nicht konfiguriert");
+  if (!mailEnabled()) throw new AppError("err.mail.smtp");
   await getTransport().sendMail({ from: env().SMTP_FROM, ...mail });
 }
 
-export const resetMail = (to: string, name: string, url: string): Mail => ({
-  to,
-  subject: "Ally Tool: Passwort zurücksetzen",
-  text: `Hallo ${name},\n\nüber diesen Link kannst du ein neues Passwort setzen (eine Stunde gültig):\n\n${url}\n\nWenn du das nicht angefordert hast, ignoriere diese Nachricht.`,
-});
+/** Sprache der Mail = Sprache des Empfängers (`user.locale`), sonst Englisch. */
+export const resetMail = (to: string, name: string, url: string, locale?: string | null): Mail => {
+  const l = isLocale(locale) ? locale : DEFAULT_LOCALE;
+  return { to, subject: translate(l, "err.mail.resetSubject"), text: translate(l, "err.mail.resetBody", { name, url }) };
+};

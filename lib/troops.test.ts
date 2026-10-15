@@ -9,10 +9,10 @@ describe("parseTroopsText", () => {
     ]);
   });
   it("lehnt ungültige Eingaben mit Zeilennummer ab", () => {
-    expect(() => parseTroopsText("Axt; abc")).toThrow(/Zeile 1/);
+    expect(() => parseTroopsText("Axt; abc")).toThrow(/Line 1/);
     expect(() => parseTroopsText("Axt; -5")).toThrow(TroopsError);
-    expect(() => parseTroopsText("ok; 1\n; 5")).toThrow(/Zeile 2/);
-    expect(() => parseTroopsText("a;1;2;3;4")).toThrow(/zu viele/);
+    expect(() => parseTroopsText("ok; 1\n; 5")).toThrow(/Line 2/);
+    expect(() => parseTroopsText("a;1;2;3;4")).toThrow(/too many/);
     expect(() => parseTroopsText("x".repeat(41) + ";1")).toThrow(TroopsError);
   });
   it("Rundreise Text ↔ Daten", () => {
@@ -20,7 +20,7 @@ describe("parseTroopsText", () => {
     expect(parseTroopsText(troopsToText(e))).toEqual(e);
   });
   it("max. 60 Einheiten", () => {
-    expect(() => parseTroopsText(Array.from({ length: 61 }, (_, i) => `E${i};1`).join("\n"))).toThrow(/Maximal/);
+    expect(() => parseTroopsText(Array.from({ length: 61 }, (_, i) => `E${i};1`).join("\n"))).toThrow(/At most/);
   });
 });
 

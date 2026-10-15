@@ -2,13 +2,16 @@ import { ChatClient } from "@/components/chat/ChatClient";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { hasPermission } from "@/lib/permissions";
-import { chatCtx, listChannels, listMessages, listMyTaskforceInvites, listTagTypes, TF_ROLE_LABEL } from "@/lib/services/chat";
+import { tfRoleLabel } from "@/components/chat/roles";
+import { getT } from "@/lib/i18n/server";
+import { chatCtx, listChannels, listMessages, listMyTaskforceInvites, listTagTypes } from "@/lib/services/chat";
 import { requirePermission } from "@/lib/session";
 import { respondInviteAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function ChatPage({ searchParams }: { searchParams: Promise<{ c?: string; tf?: string }> }) {
+  const { t } = await getT();
   const user = await requirePermission("chat.read");
   const sp = await searchParams;
   const ctx = await chatCtx(db, user);
@@ -26,14 +29,14 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
   return (
     <>
       {invites.length > 0 && (
-        <section className="card" style={{ margin: "12px 24px 0" }} aria-label="Einladungen">
-          <b>Einladungen in Task-Forces</b>
+        <section className="card" style={{ margin: "12px 24px 0" }} aria-label={t("chat.invites.label")}>
+          <b>{t("chat.invites.title")}</b>
           {invites.map((i) => (
             <form key={i.id} action={respondInviteAction} className="row" style={{ marginTop: 8, gap: 8, flexWrap: "wrap" }}>
               <input type="hidden" name="inviteId" value={i.id} />
-              <span>{i.invitedBy} lädt dich in <b>{i.taskforce.name}</b> ein (Rolle: {TF_ROLE_LABEL[i.role]})</span>
-              <button className="btn sm" name="answer" value="accept">Annehmen</button>
-              <button className="btn ghost sm" name="answer" value="decline">Ablehnen</button>
+              <span>{t("chat.invites.textPre", { inviter: i.invitedBy })} <b>{i.taskforce.name}</b> {t("chat.invites.textPost", { role: tfRoleLabel(t, i.role) })}</span>
+              <button className="btn sm" name="answer" value="accept">{t("chat.invites.accept")}</button>
+              <button className="btn ghost sm" name="answer" value="decline">{t("chat.invites.decline")}</button>
             </form>
           ))}
         </section>

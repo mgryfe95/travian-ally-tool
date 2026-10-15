@@ -1,14 +1,15 @@
 import type { PrismaClient } from "@prisma/client";
 import { ForbiddenError, hasPermission, rank, type Permission } from "../permissions";
 import { publishUser } from "../realtime";
-import { audit, loadMatrix, type Actor } from "./context";
+import { audit, loadMatrix, userLocale, type Actor } from "./context";
 import { ChatError } from "./chat";
+import { DEFAULT_LOCALE, translate, type Locale } from "../i18n";
 
 export const MAX_DM = 4000;
 export const MAX_SUBJECT = 100;
 
 async function requirePerm(db: PrismaClient, actor: Actor, perm: Permission) {
-  if (!hasPermission(actor.role, perm, await loadMatrix(db))) throw new ForbiddenError(`Fehlendes Recht ${perm}`);
+  if (!hasPermission(actor.role, perm, await loadMatrix(db))) throw new ForbiddenError("err.perm.missing", { perm });
 }
 
 /** Wer ansprechbar ist: aktives Konto, kein Gast. */
@@ -20,9 +21,9 @@ export const pairKey = (a: string, b: string) => (a < b ? `${a}:${b}` : `${b}:${
 
 export async function getOrCreateThread(db: PrismaClient, actor: Actor, otherId: string) {
   await requirePerm(db, actor, "messenger.use");
-  if (otherId === actor.id) throw new ChatError("Nachrichten an dich selbst sind nicht möglich");
+  if (otherId === actor.id) throw new ChatError("err.messenger.self");
   const other = await db.user.findFirst({ where: { id: otherId, ...reachable } });
-  if (!other) throw new ChatError("Empfänger nicht erreichbar");
+  if (!other) throw new ChatError("err.messenger.recipientUnreachable");
   const key = pairKey(actor.id, otherId);
   const [a, b] = actor.id < otherId ? [actor.id, otherId] : [otherId, actor.id];
   return db.dmThread.upsert({ where: { pairKey: key }, create: { pairKey: key, userA: a, userB: b }, update: {} });
@@ -30,7 +31,7 @@ export async function getOrCreateThread(db: PrismaClient, actor: Actor, otherId:
 
 async function ownThread(db: PrismaClient, userId: string, threadId: number) {
   const t = await db.dmThread.findUnique({ where: { id: threadId } });
-  if (!t || (t.userA !== userId && t.userB !== userId)) throw new ChatError("Unterhaltung nicht gefunden");
+  if (!t || (t.userA !== userId && t.userB !== userId)) throw new ChatError("err.messenger.threadNotFound");
   return { thread: t, otherId: t.userA === userId ? t.userB : t.userA };
 }
 
@@ -38,10 +39,10 @@ export async function sendDm(db: PrismaClient, actor: Actor, threadId: number, b
   await requirePerm(db, actor, "messenger.use");
   const { otherId } = await ownThread(db, actor.id, threadId);
   const body = bodyRaw.trim();
-  if (!body) throw new ChatError("Nachricht ist leer");
-  if (body.length > MAX_DM) throw new ChatError(`Nachricht zu lang (max. ${MAX_DM} Zeichen)`);
+  if (!body) throw new ChatError("err.chat.empty");
+  if (body.length > MAX_DM) throw new ChatError("err.chat.tooLong", { max: MAX_DM });
   const other = await db.user.findFirst({ where: { id: otherId, ...reachable } });
-  if (!other) throw new ChatError("Empfänger nicht erreichbar");
+  if (!other) throw new ChatError("err.messenger.recipientUnreachable");
   const m = await db.dmMessage.create({ data: { threadId, authorId: actor.id, body } });
   await db.dmRead.upsert({ where: { userId_threadId: { userId: actor.id, threadId } }, create: { userId: actor.id, threadId, lastReadMsgId: m.id }, update: { lastReadMsgId: m.id } });
   publishUser(otherId, "messenger:new", { threadId });
@@ -73,7 +74,7 @@ export async function listThreads(db: PrismaClient, userId: string): Promise<Thr
     .map((t) => {
       const oid = t.userA === userId ? t.userB : t.userA;
       const l = lastMap.get(t.id);
-      return { id: t.id, other: { id: oid, name: names.get(oid) ?? "gelöscht" }, last: l ? { body: l.body, at: l.createdAt, mine: l.authorId === userId } : null, unread: unread.get(t.id) ?? 0 };
+      return { id: t.id, other: { id: oid, name: names.get(oid) ?? translate(DEFAULT_LOCALE, "err.deletedUser") }, last: l ? { body: l.body, at: l.createdAt, mine: l.authorId === userId } : null, unread: unread.get(t.id) ?? 0 };
     })
     .filter((t) => t.last !== null)
     .sort((a, b) => b.last!.at.getTime() - a.last!.at.getTime());
@@ -91,34 +92,34 @@ export async function readThread(db: PrismaClient, userId: string, threadId: num
   const messages = rows.reverse();
   const last = messages[messages.length - 1]?.id ?? 0;
   await db.dmRead.upsert({ where: { userId_threadId: { userId, threadId } }, create: { userId, threadId, lastReadMsgId: last }, update: { lastReadMsgId: last } });
-  return { other: other ?? { id: otherId, name: "gelöscht" }, messages: messages.map((m) => ({ id: m.id, authorId: m.authorId, body: m.body, createdAt: m.createdAt })) };
+  return { other: other ?? { id: otherId, name: translate(DEFAULT_LOCALE, "err.deletedUser") }, messages: messages.map((m) => ({ id: m.id, authorId: m.authorId, body: m.body, createdAt: m.createdAt })) };
 }
 
 // ───────── Rundnachrichten ─────────
 
 export type Audience = { type: "all" } | { type: "role"; role: "MEMBER" | "MODERATOR" | "ADMIN" } | { type: "taskforce"; taskforceId: number } | { type: "users"; userIds: string[] };
 
-async function resolveAudience(db: PrismaClient, actor: Actor, a: Audience): Promise<{ ids: string[]; label: string }> {
+async function resolveAudience(db: PrismaClient, actor: Actor, a: Audience, locale: Locale): Promise<{ ids: string[]; label: string }> {
   let ids: string[] = [];
   let label = "";
   if (a.type === "all") {
     ids = (await db.user.findMany({ where: reachable, select: { id: true } })).map((u) => u.id);
-    label = "Alle Mitglieder";
+    label = translate(locale, "err.audience.all");
   } else if (a.type === "role") {
-    if (!["MEMBER", "MODERATOR", "ADMIN"].includes(a.role)) throw new ChatError("Ungültige Rolle");
+    if (!["MEMBER", "MODERATOR", "ADMIN"].includes(a.role)) throw new ChatError("err.role.invalid");
     // „ab Rolle“: Moderator = Moderatoren und Admins
     ids = (await db.user.findMany({ where: { ...reachable, role: { in: (["MEMBER", "MODERATOR", "ADMIN"] as const).filter((r) => rank(r) >= rank(a.role)) } }, select: { id: true } })).map((u) => u.id);
-    label = `Rolle ${a.role === "MEMBER" ? "Member" : a.role === "MODERATOR" ? "Moderator" : "Admin"} und höher`;
+    label = translate(locale, "err.audience.role", { role: a.role === "MEMBER" ? "Member" : a.role === "MODERATOR" ? "Moderator" : "Admin" });
   } else if (a.type === "taskforce") {
     const tf = await db.taskforce.findFirst({ where: { id: a.taskforceId, archivedAt: null }, include: { members: true } });
-    if (!tf) throw new ChatError("Task-Force nicht gefunden");
+    if (!tf) throw new ChatError("err.chat.tfNotFound");
     const active = await db.user.findMany({ where: { id: { in: tf.members.map((m) => m.userId) }, ...reachable }, select: { id: true } });
     ids = active.map((u) => u.id);
-    label = `Task-Force ${tf.name}`;
+    label = translate(locale, "err.audience.taskforce", { name: tf.name });
   } else {
     const want = [...new Set(a.userIds)];
     ids = (await db.user.findMany({ where: { id: { in: want }, ...reachable }, select: { id: true } })).map((u) => u.id);
-    label = `Auswahl (${ids.filter((i) => i !== actor.id).length})`;
+    label = translate(locale, "err.audience.selection", { n: ids.filter((i) => i !== actor.id).length });
   }
   return { ids: ids.filter((i) => i !== actor.id), label };
 }
@@ -127,11 +128,11 @@ export async function sendBroadcast(db: PrismaClient, actor: Actor, input: { sub
   await requirePerm(db, actor, "messenger.broadcast");
   const subject = input.subject.trim();
   const body = input.body.trim();
-  if (subject.length < 2 || subject.length > MAX_SUBJECT) throw new ChatError(`Betreff: 2–${MAX_SUBJECT} Zeichen`);
-  if (!body) throw new ChatError("Nachricht ist leer");
-  if (body.length > MAX_DM) throw new ChatError(`Nachricht zu lang (max. ${MAX_DM} Zeichen)`);
-  const { ids, label } = await resolveAudience(db, actor, input.audience);
-  if (ids.length === 0) throw new ChatError("Keine Empfänger in dieser Zielgruppe");
+  if (subject.length < 2 || subject.length > MAX_SUBJECT) throw new ChatError("err.messenger.subjectLength", { max: MAX_SUBJECT });
+  if (!body) throw new ChatError("err.chat.empty");
+  if (body.length > MAX_DM) throw new ChatError("err.chat.tooLong", { max: MAX_DM });
+  const { ids, label } = await resolveAudience(db, actor, input.audience, await userLocale(db, actor.id));
+  if (ids.length === 0) throw new ChatError("err.messenger.noRecipients");
   const b = await db.broadcast.create({ data: { senderId: actor.id, subject, body, audience: label, recipients: { create: ids.map((userId) => ({ userId })) } } });
   await audit(db, actor.id, "broadcast.send", `broadcast:${b.id}`, undefined, { audience: label, recipients: ids.length });
   for (const id of ids) publishUser(id, "messenger:new", { broadcastId: b.id });
@@ -144,7 +145,7 @@ export async function listInbox(db: PrismaClient, userId: string, take = 50): Pr
   const rows = await db.broadcastRecipient.findMany({ where: { userId }, include: { broadcast: true }, orderBy: { broadcastId: "desc" }, take });
   const senders = await db.user.findMany({ where: { id: { in: [...new Set(rows.map((r) => r.broadcast.senderId))] } }, select: { id: true, name: true } });
   const n = new Map(senders.map((u) => [u.id, u.name]));
-  return rows.map((r) => ({ id: r.broadcastId, subject: r.broadcast.subject, body: r.broadcast.body, sender: { id: r.broadcast.senderId, name: n.get(r.broadcast.senderId) ?? "gelöscht" }, createdAt: r.broadcast.createdAt, read: r.readAt !== null }));
+  return rows.map((r) => ({ id: r.broadcastId, subject: r.broadcast.subject, body: r.broadcast.body, sender: { id: r.broadcast.senderId, name: n.get(r.broadcast.senderId) ?? translate(DEFAULT_LOCALE, "err.deletedUser") }, createdAt: r.broadcast.createdAt, read: r.readAt !== null }));
 }
 
 export async function markBroadcastRead(db: PrismaClient, userId: string, broadcastId: number) {

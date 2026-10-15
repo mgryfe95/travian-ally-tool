@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useT } from "@/lib/i18n/client";
 
 export type LightboxImage = { id: number; name: string };
 
 /** Vollbild-Ansicht: Blättern (‹ ›, Pfeiltasten), Zoom (Klick / Mausrad), Download, Esc schließt. */
 export function Lightbox({ images, start, onClose }: { images: LightboxImage[]; start: number; onClose: () => void }) {
+  const t = useT();
   const [i, setI] = useState(start);
   const [zoom, setZoom] = useState(1);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -26,7 +28,7 @@ export function Lightbox({ images, start, onClose }: { images: LightboxImage[]; 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
-    <div className="lightbox" role="dialog" aria-modal="true" aria-label="Bildansicht" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="lightbox" role="dialog" aria-modal="true" aria-label={t("chat.lightbox.label")} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div
         style={{ width: "min(92vw, 1100px)", height: "min(72vh, 700px)", overflow: "auto", display: "flex", alignItems: "center", justifyContent: "center" }}
         onWheel={(e) => setZoom((z) => Math.min(4, Math.max(1, z - e.deltaY / 500)))}
@@ -39,10 +41,10 @@ export function Lightbox({ images, start, onClose }: { images: LightboxImage[]; 
       </div>
       <div className="sub">{img.name} · {i + 1} / {images.length}</div>
       <div className="row">
-        {images.length > 1 && <button type="button" className="btn ghost" onClick={() => go(-1)}>‹ Zurück</button>}
-        <a className="btn ghost" href={`/api/attachments/${img.id}?v=dl`} download={img.name}>Download</a>
-        {images.length > 1 && <button type="button" className="btn ghost" onClick={() => go(1)}>Weiter ›</button>}
-        <button ref={closeRef} type="button" className="btn" onClick={onClose}>Schließen</button>
+        {images.length > 1 && <button type="button" className="btn ghost" onClick={() => go(-1)}>{t("chat.lightbox.prev")}</button>}
+        <a className="btn ghost" href={`/api/attachments/${img.id}?v=dl`} download={img.name}>{t("chat.lightbox.download")}</a>
+        {images.length > 1 && <button type="button" className="btn ghost" onClick={() => go(1)}>{t("chat.lightbox.next")}</button>}
+        <button ref={closeRef} type="button" className="btn" onClick={onClose}>{t("chat.lightbox.close")}</button>
       </div>
     </div>
   );

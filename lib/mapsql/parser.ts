@@ -1,8 +1,9 @@
 import { EXTRA_COLUMNS, type MapRow } from "./types";
+import { AppError } from "../i18n/errors";
 
 type Value = string | number | boolean | null;
 
-export class MapSqlParseError extends Error {}
+export class MapSqlParseError extends AppError {}
 
 const ESCAPES: Record<string, string> = { n: "\n", r: "\r", t: "\t", "0": "\0", b: "\b", Z: "\x1a" };
 
@@ -13,10 +14,10 @@ function readValue(s: string, i: number): [Value, number] {
     let j = i + 1;
     for (;;) {
       const c = s[j];
-      if (c === undefined) throw new MapSqlParseError("Unterminated string literal");
+      if (c === undefined) throw new MapSqlParseError("err.mapsql.unterminatedString");
       if (c === "\\") {
         const n = s[j + 1];
-        if (n === undefined) throw new MapSqlParseError("Dangling backslash");
+        if (n === undefined) throw new MapSqlParseError("err.mapsql.danglingBackslash");
         out += ESCAPES[n] ?? n;
         j += 2;
       } else if (c === "'") {
@@ -37,7 +38,7 @@ function readValue(s: string, i: number): [Value, number] {
   if (tok === "TRUE") return [true, j];
   if (tok === "FALSE") return [false, j];
   const num = Number(tok);
-  if (tok === "" || Number.isNaN(num)) throw new MapSqlParseError(`Unexpected token "${tok.slice(0, 40)}"`);
+  if (tok === "" || Number.isNaN(num)) throw new MapSqlParseError("err.mapsql.unexpectedToken", { tok: tok.slice(0, 40) });
   return [num, j];
 }
 
@@ -47,15 +48,15 @@ function skipWs(s: string, i: number) {
 }
 
 function toRow(v: Value[]): MapRow {
-  if (v.length < 11) throw new MapSqlParseError(`Expected >= 11 columns, got ${v.length}`);
+  if (v.length < 11) throw new MapSqlParseError("err.mapsql.columns", { n: v.length });
   const num = (idx: number, name: string) => {
     const x = v[idx];
-    if (typeof x !== "number") throw new MapSqlParseError(`Column ${name} must be a number, got ${JSON.stringify(x)}`);
+    if (typeof x !== "number") throw new MapSqlParseError("err.mapsql.colNumber", { name, got: JSON.stringify(x) });
     return x;
   };
   const str = (idx: number, name: string) => {
     const x = v[idx];
-    if (typeof x !== "string") throw new MapSqlParseError(`Column ${name} must be a string, got ${JSON.stringify(x)}`);
+    if (typeof x !== "string") throw new MapSqlParseError("err.mapsql.colString", { name, got: JSON.stringify(x) });
     return x;
   };
   const extra: MapRow["extra"] = {};
@@ -85,7 +86,7 @@ export function parseMapSql(text: string): MapRow[] {
     let i = m.index + m[0].length;
     for (;;) {
       i = skipWs(text, i);
-      if (text[i] !== "(") throw new MapSqlParseError(`Expected "(" at offset ${i}`);
+      if (text[i] !== "(") throw new MapSqlParseError("err.mapsql.expectedParen", { i });
       i++;
       const vals: Value[] = [];
       for (;;) {
@@ -97,7 +98,7 @@ export function parseMapSql(text: string): MapRow[] {
         else if (text[i] === ")") {
           i++;
           break;
-        } else throw new MapSqlParseError(`Expected "," or ")" at offset ${i}`);
+        } else throw new MapSqlParseError("err.mapsql.expectedCommaOrParen", { i });
       }
       rows.push(toRow(vals));
       i = skipWs(text, i);

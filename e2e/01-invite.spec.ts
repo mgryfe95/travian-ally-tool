@@ -26,7 +26,7 @@ test("Einladung erzeugen → einlösen → verifiziert; Systemadmin bleibt unant
   const url = text.match(/https?:\/\/\S+\/invite\/\S+/)![0];
 
   // Als neuer Nutzer in frischem Kontext einlösen.
-  const ctx = await browser.newContext();
+  const ctx = await browser.newContext({ locale: "de-DE" });
   const guest = await ctx.newPage();
   await guest.goto(url);
   await expect(guest.getByRole("heading", { name: /Willkommen,/ })).toBeVisible();
@@ -38,7 +38,7 @@ test("Einladung erzeugen → einlösen → verifiziert; Systemadmin bleibt unant
   await guest.getByLabel("Passwort wiederholen").fill(PW);
   await guest.getByRole("button", { name: "Account erstellen" }).click();
   await guest.waitForURL((u) => u.pathname === "/");
-  await expect(guest.locator(".me")).toContainText("Member");
+  await expect(guest.locator(".me")).toContainText("Mitglied");
   // Link ist einmalig.
   await guest.goto(url);
   await expect(guest.getByText("Einladung ungültig")).toBeVisible();
