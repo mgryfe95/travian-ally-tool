@@ -8,7 +8,7 @@ import { getCurrentUser } from "@/lib/session";
 
 export const runtime = "nodejs";
 
-const body = z.object({ action: z.enum(["confirm", "reject", "delete"]), reading: z.unknown().optional() });
+const body = z.object({ action: z.enum(["confirm", "reject", "delete"]), reading: z.unknown().optional(), villageId: z.number().int().optional() });
 
 /** Prüfen eines Screenshots (Lernmodus): bestätigen (optional mit Korrektur) oder verwerfen. Nur der eigene Upload. */
 export function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -28,7 +28,7 @@ export function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
       await db.screenshot.update({ where: { id }, data: { status: "rejected" } });
       return NextResponse.json({ status: "rejected" });
     }
-    const r = await new VisionPipeline(db).confirm(id, user.id, b.data.reading);
+    const r = await new VisionPipeline(db).confirm(id, user.id, b.data.reading, b.data.villageId);
     return NextResponse.json({ status: r.status, message: r.reason ?? null }, { status: r.status === "failed" ? 422 : 200 });
   });
 }

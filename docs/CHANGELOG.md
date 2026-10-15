@@ -50,3 +50,6 @@ Was & Warum: Messenger getrennt von den Kanälen — 1:1-Direktnachrichten (alle
 
 ## 2026-10-15 · travian-ally-tool/phase2/files
 Was & Warum: (1) Fix Screenshot-Erkennung: API-Schema hatte 19 Union-Parameter (Limit 16) → Wire-Format ohne Unions (Strings/Sentinels). (2) Screenshots werden beim Upload zu WebP komprimiert (Original wird nicht gespeichert) mit Vorschau; Aufbewahrungsfrist per Worker; Seite „Meine Bilder & Dateien“ (`/files`) zum Verwalten/Löschen; Migration `screenshot_files`. Anker `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.
+
+## 2026-10-15 · travian-ally-tool/phase2/village-view
+Was & Warum: Dorfseite zeigt jetzt die erkannten Werte (Rohstoffe inkl. Produktion/brutto/Händler, Rohstofffeld-Stufen, Gebäude mit Stufen, Bauschleife) – zuvor wurden freigegebene Gebäude gespeichert, aber nicht angezeigt. Bestätigen meldet einen Fehler, wenn die Lesung keinem eigenen Dorf zugeordnet werden kann; in der Prüfansicht lässt sich das Dorf ausdrücklich wählen; Upload zeigt „Zur Prüfung“. Anker `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.

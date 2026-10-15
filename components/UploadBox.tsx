@@ -1,12 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type DragEvent } from "react";
 
 /** Ein Upload-Weg je Zweck – Art und Gerät (Desktop/Mobile) werden vom Scanner erkannt, es gibt keine Auswahl. Auch Strg+V. */
 export function UploadBox({ villageId, label, hint, id }: { villageId?: number; label: string; hint?: string; id: string }) {
   const router = useRouter();
-  const [msg, setMsg] = useState<{ text: string; error?: boolean }>();
+  const [msg, setMsg] = useState<{ text: string; error?: boolean; review?: boolean }>();
   const [busy, setBusy] = useState(false);
 
   async function upload(file: File | undefined) {
@@ -20,7 +21,7 @@ export function UploadBox({ villageId, label, hint, id }: { villageId?: number; 
     const data = (await res.json().catch(() => ({}))) as { error?: string; status?: string; message?: string | null };
     setBusy(false);
     if (!res.ok) return setMsg({ text: data.error ?? "Upload fehlgeschlagen", error: true });
-    setMsg({ text: data.message ? `Gespeichert. ${data.message}.` : "Gespeichert." });
+    setMsg({ text: data.status === "needs_review" ? "Erkannt – bitte kurz prüfen:" : data.status === "parsed" ? "Erkannt und übernommen." : data.status === "failed" ? `Gespeichert, aber die Erkennung ist fehlgeschlagen. ${data.message ?? ""}` : data.message ? `Gespeichert. ${data.message}.` : "Gespeichert.", review: data.status === "needs_review" });
     router.refresh();
   }
   const onDrop = (e: DragEvent) => {
@@ -35,7 +36,7 @@ export function UploadBox({ villageId, label, hint, id }: { villageId?: number; 
         {hint && <span className="sub">{hint}</span>}
       </label>
       <input id={id} type="file" accept="image/png,image/jpeg,image/webp" className="sr" onChange={(e) => { void upload(e.target.files?.[0]); e.target.value = ""; }} />
-      {msg && <p className={msg.error ? "errtext" : "sub"} role="status" style={{ marginTop: 6 }}>{msg.text}</p>}
+      {msg && <p className={msg.error ? "errtext" : "sub"} role="status" style={{ marginTop: 6 }}>{msg.text}{msg.review && <> <Link href="/screenshots">Zur Prüfung</Link></>}</p>}
     </div>
   );
 }

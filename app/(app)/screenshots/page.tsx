@@ -4,6 +4,7 @@ import { UploadBox } from "@/components/UploadBox";
 import type { ParsedShot } from "@/lib/ai/pipeline";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
+import { ownVillages } from "@/lib/services/villages";
 import { requireUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,7 @@ export default async function ScreenshotsPage() {
   const shots = await db.screenshot.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 30 });
   const confirmed = await db.visionExample.groupBy({ by: ["kind"], _count: true });
   const need = env().VISION_LEARNING_MIN;
+  const villages = (await ownVillages(db, user.id)).map((v) => ({ id: v.id, label: `${v.name} (${v.x}|${v.y})` }));
   return (
     <>
       <header>
@@ -39,7 +41,7 @@ export default async function ScreenshotsPage() {
               <span className="sub">{STATUS[s.status] ?? s.status}{s.confidence !== null ? ` · Konfidenz ${Math.round(s.confidence * 100)} %` : ""}</span>
             </div>
             {p.error && <p className="errtext">{p.error}</p>}
-            {s.status === "needs_review" && p.reading && <ScreenshotReview id={s.id} reading={p.reading} issues={p.issues ?? []} />}
+            {s.status === "needs_review" && p.reading && <ScreenshotReview id={s.id} reading={p.reading} issues={p.issues ?? []} villages={villages} defaultVillageId={s.villageId ?? undefined} />}
           </section>
         );
       })}

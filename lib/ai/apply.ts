@@ -14,12 +14,13 @@ const four = (c: (number | null)[]) => Object.fromEntries(RES.map((k, i) => [k, 
 type Patch = { troops?: TroopEntry[]; resources?: Record<string, unknown>; fields?: unknown; buildings?: unknown; queues?: Record<string, unknown> };
 
 /** Zerlegt eine Lesung in Änderungen je Dorf (nur Dörfer aus `known`, also des eigenen Kontos). */
-export function planApply(r: Reading, known: KnownVillage[], hintVillageId?: number): Map<number, Patch> {
+export function planApply(r: Reading, known: KnownVillage[], hintVillageId?: number, preferHint = false): Map<number, Patch> {
   const byCoord = new Map(known.map((v) => [`${v.x}|${v.y}`, v.id]));
   const hint = hintVillageId && known.some((v) => v.id === hintVillageId) ? hintVillageId : undefined;
   const header = r.village?.x != null && r.village?.y != null ? byCoord.get(`${r.village.x}|${r.village.y}`) : undefined;
   const byName = known.find((v) => r.village?.name && v.name.toLowerCase() === r.village.name.toLowerCase())?.id;
-  const current = header ?? hint ?? byName;
+  // Vom Nutzer ausdrücklich gewähltes Dorf (preferHint) schlägt die Erkennung
+  const current = preferHint && hint !== undefined ? hint : (header ?? hint ?? byName);
   const out = new Map<number, Patch>();
   const patch = (id: number | undefined) => (id === undefined ? undefined : (out.get(id) ?? out.set(id, {}).get(id)!));
   const nameMap = new Map(known.map((v) => [v.name.trim().toLowerCase(), v.id]));
@@ -84,8 +85,8 @@ export function planApply(r: Reading, known: KnownVillage[], hintVillageId?: num
 }
 
 
-export async function applyReading(db: PrismaClient, userId: string, screenshotId: number, r: Reading, known: KnownVillage[], hintVillageId?: number, now = new Date()): Promise<Applied[]> {
-  const plan = planApply(r, known, hintVillageId);
+export async function applyReading(db: PrismaClient, userId: string, screenshotId: number, r: Reading, known: KnownVillage[], hintVillageId?: number, now = new Date(), preferHint = false): Promise<Applied[]> {
+  const plan = planApply(r, known, hintVillageId, preferHint);
   const applied: Applied[] = [];
   for (const [villageId, p] of plan) {
     const cur = await db.villageState.findUnique({ where: { villageId } });

@@ -12,6 +12,16 @@ import { saveTroopsAction, saveVillageInstructionsAction } from "../actions";
 
 export const dynamic = "force-dynamic";
 
+type Res4 = { wood?: number | null; clay?: number | null; iron?: number | null; crop?: number | null };
+type ResState = { stock?: Res4; production?: Res4; productionGross?: Res4; merchants?: string | null; freeCrop?: number | null };
+type Level = { slot?: number | null; name?: string | null; level: number };
+type QueueItem = { building: string; level: number | null; remaining?: string | null; finishAt?: string | null };
+const arr = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
+const obj = <T,>(v: unknown): T => ((v && typeof v === "object" && !Array.isArray(v) ? v : {}) as T);
+const num = (v: number | null | undefined) => (typeof v === "number" ? fmt(v) : "–");
+const signed = (v: number | null | undefined) => (typeof v === "number" ? `${v > 0 ? "+" : ""}${fmt(v)}` : "–");
+const RES_ROWS = [["wood", "Holz"], ["clay", "Lehm"], ["iron", "Eisen"], ["crop", "Getreide"]] as const;
+
 const AREAS: { area: StateArea; title: string; desc: string; at: "troopsAt" | "buildingsAt" | "resourcesAt" }[] = [
   { area: "troops", title: "Truppen", desc: "Screenshot vom Versammlungsplatz (Tab „Truppen“)", at: "troopsAt" },
   { area: "buildings", title: "Dorfansicht", desc: "Gebäude und Stufen im Dorfzentrum", at: "buildingsAt" },
@@ -31,6 +41,10 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
   const now = new Date();
   const s = village.state;
   const troops = readTroops(s?.troops);
+  const res = obj<ResState>(s?.resources);
+  const fields = arr<Level>(s?.fields);
+  const buildings = arr<Level>(s?.buildings);
+  const queue = arr<QueueItem>(obj<{ construction?: unknown }>(s?.queues).construction);
 
   return (
     <>
@@ -57,7 +71,7 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
             );
           })}
         </div>
-        <div className="sub" style={{ marginTop: 8, fontSize: 12 }}>Desktop- oder Mobile-Screenshot – das Layout soll beim Hochladen automatisch erkannt werden. Die automatische Erkennung ist noch nicht aktiv; Screenshots werden bis dahin nur gespeichert.</div>
+        <div className="sub" style={{ marginTop: 8, fontSize: 12 }}>Desktop- oder Mobile-Screenshot – Art und Layout werden automatisch erkannt. Neue Werte erscheinen hier, sobald Du die Lesung unter Screenshots bestätigt hast (Lernmodus) oder die Erkennung sicher genug ist.</div>
       </section>
 
       <section id="desc" className="card hi" aria-labelledby="desc-h">
@@ -86,7 +100,23 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
       <div className="grid2">
         <section className="card" aria-labelledby="res">
           <div className="row between" style={{ alignItems: "baseline" }}><h2 id="res">Rohstoffe</h2><span className="sub" style={{ fontSize: 12 }}>{s?.resourcesAt ? `Stand ${s.resourcesAt.toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" })}` : ""}</span></div>
-          <p className="sub" style={{ marginTop: 10 }}>{s?.resources ? "Daten vorhanden." : "Noch kein Ist-Zustand – lade einen Screenshot der Ressourcenfelder hoch."}</p>
+          {s?.resources ? (
+            <div className="scroll" style={{ marginTop: 8 }}>
+              <table>
+                <thead><tr><th>Rohstoff</th><th className="r">Bestand</th><th className="r">Produktion/h</th>{res.productionGross && <th className="r">brutto/h</th>}</tr></thead>
+                <tbody>{RES_ROWS.map(([k, label]) => (
+                  <tr key={k}><td>{label}</td><td className="mono r">{num(res.stock?.[k])}</td><td className="mono r">{signed(res.production?.[k])}</td>{res.productionGross && <td className="mono r">{num(res.productionGross[k])}</td>}</tr>
+                ))}</tbody>
+              </table>
+              <p className="sub" style={{ fontSize: 12, marginTop: 6 }}>{[res.merchants ? `Händler ${res.merchants}` : null, typeof res.freeCrop === "number" ? `freies Getreide ${fmt(res.freeCrop)}` : null].filter(Boolean).join(" · ")}</p>
+            </div>
+          ) : <p className="sub" style={{ marginTop: 10 }}>Noch kein Ist-Zustand – lade einen Screenshot der Ressourcenfelder oder der Dorfübersicht hoch.</p>}
+          {fields.length > 0 && (
+            <div style={{ marginTop: 10 }}>
+              <div className="sub" style={{ fontSize: 12, marginBottom: 4 }}>Rohstofffelder (Stufen)</div>
+              <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>{fields.map((f, i) => <span key={i} className="pill p-none mono">{f.level}</span>)}</div>
+            </div>
+          )}
         </section>
         <section id="trp" className="card" aria-labelledby="trp-h">
           <div className="row between" style={{ alignItems: "baseline" }}><h2 id="trp-h">Truppen</h2><span className={s?.troopsAt && (ageInDays(s.troopsAt, now) ?? 0) >= staleDays ? "stale" : "sub"} style={{ fontSize: 12 }}>{s?.troopsAt ? `Stand ${ageLabel(ageInDays(s.troopsAt, now))}` : "noch nie aktualisiert"}</span></div>
@@ -100,16 +130,20 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
             <textarea id="troops-text" name="text" rows={5} className="field mono" defaultValue={troopsToText(troops)} placeholder={"Axtkämpfer; 3410; 600; 0\nKatapult; 120; 0; 0"} />
             <div className="row" style={{ marginTop: 8 }}><button className="btn sm">Truppen speichern</button></div>
           </form>
-          <p className="sub" style={{ marginTop: 8, fontSize: 12 }}>Bis die Screenshot-Erkennung aktiv ist, ist das der Weg zu Truppendaten. <strong>Hinweis:</strong> Admins und Moderatoren können die Truppen deiner Dörfer zur Planung und Koordination einsehen.</p>
+          <p className="sub" style={{ marginTop: 8, fontSize: 12 }}>Alternativ zum Screenshot (Versammlungsplatz oder Dorfstatistik › Truppen). <strong>Hinweis:</strong> Admins und Moderatoren können die Truppen deiner Dörfer zur Planung und Koordination einsehen.</p>
         </section>
       </div>
 
       <section className="card flush" aria-labelledby="bld">
-        <div className="row between" style={{ alignItems: "baseline", margin: "12px 12px 8px" }}><h2 id="bld">Gebäude (Ist-Zustand)</h2><span className="sub" style={{ fontSize: 12 }}>Kosten aus <Link href="/gamedata">Spieldaten</Link></span></div>
+        <div className="row between" style={{ alignItems: "baseline", margin: "12px 12px 8px" }}><h2 id="bld">Gebäude (Ist-Zustand)</h2><span className="sub" style={{ fontSize: 12 }}>Namen, Nutzen und Kosten folgen mit den <Link href="/gamedata">Spieldaten</Link></span></div>
         <div className="scroll">
           <table style={{ minWidth: 720 }}>
             <thead><tr><th>Gebäude</th><th>Stufe</th><th>Nutzen aktuell</th><th>Nächste Stufe kostet</th><th>Nutzen danach</th></tr></thead>
-            <tbody><tr><td colSpan={5} className="sub">Noch keine Gebäudedaten.</td></tr></tbody>
+            <tbody>
+              {buildings.length === 0 && <tr><td colSpan={5} className="sub">Noch keine Gebäudedaten – lade einen Screenshot der Dorfansicht hoch.</td></tr>}
+              {buildings.map((b, i) => <tr key={i}><td>{b.name ?? `Gebäude ${i + 1}`}</td><td className="mono">{b.level}</td><td className="sub">–</td><td className="sub">–</td><td className="sub">–</td></tr>)}
+              {queue.map((q, i) => <tr key={`q${i}`}><td>{q.building} <span className="pill p-wait">im Bau</span></td><td className="mono">→ {q.level ?? "?"}</td><td className="sub" colSpan={3}>{[q.remaining ? `noch ${q.remaining}` : null, q.finishAt ? `fertig ${q.finishAt}` : null].filter(Boolean).join(" · ")}</td></tr>)}
+            </tbody>
           </table>
         </div>
       </section>

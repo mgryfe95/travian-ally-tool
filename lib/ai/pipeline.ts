@@ -89,7 +89,7 @@ export class VisionPipeline {
   }
 
   /** Nutzer bestätigt (optional korrigiert): übernehmen und als Lern-Beispiel speichern. */
-  async confirm(screenshotId: number, userId: string, corrected?: unknown): Promise<PipelineResult> {
+  async confirm(screenshotId: number, userId: string, corrected?: unknown, villageId?: number): Promise<PipelineResult> {
     const shot = await this.db.screenshot.findUnique({ where: { id: screenshotId } });
     if (!shot || shot.userId !== userId) return { status: "failed", reason: "Screenshot nicht gefunden" };
     const parsed = (shot.parsed ?? {}) as ParsedShot;
@@ -99,10 +99,14 @@ export class VisionPipeline {
     const known = await knownVillages(this.db, userId);
     const a = assess(reading.data, known);
     if (reading.data.kind === "UNKNOWN") return { status: "failed", reason: "Art nicht erkannt – bitte Art korrigieren" };
-    const applied = await applyReading(this.db, userId, shot.id, reading.data, known, shot.villageId ?? undefined);
+    const chosen = villageId !== undefined && known.some((k) => k.id === villageId) ? villageId : undefined;
+    const applied = await applyReading(this.db, userId, shot.id, reading.data, known, chosen ?? shot.villageId ?? undefined, new Date(), chosen !== undefined);
+    // Nur Arten, die in den Dorfzustand fließen, müssen ein Dorf treffen
+    const writes = !["VILLAGE_TROOPS_PRESENT", "BATTLE_REPORT"].includes(reading.data.kind);
+    if (writes && applied.length === 0) return { status: "failed", reason: "Konnte keinem deiner Dörfer zugeordnet werden – bitte oben das Dorf wählen und erneut bestätigen." };
     await this.db.screenshot.update({
       where: { id: shot.id },
-      data: { status: "parsed", detectedKind: reading.data.kind, detectedDevice: reading.data.device, parsed: { ...parsed, reading: reading.data, issues: a.issues, confirmedBy: userId, corrected: corrected !== undefined, applied } as object },
+      data: { villageId: chosen ?? shot.villageId, status: "parsed", detectedKind: reading.data.kind, detectedDevice: reading.data.device, parsed: { ...parsed, reading: reading.data, issues: a.issues, confirmedBy: userId, corrected: corrected !== undefined, applied } as object },
     });
     await this.db.visionExample.create({ data: { kind: reading.data.kind, storageKey: shot.storageKey, gold: reading.data as object, createdBy: userId } });
     const old = await this.db.visionExample.findMany({ where: { kind: reading.data.kind }, orderBy: { createdAt: "desc" }, skip: KEEP_EXAMPLES_PER_KIND, select: { id: true } });
