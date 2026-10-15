@@ -11,7 +11,7 @@ sudo apt update && sudo apt install -y docker.io docker-compose-v2 git nginx cer
 sudo systemctl enable --now docker nginx
 sudo ufw allow OpenSSH && sudo ufw allow 'Nginx Full' && sudo ufw --force enable
 ```
-(Apache statt Nginx: siehe Abschnitt 6b.) Port 3000 wird nur an `127.0.0.1` gebunden und ist von außen nicht erreichbar.
+(Apache statt Nginx: siehe Abschnitt 6b.) Port 3000 (änderbar über `APP_PORT` in der `.env`, dann auch im Proxy) wird nur an `127.0.0.1` gebunden und ist von außen nicht erreichbar.
 
 ## 2. Deploy-Key (Lesezugriff auf das Repo)
 ```bash
@@ -61,6 +61,8 @@ docker compose logs -f --tail=50 app worker     # Strg+C beendet nur die Anzeige
 curl -s http://127.0.0.1:3000/api/health          # {"status":"ok","db":true,…}
 ```
 Der app-Container migriert die Datenbank beim Start und legt Rechte-Defaults, die 8 Kanäle und Tags an. Der Worker lädt sofort die erste `map.sql` und prüft danach stündlich (`IMPORT_CRON`, Minute :15); importiert wird nur, wenn sich die Datei geändert hat (täglich). Erster Import in den Worker-Logs: `[worker] import { status: 'imported', … }`.
+
+**Fehler „port is already allocated“:** Port 3000 ist belegt (`ss -ltnp | grep :3000`). In der `.env` `APP_PORT=3010` setzen, `docker compose up -d` und in den Proxy-Direktiven `3000` → `3010` ändern.
 
 ## 6a. Nginx
 ```bash

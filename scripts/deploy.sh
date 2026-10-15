@@ -14,8 +14,9 @@ echo "==> Bauen und starten (Migrationen laufen beim Start des app-Containers)"
 docker compose build
 docker compose up -d
 echo "==> Health"
+PORT=$(grep -E '^APP_PORT=' .env 2>/dev/null | head -1 | cut -d= -f2 | cut -d" " -f1); PORT=${PORT:-3000}
 for i in $(seq 1 40); do
-  if curl -fsS http://127.0.0.1:3000/api/health >/dev/null 2>&1; then echo "OK: $(curl -fsS http://127.0.0.1:3000/api/health)"; exit 0; fi
+  if curl -fsS http://127.0.0.1:$PORT/api/health >/dev/null 2>&1; then echo "OK: $(curl -fsS http://127.0.0.1:$PORT/api/health)"; exit 0; fi
   sleep 3
 done
 echo "FEHLER: Health-Check schlägt fehl. Logs: docker compose logs --tail=100 app" >&2
