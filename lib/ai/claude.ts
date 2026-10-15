@@ -7,7 +7,7 @@ export type ReadOptions = { examples?: Example[]; aliases?: Alias[] };
 
 export class VisionError extends Error {}
 
-export const DEFAULT_MODEL = "claude-opus-5-5";
+export const DEFAULT_MODEL = "claude-haiku-5-5";
 
 export function mediaType(img: Buffer): "image/png" | "image/jpeg" | "image/webp" {
   if (img.subarray(0, 4).toString("hex") === "89504e47") return "image/png";

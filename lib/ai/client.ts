@@ -48,7 +48,7 @@ export class StubAiClient implements AiClient {
   }
 }
 
-/** Echter Client, sobald ANTHROPIC_API_KEY gesetzt ist (Modell: ANTHROPIC_MODEL, sonst claude-opus-5-5). */
+/** Echter Client, sobald ANTHROPIC_API_KEY gesetzt ist (Modell: ANTHROPIC_MODEL, sonst claude-haiku-5-5). */
 export class ClaudeAiClient extends StubAiClient {
   private readonly vision: ClaudeVision;
   constructor(apiKey: string, model?: string) {
