@@ -6,6 +6,10 @@ export type PageAnalysis = {
   dataUrls: string[];
   embeddedJson: { source: string; bytes: number }[];
   tables: number;
+  /** Erste Zeile der ersten Tabelle (Spaltenköpfe), sofern vorhanden */
+  firstTableHeader: string[];
+  /** Sichtbarer Text (Tags entfernt), gekürzt – zeigt, ob die Seite serverseitig gerendert ist */
+  textSample: string;
 };
 
 const abs = (href: string, base: string) => {
@@ -26,7 +30,13 @@ export function analyzeHtml(html: string, baseUrl: string): PageAnalysis {
   const scripts = attr(/<script[^>]+src="([^"]+)"/g);
   const inlineUrls = [...html.matchAll(/["'`](https?:\/\/[^"'`\s]+|\/[A-Za-z0-9_\-./]*(?:api|graphql|\.json|_next\/data)[^"'`\s]*)["'`]/g)].map((m) => abs(m[1] as string, baseUrl)).filter((u): u is string => !!u);
   const dataUrls = uniq([...links, ...scripts, ...inlineUrls].filter((u) => /(\.json(\?|$)|\/api\/|graphql|_next\/data)/i.test(u)));
+  const body = html.replace(/<(script|style)[\s\S]*?<\/\1>/gi, " ");
+  const firstTable = /<table[\s\S]*?<\/table>/i.exec(body)?.[0] ?? "";
+  const firstRow = /<tr[\s\S]*?<\/tr>/i.exec(firstTable)?.[0] ?? "";
+  const clean = (t: string) => t.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
   return {
+    firstTableHeader: [...firstRow.matchAll(/<t[hd][^>]*>([\s\S]*?)<\/t[hd]>/gi)].map((m) => clean(m[1] as string)).slice(0, 20),
+    textSample: clean(body).slice(0, 600),
     title: /<title[^>]*>([^<]*)<\/title>/i.exec(html)?.[1]?.trim() ?? "",
     scripts, links, dataUrls, embeddedJson: embedded, tables: (html.match(/<table[\s>]/gi) ?? []).length,
   };

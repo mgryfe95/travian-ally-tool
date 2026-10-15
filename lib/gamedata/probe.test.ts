@@ -13,6 +13,12 @@ describe("analyzeHtml", () => {
     expect(r.scripts).toEqual(["https://example.invalid/_next/static/app.js"]);
     expect(r.tables).toBe(1);
   });
+  it("Spaltenköpfe und Textprobe", () => {
+    const r2 = analyzeHtml("<html><body><p>Hallo <b>Welt</b></p><table><tr><th>Einheit</th><th>Angriff</th></tr></table><script>x()</script></body></html>", "https://example.invalid/");
+    expect(r2.firstTableHeader).toEqual(["Einheit", "Angriff"]);
+    expect(r2.textSample).toContain("Hallo Welt");
+    expect(r2.textSample).not.toContain("x()");
+  });
   it("findet eingebettetes JSON und Daten-Endpunkte", () => {
     expect(r.embeddedJson).toEqual([{ source: "__NEXT_DATA__", bytes: 12 }]);
     expect(r.dataUrls).toContain("https://example.invalid/api/v1/buildings?lang=en");
