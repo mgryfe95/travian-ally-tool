@@ -43,6 +43,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           <div style={{ fontWeight: 600 }}>{user.name}</div>
           <div className="sub">{ROLE_LABEL[user.role] ?? user.role}</div>
           <div style={{ marginTop: 6, fontSize: 12 }}>
+            <a href="/files" style={{ display: "block", marginBottom: 4 }}>Meine Bilder &amp; Dateien</a>
             <LogoutButton />
           </div>
         </div>

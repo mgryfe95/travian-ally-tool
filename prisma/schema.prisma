@@ -440,6 +440,9 @@ model Screenshot {
   detectedDevice String   @default("UNKNOWN")
   confidence     Float?
   storageKey     String
+  thumbKey       String?
+  /// gespeicherte Größe (komprimiert) in Bytes
+  sizeBytes      Int      @default(0)
   /// uploaded | parsed | needs_review | failed
   status         String   @default("uploaded")
   parsed         Json?

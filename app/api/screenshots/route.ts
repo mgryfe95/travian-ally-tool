@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { VisionPipeline } from "@/lib/ai/pipeline";
 import { processUpload } from "@/lib/chat/attachments";
+import { compressScreenshot } from "@/lib/screenshots";
 import { uploadLimiter } from "@/lib/chat/limits";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
@@ -29,9 +30,12 @@ export function POST(req: Request) {
     const maxImageBytes = env().UPLOAD_MAX_IMAGE_MB * 1_048_576;
     const p = await processUpload({ name: file.name, data: Buffer.from(await file.arrayBuffer()) }, { maxImageBytes, maxFileBytes: maxImageBytes });
     if (p.kind !== "image") return NextResponse.json({ error: "Bitte einen Screenshot (PNG, JPG, WebP) hochladen" }, { status: 415 });
-    const key = `shots/${user.id}/${randomUUID()}.${p.origExt}`;
-    await storage().put(key, p.orig);
-    const shot = await db.screenshot.create({ data: { userId: user.id, villageId: villageId ?? null, storageKey: key } });
+    // Nur die komprimierte WebP-Fassung (ohne Metadaten) + Vorschau werden gespeichert, das Original nicht.
+    const c = await compressScreenshot(p.orig);
+    const base = `shots/${user.id}/${randomUUID()}`;
+    await storage().put(`${base}.webp`, c.full);
+    await storage().put(`${base}.thumb.webp`, c.thumb);
+    const shot = await db.screenshot.create({ data: { userId: user.id, villageId: villageId ?? null, storageKey: `${base}.webp`, thumbKey: `${base}.thumb.webp`, sizeBytes: c.full.length + c.thumb.length } });
     const result = await new VisionPipeline(db).process(shot.id);
     return NextResponse.json({ id: shot.id, status: result.status, message: result.reason ?? null }, { status: 201 });
   });

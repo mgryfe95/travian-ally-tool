@@ -28,6 +28,8 @@ const schema = z.object({
   UPLOAD_MAX_IMAGE_MB: z.coerce.number().positive().default(10),
   UPLOAD_MAX_FILE_MB: z.coerce.number().positive().default(20),
   UPLOAD_MAX_FILES: z.coerce.number().int().positive().default(10),
+  /** Screenshots werden nach so vielen Tagen samt Datei gelöscht (außer als Lern-Beispiel genutzte). 0 = nie. */
+  SCREENSHOT_RETENTION_DAYS: z.coerce.number().int().min(0).default(30),
   ANTHROPIC_API_KEY: z.string().optional(),
   ANTHROPIC_MODEL: z.string().optional(),
   /** Bilderkennung: Anzahl unabhängiger Lesedurchläufe je Screenshot (≥2 = Konsens-Prüfung, höhere Konfidenz, höhere Kosten). */

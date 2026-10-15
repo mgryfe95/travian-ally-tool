@@ -3,11 +3,12 @@ import { z } from "zod";
 import { VisionPipeline } from "@/lib/ai/pipeline";
 import { db } from "@/lib/db";
 import { handle, unauthorized } from "@/lib/http";
+import { deleteScreenshotFiles } from "@/lib/screenshots";
 import { getCurrentUser } from "@/lib/session";
 
 export const runtime = "nodejs";
 
-const body = z.object({ action: z.enum(["confirm", "reject"]), reading: z.unknown().optional() });
+const body = z.object({ action: z.enum(["confirm", "reject", "delete"]), reading: z.unknown().optional() });
 
 /** Prüfen eines Screenshots (Lernmodus): bestätigen (optional mit Korrektur) oder verwerfen. Nur der eigene Upload. */
 export function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -19,6 +20,10 @@ export function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
     if (!Number.isInteger(id) || !b.success) return NextResponse.json({ error: "Ungültige Anfrage" }, { status: 400 });
     const shot = await db.screenshot.findUnique({ where: { id } });
     if (!shot || shot.userId !== user.id) return NextResponse.json({ error: "Nicht gefunden" }, { status: 404 });
+    if (b.data.action === "delete") {
+      await deleteScreenshotFiles(db, [id]);
+      return NextResponse.json({ status: "deleted" });
+    }
     if (b.data.action === "reject") {
       await db.screenshot.update({ where: { id }, data: { status: "rejected" } });
       return NextResponse.json({ status: "rejected" });

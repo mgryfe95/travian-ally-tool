@@ -1,3 +1,4 @@
+import { Thumb } from "@/components/Thumb";
 import { ScreenshotReview } from "@/components/ScreenshotReview";
 import { UploadBox } from "@/components/UploadBox";
 import type { ParsedShot } from "@/lib/ai/pipeline";
@@ -31,7 +32,10 @@ export default async function ScreenshotsPage() {
         return (
           <section key={s.id} className="card" aria-label={`Screenshot ${s.id}`}>
             <div className="row between">
-              <strong>{s.detectedKind}</strong>
+              <span className="row" style={{ gap: 10 }}>
+                {s.thumbKey ? <Thumb src={`/api/screenshots/${s.id}/file?v=thumb`} size={48} /> : null}
+                <strong>{s.detectedKind}</strong>
+              </span>
               <span className="sub">{STATUS[s.status] ?? s.status}{s.confidence !== null ? ` · Konfidenz ${Math.round(s.confidence * 100)} %` : ""}</span>
             </div>
             {p.error && <p className="errtext">{p.error}</p>}

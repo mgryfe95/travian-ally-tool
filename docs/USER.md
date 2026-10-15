@@ -51,3 +51,6 @@ Wer eine Task-Force anlegt, ist **Gründer**. Im Kanal **Task-Force › Verwalte
 
 ## Nachrichten (Messenger)
 Menü **Nachrichten** (getrennt von den Kanälen, mit Ungelesen-Zähler in der Navigation). **Direkt:** 1:1-Unterhaltungen mit allen Mitgliedern (Gäste ausgeschlossen); „Neue Nachricht an …“ wählen, Enter sendet. **Rundnachrichten:** Moderatoren und Admins schreiben an alle Mitglieder, ab einer Rolle, eine Task-Force oder eine Auswahl. Empfänger lesen sie im Tab „Rundnachrichten“ und können per **Antworten** dem Absender eine Direktnachricht schicken (kein Antwort-an-alle). Absender sehen unter „Gesendet“, wie viele die Nachricht gelesen haben. Neue Nachrichten erscheinen live.
+
+## Meine Bilder & Dateien
+Link „Meine Bilder & Dateien“ links unten unter Deinem Namen. Dort siehst Du alle eigenen Screenshots und Chat-Anhänge mit Vorschau, Größe und Verwendung und kannst sie löschen (Screenshots samt daraus entstandener Lern-Beispiele). Bilder werden beim Hochladen komprimiert (WebP, ohne Metadaten; Screenshots in voller Auflösung, ca. 70–80 % kleiner). Screenshots löscht das System nach `SCREENSHOT_RETENTION_DAYS` (Standard 30) Tagen, außer sie sind Lern-Beispiele.

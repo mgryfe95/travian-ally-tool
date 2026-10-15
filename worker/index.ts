@@ -3,6 +3,7 @@ import { db } from "../lib/db";
 import { env } from "../lib/env";
 import { fetchMapSql, importMapSql, pruneVillageSnapshots } from "../lib/import/importer";
 import { getInactiveDays } from "../lib/settings";
+import { purgeOldScreenshots } from "../lib/screenshots";
 import { checkClaims } from "../lib/services/verification";
 import { cleanupOrphanAttachments } from "../lib/chat/cleanup";
 import { recordImportOutcome } from "../lib/services/world";
@@ -34,6 +35,7 @@ export async function runImport() {
 if (!cron.validate(cfg.IMPORT_CRON)) throw new Error(`Invalid IMPORT_CRON: ${cfg.IMPORT_CRON}`);
 cron.schedule(cfg.IMPORT_CRON, () => void runImport());
 // Verwaiste Chat-Uploads (ohne Nachricht, älter als 24 h) stündlich aufräumen.
+cron.schedule("20 3 * * *", () => void purgeOldScreenshots(db, cfg.SCREENSHOT_RETENTION_DAYS).then((n) => n && console.log("[worker] alte Screenshots gelöscht:", n)).catch((e) => console.error("[worker] purge failed", e)));
 cron.schedule("40 * * * *", () => void cleanupOrphanAttachments(db).then((n) => n && console.log("[worker] verwaiste Uploads gelöscht:", n)).catch((e) => console.error("[worker] cleanup failed", e)));
 void runImport();
 console.log(`[worker] started, schedule "${cfg.IMPORT_CRON}"`);
