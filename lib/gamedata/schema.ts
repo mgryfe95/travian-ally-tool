@@ -14,6 +14,7 @@ export const levelSchema = z.object({
 
 export const buildingSchema = z.object({
   key,
+  gid: z.number().int().positive().nullable().default(null),
   name: z.string().min(1),
   category: z.string().min(1),
   tribeRestriction: z.string().nullable().default(null),

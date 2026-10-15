@@ -56,3 +56,6 @@ Was & Warum: Dorfseite zeigt jetzt die erkannten Werte (Rohstoffe inkl. Produkti
 
 ## 2026-10-15 · travian-ally-tool/gamedata/world-binding
 Was & Warum: Vertrags-Invariante für Spieldaten — Import nur für die eigene Welt: Host, Spielversion (`GAME_VERSION`, Standard legends) und Server-Geschwindigkeit (aus Host `xN` oder `GAME_SPEED`) müssen zur Datei passen, sonst Ablehnung der gesamten Datei; keine Umrechnung. Format: `world` + `serverSpeed` Pflicht; `GameDataVersion` speichert Welt/Version; Migration `gamedata_world`. Anker `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.
+
+## 2026-10-15 · travian-ally-tool/gamedata/kb-buildings
+Was & Warum: Spieldaten-Import aus der Legends-Wissensdatenbank (Gebäude: 49, 995 Stufen, 9 Völker) mit eigenem sicheren Literal-Parser, Welt-/Speed-Bindung und Trockenlauf; `Building.gid`; Migration `building_gid`. Befund: die Wissensdatenbank enthält keine Truppen → Einheitennamen brauchen eine andere Quelle. Anker `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.

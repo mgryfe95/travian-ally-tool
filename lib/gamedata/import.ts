@@ -26,7 +26,7 @@ export async function importGameData(db: PrismaClient, raw: unknown, world: Worl
       }
       for (const b of d.buildings) {
         const row = await tx.building.create({
-          data: { versionId: version.id, key: b.key, name: b.name, category: b.category, tribeRestriction: b.tribeRestriction, maxLevel: b.maxLevel, prerequisites: b.prerequisites as Prisma.InputJsonValue, description: b.description },
+          data: { versionId: version.id, key: b.key, gid: b.gid, name: b.name, category: b.category, tribeRestriction: b.tribeRestriction, maxLevel: b.maxLevel, prerequisites: b.prerequisites as Prisma.InputJsonValue, description: b.description },
         });
         await tx.buildingLevel.createMany({ data: b.levels.map((l) => ({ ...l, buildingId: row.id, effects: l.effects as Prisma.InputJsonValue })) });
       }

@@ -485,6 +485,8 @@ model Building {
   versionId        Int
   version          GameDataVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
   key              String
+  /// Gebäude-ID der Quelle (gid), Voraussetzungen verweisen darauf
+  gid              Int?
   name             String
   category         String
   tribeRestriction String?
