@@ -147,6 +147,8 @@ model User {
   lastOrigin     String?
   /// KI-Instruktionen auf Account-Ebene (gelten für alle Dörfer)
   aiInstructions String       @default("")
+  /// UI-Sprache (en | de); leer = Cookie/Browser.
+  locale         String?
   sessions       Session[]
   accounts       Account[]
   links          PlayerLink[]

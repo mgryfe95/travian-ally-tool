@@ -6,7 +6,7 @@ import { env } from "./env";
 import { effectiveRole, hasPermission, type Permission, type Role } from "./permissions";
 import { loadMatrix, type Actor } from "./services/context";
 
-export type CurrentUser = Actor & { email: string; name: string };
+export type CurrentUser = Actor & { email: string; name: string; locale: string | null };
 
 /** Frisch aus der DB: Rolle und Sperre gelten bei jedem Request sofort; SYSTEMADMIN kommt nur aus der ENV-Liste. */
 export async function getCurrentUser(): Promise<CurrentUser | null> {
@@ -14,7 +14,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   if (!session) return null;
   const user = await db.user.findUnique({ where: { id: session.user.id } });
   if (!user || user.banned) return null;
-  return { id: user.id, email: user.email, name: user.name, role: effectiveRole(user, env().SYSTEMADMIN_EMAILS) };
+  return { id: user.id, email: user.email, name: user.name, locale: user.locale, role: effectiveRole(user, env().SYSTEMADMIN_EMAILS) };
 }
 
 export async function requireUser(): Promise<CurrentUser> {
