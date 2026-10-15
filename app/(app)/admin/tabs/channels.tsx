@@ -25,13 +25,13 @@ export async function ChannelsTab({ actor }: { actor: Actor }) {
     db.tag.findMany({ orderBy: { id: "asc" } }),
   ]);
   return (
-    <div className="grid2">
+    <div className="grid2" style={{ gridTemplateColumns: "minmax(0, 1fr)" }}>
       <section className="card">
         <div className="row between" style={{ marginBottom: 10 }}><h2>Allianz-Kanäle</h2></div>
         {channels.map((c, i) => (
-          <form key={c.id} action={updateChannelAction} className="row" style={{ padding: "6px 0", borderBottom: "1px solid var(--line2)", flexWrap: "nowrap" }}>
+          <form key={c.id} action={updateChannelAction} className="row" style={{ padding: "6px 0", borderBottom: "1px solid var(--line2)", flexWrap: "wrap" }}>
             <input type="hidden" name="channelId" value={c.id} />
-            <input name="name" defaultValue={c.name} className="field" style={{ minHeight: 36, minWidth: 120 }} aria-label="Name" disabled={!canChannels} />
+            <input name="name" defaultValue={c.name} className="field" style={{ minHeight: 36, minWidth: 140, flex: "1 1 140px" }} aria-label="Name" disabled={!canChannels} />
             <span className="sub" style={{ fontSize: 12 }}>lesen</span><RoleSelect name="minReadRole" value={c.minReadRole} />
             <span className="sub" style={{ fontSize: 12 }}>schreiben</span><RoleSelect name="minWriteRole" value={c.minWriteRole} />
             {canChannels && (
@@ -45,7 +45,7 @@ export async function ChannelsTab({ actor }: { actor: Actor }) {
           </form>
         ))}
         {canChannels && (
-          <form action={createChannelAction} className="row" style={{ marginTop: 14, flexWrap: "nowrap" }}>
+          <form action={createChannelAction} className="row" style={{ marginTop: 14, flexWrap: "wrap" }}>
             <input name="name" className="field" placeholder="Neuer Kanal" aria-label="Neuer Kanal" required minLength={2} style={{ minHeight: 36 }} />
             <RoleSelect name="minReadRole" value="MEMBER" /><RoleSelect name="minWriteRole" value="MEMBER" />
             <button className="btn ghost sm">Kanal anlegen</button>
@@ -56,7 +56,7 @@ export async function ChannelsTab({ actor }: { actor: Actor }) {
       <section className="card">
         <h2 style={{ marginBottom: 10 }}>Tags</h2>
         {tags.map((t) => (
-          <form key={t.id} action={saveTagAction} className="row" style={{ padding: "6px 0", borderBottom: "1px solid var(--line2)", flexWrap: "nowrap" }}>
+          <form key={t.id} action={saveTagAction} className="row" style={{ padding: "6px 0", borderBottom: "1px solid var(--line2)", flexWrap: "wrap" }}>
             <input type="hidden" name="tagId" value={t.id} />
             <span className={`pill t-${t.color}`} style={{ minWidth: 70, textAlign: "center" }}>{t.name}</span>
             {canTags && (
@@ -70,7 +70,7 @@ export async function ChannelsTab({ actor }: { actor: Actor }) {
           </form>
         ))}
         {canTags && (
-          <form action={saveTagAction} className="row" style={{ marginTop: 14, flexWrap: "nowrap" }}>
+          <form action={saveTagAction} className="row" style={{ marginTop: 14, flexWrap: "wrap" }}>
             <input name="name" className="field" placeholder="Neuer Tag" aria-label="Neuer Tag" required minLength={2} style={{ minHeight: 36 }} />
             <select name="color" className="field" style={{ width: "auto", minHeight: 36 }} aria-label="Neue Farbe">{TAG_COLORS.map((c) => <option key={c} value={c}>{COLOR_LABEL[c]}</option>)}</select>
             <button className="btn ghost sm">Tag anlegen</button>
