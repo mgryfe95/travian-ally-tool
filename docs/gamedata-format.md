@@ -1,11 +1,12 @@
 # Spieldaten-Importformat
 
 Import: `npx tsx scripts/import-gamedata.ts datei.json` (im Container: `docker compose exec app npx tsx scripts/import-gamedata.ts /app/storage/gamedata.json`).
-Jeder Import legt eine **neue Version** an (`GameDataVersion`), alte bleiben erhalten. Die Datei wird strikt validiert; es wird nichts ergänzt oder geschätzt. Werte gelten für **Server-Speed 1**, Zeiten werden beim Anzeigen durch die Server-Geschwindigkeit geteilt.
+Jeder Import legt eine **neue Version** an (`GameDataVersion`), alte bleiben erhalten. Die Datei wird strikt validiert; es wird nichts ergänzt oder geschätzt. **Vertrags-Invariante:** Es werden nur Werte übernommen, die für **genau diese Spielwelt** gelten – Host, Spielversion und Server-Geschwindigkeit der Datei müssen zur eigenen Welt passen (Host aus `TRAVIAN_SERVER_URL`, Version `GAME_VERSION`, Geschwindigkeit aus dem Host `x1/x2/…` oder `GAME_SPEED`), sonst wird die ganze Datei abgelehnt. Es gibt keine Umrechnung: Werte stehen so, wie die Quelle sie für diese Welt nennt.
 
 ```json
 {
   "source": "https://knowledgebase.legends.travian.com/… (abgerufen 2026-10-14)",
+  "world": { "host": "ts12.x1.europe.travian.com", "gameVersion": "legends" },
   "serverSpeed": 1,
   "notes": "",
   "tribes": [{ "key": "romans", "name": "Römer", "traits": {} }],

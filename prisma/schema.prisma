@@ -458,6 +458,9 @@ model GameDataVersion {
   source      String
   importedAt  DateTime   @default(now())
   serverSpeed Int        @default(1)
+  /// Welt (Host) und Spielversion, für die die Werte gelten – Import nur für die eigene Welt
+  worldHost   String     @default("")
+  gameVersion String     @default("")
   notes       String     @default("")
   tribes      Tribe[]
   buildings   Building[]

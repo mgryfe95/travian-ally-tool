@@ -37,11 +37,13 @@ export const unitSchema = z.object({
 
 export const tribeSchema = z.object({ key, name: z.string().min(1), traits: z.record(z.unknown()).default({}) });
 
-/** Import-Datei. `source` = URL + Abrufdatum der freigegebenen Quelle; Werte gelten für Server-Speed 1. */
+/** Import-Datei. `source` = URL + Abrufdatum der freigegebenen Quelle. `world` + `serverSpeed` bezeichnen die Welt, für die die Werte gelten
+ *  (Host, Spielversion, Geschwindigkeit) – sie müssen zur eigenen Welt passen, sonst wird nichts importiert. */
 export const gameDataSchema = z
   .object({
     source: z.string().min(10, "source: URL + Abrufdatum angeben"),
-    serverSpeed: z.number().int().positive().default(1),
+    world: z.object({ host: z.string().min(3, "world.host fehlt"), gameVersion: z.string().min(2, "world.gameVersion fehlt") }),
+    serverSpeed: z.number().int().positive(),
     notes: z.string().default(""),
     tribes: z.array(tribeSchema).default([]),
     buildings: z.array(buildingSchema).default([]),

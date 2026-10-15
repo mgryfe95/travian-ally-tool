@@ -30,6 +30,10 @@ const schema = z.object({
   UPLOAD_MAX_FILES: z.coerce.number().int().positive().default(10),
   /** Screenshots werden nach so vielen Tagen samt Datei gelöscht (außer als Lern-Beispiel genutzte). 0 = nie. */
   SCREENSHOT_RETENTION_DAYS: z.coerce.number().int().min(0).default(30),
+  /** Spielversion der Welt (Spieldaten-Import nur für genau diese Version). */
+  GAME_VERSION: z.string().min(2).default("legends"),
+  /** Server-Geschwindigkeit; Standard: aus dem Host der TRAVIAN_SERVER_URL (x1, x2 …). */
+  GAME_SPEED: z.preprocess(emptyToUndefined, z.coerce.number().int().positive().optional()),
   ANTHROPIC_API_KEY: z.string().optional(),
   ANTHROPIC_MODEL: z.string().optional(),
   /** Bilderkennung: Anzahl unabhängiger Lesedurchläufe je Screenshot (≥2 = Konsens-Prüfung, höhere Konfidenz, höhere Kosten). */

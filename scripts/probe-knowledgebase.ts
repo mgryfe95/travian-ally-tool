@@ -5,6 +5,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { allowedByRobots, analyzeHtml } from "../lib/gamedata/probe";
+import { worldProfile } from "../lib/world-profile";
 
 const start = process.argv[2] ?? "https://knowledgebase.legends.travian.com/en-US/buildings";
 const out = path.resolve("storage/gamedata-raw");
@@ -16,7 +17,8 @@ const origin = new URL(start).origin;
 const robots = await fetch(`${origin}/robots.txt`, { headers: { "user-agent": UA } }).then((r) => (r.ok ? r.text() : "")).catch(() => "");
 await writeFile(path.join(out, "robots.txt"), robots);
 
-const report: string[] = [`# Probe ${new Date().toISOString()}`, `Start: ${start}`, `robots.txt: ${robots ? "vorhanden" : "nicht abrufbar/leer"}`, ""];
+const world = worldProfile(process.env.TRAVIAN_SERVER_URL ?? "https://ts12.x1.europe.travian.com", { version: process.env.GAME_VERSION, speed: process.env.GAME_SPEED ? Number(process.env.GAME_SPEED) : undefined });
+const report: string[] = [`# Probe ${new Date().toISOString()}`, `Eigene Welt: ${world.host} · Version ${world.version} · Geschwindigkeit x${world.speed ?? "?"} (nur Werte für genau diese Welt übernehmen)`, `Start: ${start}`, `robots.txt: ${robots ? "vorhanden" : "nicht abrufbar/leer"}`, ""];
 const queue = [start];
 const seen = new Set<string>();
 while (queue.length && seen.size < 6) {

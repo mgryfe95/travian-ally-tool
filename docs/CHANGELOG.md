@@ -53,3 +53,6 @@ Was & Warum: (1) Fix Screenshot-Erkennung: API-Schema hatte 19 Union-Parameter (
 
 ## 2026-10-15 · travian-ally-tool/phase2/village-view
 Was & Warum: Dorfseite zeigt jetzt die erkannten Werte (Rohstoffe inkl. Produktion/brutto/Händler, Rohstofffeld-Stufen, Gebäude mit Stufen, Bauschleife) – zuvor wurden freigegebene Gebäude gespeichert, aber nicht angezeigt. Bestätigen meldet einen Fehler, wenn die Lesung keinem eigenen Dorf zugeordnet werden kann; in der Prüfansicht lässt sich das Dorf ausdrücklich wählen; Upload zeigt „Zur Prüfung“. Anker `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.
+
+## 2026-10-15 · travian-ally-tool/gamedata/world-binding
+Was & Warum: Vertrags-Invariante für Spieldaten — Import nur für die eigene Welt: Host, Spielversion (`GAME_VERSION`, Standard legends) und Server-Geschwindigkeit (aus Host `xN` oder `GAME_SPEED`) müssen zur Datei passen, sonst Ablehnung der gesamten Datei; keine Umrechnung. Format: `world` + `serverSpeed` Pflicht; `GameDataVersion` speichert Welt/Version; Migration `gamedata_world`. Anker `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.
