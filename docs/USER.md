@@ -36,3 +36,6 @@ Unter **Truppen** (Recht `troops.view`, Standard: Moderator und Admin) sehen Mod
 
 ## Screenshots (Erkennung & Lernmodus)
 Unter **Screenshots** lädst du Bilder hoch (oder Strg+V). Art und Gerät werden erkannt. Am Anfang prüfst du jede Lesung: **„Stimmt, übernehmen“** oder mit Häkchen **„Werte korrigieren“** (JSON anpassen). Jede Bestätigung wird zum Lernbeispiel. Nach `VISION_LEARNING_MIN` (Standard 10) bestätigten Screenshots einer Art werden sehr sichere Lesungen automatisch übernommen; auffällige (Summen passen nicht, Dorf nicht zuordenbar) landen weiter in der Prüfung. Emojis/Kürzel für die KI: `npx tsx scripts/vision-alias.ts add "<Begriff>" "<Bedeutung>"`.
+
+## Konto direkt einem Spieler zuordnen
+**Admin → Konten:** In der Spalte „Spieler“ den Travian-Spieler der eigenen Gruppe wählen und **Zuordnen** (Recht `members.approve`, Moderator+). Das Konto gilt sofort als verifiziert (Gäste werden Mitglied), der Vorgang steht im Audit-Log. Gilt auch für Systemadmins.

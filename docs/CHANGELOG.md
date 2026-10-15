@@ -32,3 +32,6 @@ Was & Warum: Neue Anforderung — Admins und Moderatoren sehen die Truppen der M
 
 ## 2026-10-14 · travian-ally-tool/phase2/vision
 Was & Warum: Screenshot-Erkennung für 1.0 (Anker `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`). Claude Vision mit Structured Outputs liest 12 Screenshot-Arten (Mobil + Desktop, DE/EN) aus 14 Mustern in ein einheitliches Format; Konfidenz aus deterministischen Prüfungen + Konsens mehrerer Durchläufe; Lernmodus (Review-Seite `/screenshots`, Bestätigungen werden Beispiele, Auto-Übernahme erst nach `VISION_LEARNING_MIN`); Übernahme in `VillageState` (Truppen, Rohstoffe, Felder, Gebäude, Queues); `scripts/eval-vision.ts` und `scripts/vision-alias.ts`. Echte Genauigkeit lässt sich nur mit API-Key messen (Eval-Skript). Migration `vision_learning`.
+
+## 2026-10-15 · travian-ally-tool/m3/assign-player
+Was & Warum: Admin → Konten: Moderator/Admin kann ein Konto direkt einem Spieler der eigenen Gruppe zuordnen (`assignPlayer`, Audit `link.assign`, Gast → Mitglied), ohne dass das Konto vorher einen Claim startet. Anlass: erster Systemadmin hatte keinen Weg zur Verknüpfung. Anker `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.

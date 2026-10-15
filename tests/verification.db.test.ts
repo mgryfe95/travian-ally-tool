@@ -4,7 +4,7 @@ import { ForbiddenError } from "@/lib/permissions";
 import { seedPermissions } from "@/lib/services/admin";
 import type { Actor } from "@/lib/services/context";
 import {
-  approveLink, checkClaims, createInvite, findOpenInvite, INVITE_TTL_MS, inviteMessage, redeemInvite, rejectLink, revokeInvite,
+  approveLink, assignPlayer, checkClaims, createInvite, findOpenInvite, INVITE_TTL_MS, inviteMessage, redeemInvite, rejectLink, revokeInvite,
   startClaim, VerificationError,
 } from "@/lib/services/verification";
 
@@ -124,5 +124,21 @@ describe("Manuelle Freigabe", () => {
     expect((await db.playerLink.findUnique({ where: { id: b.id } }))?.status).toBe("rejected");
     expect((await db.user.findUnique({ where: { id: "u2" } }))?.role).toBe("GUEST");
     expect(await db.auditLog.count()).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe("assignPlayer (direkte Zuordnung)", () => {
+  it("Moderator ordnet Gast einem Gruppen-Spieler zu → verifiziert, Mitglied", async () => {
+    await assignPlayer(db, mod, "u1", 1, t0);
+    expect((await db.playerLink.findFirstOrThrow({ where: { userId: "u1" } })).status).toBe("verified");
+    expect((await db.user.findUniqueOrThrow({ where: { id: "u1" } })).role).toBe("MEMBER");
+    expect(await db.auditLog.count({ where: { action: "link.assign" } })).toBe(1);
+  });
+  it("überschreibt eine offene Beanspruchung, lehnt Fremde und fehlende Rechte ab", async () => {
+    await startClaim(db, "u1", 1);
+    await assignPlayer(db, mod, "u1", 1, t0);
+    expect(await db.playerLink.count({ where: { userId: "u1", status: "verified" } })).toBe(1);
+    await expect(assignPlayer(db, mod, "u2", 3, t0)).rejects.toBeInstanceOf(VerificationError);
+    await expect(assignPlayer(db, member, "u2", 1, t0)).rejects.toBeInstanceOf(ForbiddenError);
   });
 });

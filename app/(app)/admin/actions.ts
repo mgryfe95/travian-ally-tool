@@ -6,7 +6,7 @@ import { env } from "@/lib/env";
 import { RELATIONS, type Relation } from "@/lib/alliance-group";
 import { ForbiddenError, PERMISSIONS, ROLES, type Permission, type Role } from "@/lib/permissions";
 import { classifyAlliance, deleteUser, setRolePermission, setUserBanned, setUserRole } from "@/lib/services/admin";
-import { approveLink, createInvite, inviteMessage, rejectLink, revokeInvite, VerificationError } from "@/lib/services/verification";
+import { approveLink, assignPlayer, createInvite, inviteMessage, rejectLink, revokeInvite, VerificationError } from "@/lib/services/verification";
 import { ChatError, chatCtx, createChannel, deleteTag, moveChannel, saveTag, updateChannel } from "@/lib/services/chat";
 import { requireUser } from "@/lib/session";
 import { loadMemberRows } from "./tabs/data";
@@ -61,6 +61,9 @@ export async function setPermissionAction(f: FormData) {
 
 export async function approveLinkAction(f: FormData) {
   return run("members", async () => approveLink(db, await requireUser(), int(f, "linkId")));
+}
+export async function assignPlayerAction(f: FormData) {
+  return run("users", async () => assignPlayer(db, await requireUser(), str(f, "userId"), int(f, "playerId")));
 }
 export async function rejectLinkAction(f: FormData) {
   return run("members", async () => rejectLink(db, await requireUser(), int(f, "linkId")));

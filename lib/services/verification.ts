@@ -140,3 +140,19 @@ export async function rejectLink(db: PrismaClient, actor: Actor, linkId: number)
   await db.playerLink.update({ where: { id: linkId }, data: { status: "rejected", verifiedBy: actor.id, verifiedAt: null } });
   await audit(db, actor.id, "link.reject", `user:${link.userId}`, { status: link.status }, { status: "rejected" });
 }
+
+/** Moderator/Admin ordnet ein Konto direkt einem Spieler der eigenen Gruppe zu (ohne Dorf-Umbenennen oder Einladung). */
+export async function assignPlayer(db: PrismaClient, actor: Actor, userId: string, playerId: number, now = new Date()) {
+  await requirePerm(db, actor, "members.approve");
+  const user = await db.user.findUnique({ where: { id: userId } });
+  if (!user) throw new VerificationError("Konto nicht gefunden");
+  await requireGroupPlayer(db, playerId);
+  const prev = await db.playerLink.findUnique({ where: { userId_travianPlayerId: { userId, travianPlayerId: playerId } } });
+  await db.playerLink.upsert({
+    where: { userId_travianPlayerId: { userId, travianPlayerId: playerId } },
+    create: { userId, travianPlayerId: playerId, status: "verified", method: "admin", verifiedBy: actor.id, verifiedAt: now },
+    update: { status: "verified", method: "admin", verifiedBy: actor.id, verifiedAt: now, claimCode: null },
+  });
+  await promoteGuest(db, userId);
+  await audit(db, actor.id, "link.assign", `user:${userId}`, { status: prev?.status ?? null }, { status: "verified", playerId });
+}
