@@ -6,7 +6,7 @@ import { auth } from "./lib/auth";
 import { db } from "./lib/db";
 import { env } from "./lib/env";
 import { effectiveRole } from "./lib/permissions";
-import { channelRoom, setIo } from "./lib/realtime";
+import { channelRoom, setIo, userRoom } from "./lib/realtime";
 import { seedPermissions } from "./lib/services/admin";
 import { chatCtx, seedChat } from "./lib/services/chat";
 import { dispatchDueCalls, seedSchedule } from "./lib/services/schedule";
@@ -44,6 +44,7 @@ io.use(async (socket, nextFn) => {
     const user = await userFromCookie(socket.handshake.headers.cookie);
     if (!user) return nextFn(new Error("unauthorized"));
     socket.data.userId = user.id;
+    await socket.join(userRoom(user.id)); // eigene Messenger-Benachrichtigungen
     nextFn();
   } catch {
     nextFn(new Error("unauthorized"));

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export type NavItem = { href: string; label: string; match?: string; sepBefore?: boolean };
+export type NavItem = { href: string; label: string; match?: string; sepBefore?: boolean; badge?: number };
 
 export function SideNav({ items }: { items: NavItem[] }) {
   const path = usePathname();
@@ -17,6 +17,7 @@ export function SideNav({ items }: { items: NavItem[] }) {
             {it.sepBefore && <div className="sep" />}
             <Link className={`nav ${on ? "on" : ""}`} href={it.href} aria-current={on ? "page" : undefined}>
               {it.label}
+              {it.badge ? <span className="badge" aria-label={`${it.badge} ungelesen`}>{it.badge}</span> : null}
             </Link>
           </div>
         );

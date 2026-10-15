@@ -7,6 +7,7 @@ import { env } from "@/lib/env";
 import { hasPermission, type Permission } from "@/lib/permissions";
 import { serverLabel, ownAllianceTag } from "@/lib/serverinfo";
 import { loadMatrix } from "@/lib/services/context";
+import { unreadCounts } from "@/lib/services/messenger";
 import { getWorldStatus } from "@/lib/services/world";
 import { requireUser } from "@/lib/session";
 
@@ -24,6 +25,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     { href: "/chat", label: "Chat" },
     { href: "/chat?tf=1", label: "Task-Forces", match: "/taskforces" },
   ];
+  if (can("messenger.use")) items.push({ href: "/messages", label: "Nachrichten", badge: (await unreadCounts(db, user.id)).total });
   if (can("schedule.view")) items.push({ href: "/schedule", label: "Schedule" });
   if (can("troops.view")) items.push({ href: "/troops", label: "Truppen" });
   if (user.role !== "GUEST") items.push({ href: "/screenshots", label: "Screenshots" });

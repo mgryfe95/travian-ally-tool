@@ -104,3 +104,8 @@ td { padding: 10px; border-bottom: 1px solid var(--line2); vertical-align: middl
   .tabbar a.on { color: var(--link-h); font-weight: 600; }
   .btn, .field, .opt { min-height: 44px; }
 }
+
+.nav .badge { margin-left: 8px; background: var(--accent, #dda944); color: #1b1710; border-radius: 10px; padding: 0 7px; font-size: 11px; font-weight: 700; }
+.dm-bubble { max-width: 78%; padding: 8px 12px; border-radius: 12px; background: #221e18; border: 1px solid #2c271f; white-space: pre-wrap; overflow-wrap: anywhere; }
+.dm-bubble.mine { margin-left: auto; background: #3a3220; border-color: #5a4c2e; }
+@media (max-width: 760px) { .msg-grid { grid-template-columns: minmax(0, 1fr) !important; } }

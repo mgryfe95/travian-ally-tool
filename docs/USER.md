@@ -48,3 +48,6 @@ Menü **Schedule** (alle Mitglieder sehen die anstehenden Calls). Admins (`sched
 
 ## Task-Forces: Einladungen und Rollen
 Wer eine Task-Force anlegt, ist **Gründer**. Im Kanal **Task-Force › Verwalten** lädt der Gründer (oder ein **Lead**) Allianzmitglieder ein; sie sehen die Einladung oben im Chat und **nehmen an oder lehnen ab** – erst nach Annahme sehen sie den Kanal. Rollen: **Gründer** (alles, nicht entfernbar), **Lead** (einladen, Mitglieder/Leser entfernen), **Mitglied** (lesen und schreiben), **Leser** (nur lesen). **Rollen ändert nur der Gründer** (Admins als Notausgang); auch das Archivieren ist dem Gründer vorbehalten. Mitglieder können die Task-Force selbst verlassen.
+
+## Nachrichten (Messenger)
+Menü **Nachrichten** (getrennt von den Kanälen, mit Ungelesen-Zähler in der Navigation). **Direkt:** 1:1-Unterhaltungen mit allen Mitgliedern (Gäste ausgeschlossen); „Neue Nachricht an …“ wählen, Enter sendet. **Rundnachrichten:** Moderatoren und Admins schreiben an alle Mitglieder, ab einer Rolle, eine Task-Force oder eine Auswahl. Empfänger lesen sie im Tab „Rundnachrichten“ und können per **Antworten** dem Absender eine Direktnachricht schicken (kein Antwort-an-alle). Absender sehen unter „Gesendet“, wie viele die Nachricht gelesen haben. Neue Nachrichten erscheinen live.

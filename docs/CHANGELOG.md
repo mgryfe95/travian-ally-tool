@@ -44,3 +44,6 @@ Was & Warum: Allianz-Schedule — Admins legen Calls (Angriff, Deff, Angriffstag
 
 ## 2026-10-15 · travian-ally-tool/m4/taskforce-roles
 Was & Warum: Task-Forces verwaltbar — Einladung mit Annahme, vier Rollen (Gründer/Lead/Mitglied/Leser), Rollenvergabe und Archivieren nur durch den Gründer, Selbst-Verlassen; Einladungsbanner im Chat, Verwaltungsseite erweitert; Migration `taskforce_invites`. Anker `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.
+
+## 2026-10-15 · travian-ally-tool/m7/messenger
+Was & Warum: Messenger getrennt von den Kanälen — 1:1-Direktnachrichten (alle Mitglieder), Rundnachrichten (Moderator+; Zielgruppen alle/Rolle/Task-Force/Auswahl, Antwort per DM, Lesestatus für den Absender), Ungelesen-Zähler in der Navigation, Live-Zustellung über persönliche Socket-Räume; Rechte `messenger.use/broadcast`, Migration `messenger`. Anker `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.

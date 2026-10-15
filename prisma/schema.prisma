@@ -606,3 +606,59 @@ model TaskforceInvite {
   @@index([userId, status])
   @@index([taskforceId, status])
 }
+
+/// Messenger (getrennt von den Kanälen): 1:1-Direktnachrichten …
+model DmThread {
+  id        Int         @id @default(autoincrement())
+  /// "<kleinere userId>:<größere userId>" – genau ein Thread je Paar
+  pairKey   String      @unique
+  userA     String
+  userB     String
+  createdAt DateTime    @default(now())
+  messages  DmMessage[]
+
+  @@index([userA])
+  @@index([userB])
+}
+
+model DmMessage {
+  id        Int      @id @default(autoincrement())
+  threadId  Int
+  thread    DmThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  authorId  String
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([threadId, id])
+}
+
+/// Zuletzt gelesene Nachricht je Nutzer und Thread
+model DmRead {
+  userId        String
+  threadId      Int
+  lastReadMsgId Int    @default(0)
+
+  @@id([userId, threadId])
+}
+
+/// … und Rundnachrichten (ein Absender, viele Empfänger; Antworten laufen als Direktnachricht an den Absender).
+model Broadcast {
+  id         Int                  @id @default(autoincrement())
+  senderId   String
+  subject    String
+  body       String
+  /// Klartext der Zielgruppe, z. B. „Alle Mitglieder“, „Rolle Moderator“, „Task-Force Süd“, „Auswahl (5)“
+  audience   String
+  createdAt  DateTime             @default(now())
+  recipients BroadcastRecipient[]
+}
+
+model BroadcastRecipient {
+  broadcastId Int
+  broadcast   Broadcast @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+  userId      String
+  readAt      DateTime?
+
+  @@id([broadcastId, userId])
+  @@index([userId, readAt])
+}

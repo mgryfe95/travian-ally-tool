@@ -7,7 +7,7 @@ const DESC: Record<Permission, string> = {
   "chat.read": "Kanäle lesen", "chat.write": "In Kanälen schreiben", "chat.moderate": "Nachrichten anderer bearbeiten/löschen", "chat.upload": "Dateien im Chat anhängen",
   "tags.manage": "Tags anlegen und ändern", "taskforce.create": "Task-Forces anlegen", "taskforce.manage": "Task-Forces verwalten", "members.invite": "Einladungslinks erzeugen",
   "members.approve": "Verifizierung manuell bestätigen", "roles.assign": "Rollen vergeben (nie Systemadmin)", "permissions.edit": "Diese Matrix bearbeiten",
-  "map.view": "Karte, Inaktive, Ereignisse sehen", "settings.edit": "Einstellungen ändern", "alliances.classify": "Allianz-Typen / Allianz-Gruppe festlegen", "gamedata.edit": "Spieldaten pflegen", "troops.view": "Truppen aller Mitglieder einsehen (Planung/Koordination)", "schedule.view": "Allianz-Schedule (Calls) sehen", "schedule.manage": "Allianz-Schedule und Call-Vorlagen verwalten, Calls senden",
+  "map.view": "Karte, Inaktive, Ereignisse sehen", "settings.edit": "Einstellungen ändern", "alliances.classify": "Allianz-Typen / Allianz-Gruppe festlegen", "gamedata.edit": "Spieldaten pflegen", "troops.view": "Truppen aller Mitglieder einsehen (Planung/Koordination)", "schedule.view": "Allianz-Schedule (Calls) sehen", "messenger.use": "Messenger: Direktnachrichten senden/empfangen", "messenger.broadcast": "Messenger: Rundnachrichten senden", "schedule.manage": "Allianz-Schedule und Call-Vorlagen verwalten, Calls senden",
 };
 const COLS = ["ADMIN", "MODERATOR", "MEMBER", "GUEST"] as const;
 
