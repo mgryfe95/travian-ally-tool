@@ -51,25 +51,91 @@ export const readingSchema = z.object({
 export type Reading = z.infer<typeof readingSchema>;
 export type ReadingRow = Reading["rows"][number];
 
-const J = (t: unknown) => t;
-const nullable = (type: string) => J({ type: [type, "null"] });
-const arr = (items: unknown) => J({ type: "array", items });
-const obj = (props: Record<string, unknown>) => J({ type: "object", properties: props, required: Object.keys(props), additionalProperties: false });
+// ───────── Wire-Format zur API ─────────
+// Structured Outputs erlauben höchstens 16 Parameter mit Union-Typen (type-Arrays/anyOf). Deshalb enthält das API-Schema keine
+// Unions: Zahlen mit „unbekannt“ sind Strings ("" oder "-" = unbekannt), Koordinaten "x|y" bzw. "", Objekte sind immer vorhanden.
 
-/** Handgeschriebenes JSON-Schema (Structured Outputs: keine min/max, alle Felder required, additionalProperties=false). */
+export const apiSchema = z.object({
+  kind: z.enum(READING_KINDS),
+  device: z.enum(["DESKTOP", "MOBILE", "UNKNOWN"]),
+  language: z.string(),
+  village: z.object({ name: z.string(), coord: z.string() }),
+  topBar: z.object({ present: z.boolean(), wood: z.string(), clay: z.string(), iron: z.string(), crop: z.string(), freeCrop: z.string(), warehouse: z.string(), granary: z.string() }),
+  rows: z.array(z.object({ name: z.string(), coord: z.string(), current: z.boolean(), cells: z.array(z.string()), texts: z.array(z.string()) })),
+  totals: z.object({ present: z.boolean(), cells: z.array(z.string()), texts: z.array(z.string()) }),
+  fields: z.array(z.object({ slot: z.number(), level: z.number() })),
+  buildings: z.array(z.object({ slot: z.number(), name: z.string(), level: z.number() })),
+  selfRating: z.number(),
+  uncertain: z.array(z.string()),
+});
+export type ApiReading = z.infer<typeof apiSchema>;
+
+const str = { type: "string" } as const;
+const int = { type: "integer" } as const;
+const arrOf = (items: unknown) => ({ type: "array", items });
+const obj = (props: Record<string, unknown>) => ({ type: "object", properties: props, required: Object.keys(props), additionalProperties: false });
+
 export const readingJsonSchema = obj({
   kind: { type: "string", enum: [...READING_KINDS] },
   device: { type: "string", enum: ["DESKTOP", "MOBILE", "UNKNOWN"] },
-  language: { type: "string" },
-  village: J({ anyOf: [obj({ name: nullable("string"), x: nullable("integer"), y: nullable("integer") }), { type: "null" }] }),
-  topBar: J({ anyOf: [obj({ wood: nullable("integer"), clay: nullable("integer"), iron: nullable("integer"), crop: nullable("integer"), freeCrop: nullable("integer"), warehouse: nullable("integer"), granary: nullable("integer") }), { type: "null" }] }),
-  rows: arr(obj({ name: nullable("string"), x: nullable("integer"), y: nullable("integer"), current: { type: "boolean" }, cells: arr(nullable("integer")), texts: arr(nullable("string")) })),
-  totals: J({ anyOf: [obj({ cells: arr(nullable("integer")), texts: arr(nullable("string")) }), { type: "null" }] }),
-  fields: arr(obj({ slot: nullable("integer"), level: { type: "integer" } })),
-  buildings: arr(obj({ slot: nullable("integer"), name: nullable("string"), level: { type: "integer" } })),
+  language: str,
+  village: obj({ name: str, coord: str }),
+  topBar: obj({ present: { type: "boolean" }, wood: str, clay: str, iron: str, crop: str, freeCrop: str, warehouse: str, granary: str }),
+  rows: arrOf(obj({ name: str, coord: str, current: { type: "boolean" }, cells: arrOf(str), texts: arrOf(str) })),
+  totals: obj({ present: { type: "boolean" }, cells: arrOf(str), texts: arrOf(str) }),
+  fields: arrOf(obj({ slot: int, level: int })),
+  buildings: arrOf(obj({ slot: int, name: str, level: int })),
   selfRating: { type: "number" },
-  uncertain: arr({ type: "string" }),
+  uncertain: arrOf(str),
 }) as Record<string, unknown>;
+
+/** "13,956" / "13.956" / "−2334" / "+1,695" → Zahl; "", "-" → null. */
+export function parseNum(raw: string): number | null {
+  const t = raw.trim().replace(/[−–]/g, "-").replace(/^\+/, "");
+  if (t === "" || t === "-") return null;
+  const n = Number(t.replace(/[.,\s](?=\d{3}(\D|$))/g, ""));
+  return Number.isFinite(n) ? n : null;
+}
+
+/** "x|y", "(-3|-82)", "−3|−82" → [x, y] oder null. */
+export function parseCoordStr(raw: string): [number, number] | null {
+  const m = raw.trim().replace(/[()−–]/g, (c) => (c === "(" || c === ")" ? "" : "-")).match(/^(-?\d{1,4})\s*[|,; ]\s*(-?\d{1,4})$/);
+  return m ? [Number(m[1]), Number(m[2])] : null;
+}
+
+export function apiToReading(a: ApiReading): Reading {
+  const xy = (c: string) => parseCoordStr(c);
+  const vc = xy(a.village.coord);
+  return {
+    kind: a.kind, device: a.device, language: a.language,
+    village: a.village.name.trim() || vc ? { name: a.village.name.trim() || null, x: vc?.[0] ?? null, y: vc?.[1] ?? null } : null,
+    topBar: a.topBar.present
+      ? { wood: parseNum(a.topBar.wood), clay: parseNum(a.topBar.clay), iron: parseNum(a.topBar.iron), crop: parseNum(a.topBar.crop), freeCrop: parseNum(a.topBar.freeCrop), warehouse: parseNum(a.topBar.warehouse), granary: parseNum(a.topBar.granary) }
+      : null,
+    rows: a.rows.map((r) => { const c = xy(r.coord); return { name: r.name.trim() || null, x: c?.[0] ?? null, y: c?.[1] ?? null, current: r.current, cells: r.cells.map(parseNum), texts: r.texts.map((t) => (t.trim() === "" ? null : t)) }; }),
+    totals: a.totals.present ? { cells: a.totals.cells.map(parseNum), texts: a.totals.texts.map((t) => (t.trim() === "" ? null : t)) } : null,
+    fields: a.fields.map((f) => ({ slot: f.slot > 0 ? f.slot : null, level: f.level })),
+    buildings: a.buildings.map((b) => ({ slot: b.slot > 0 ? b.slot : null, name: b.name.trim() || null, level: b.level })),
+    selfRating: a.selfRating, uncertain: a.uncertain,
+  };
+}
+
+const ns = (n: number | null) => (n === null ? "" : String(n));
+const cs = (x: number | null, y: number | null) => (x === null || y === null ? "" : `${x}|${y}`);
+
+/** Umkehrung für Few-Shot-Beispiele (Gold-Lesung → so, wie das Modell antworten soll). */
+export function readingToApi(r: Reading): ApiReading {
+  return {
+    kind: r.kind, device: r.device, language: r.language,
+    village: { name: r.village?.name ?? "", coord: cs(r.village?.x ?? null, r.village?.y ?? null) },
+    topBar: { present: !!r.topBar, wood: ns(r.topBar?.wood ?? null), clay: ns(r.topBar?.clay ?? null), iron: ns(r.topBar?.iron ?? null), crop: ns(r.topBar?.crop ?? null), freeCrop: ns(r.topBar?.freeCrop ?? null), warehouse: ns(r.topBar?.warehouse ?? null), granary: ns(r.topBar?.granary ?? null) },
+    rows: r.rows.map((x) => ({ name: x.name ?? "", coord: cs(x.x, x.y), current: x.current, cells: x.cells.map((c) => (c === null ? "-" : String(c))), texts: x.texts.map((t) => t ?? "") })),
+    totals: { present: !!r.totals, cells: (r.totals?.cells ?? []).map((c) => (c === null ? "-" : String(c))), texts: (r.totals?.texts ?? []).map((t) => t ?? "") },
+    fields: r.fields.map((f) => ({ slot: f.slot ?? 0, level: f.level })),
+    buildings: r.buildings.map((b) => ({ slot: b.slot ?? 0, name: b.name ?? "", level: b.level })),
+    selfRating: r.selfRating, uncertain: r.uncertain,
+  };
+}
 
 /** Spaltenzahl je Art (Zeilen mit anderer Länge sind verdächtig). null = frei. */
 export const EXPECTED_CELLS: Partial<Record<ReadingKind, number[]>> = {

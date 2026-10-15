@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { readingSchema, type Reading } from "./reading";
+import { apiSchema, apiToReading, parseNum, readingJsonSchema, readingSchema, readingToApi, type Reading } from "./reading";
 import { agreementOf, assess } from "./validate";
 
 const dir = join(__dirname, "../../tests/fixtures/screenshots");
@@ -65,4 +65,27 @@ describe("Prüfungen", () => {
     r.kind = "UNKNOWN";
     expect(assess(r, known).confidence).toBeLessThan(0.5);
   });
+});
+
+describe("API-Schema", () => {
+  it("hat keine Union-Typen (Limit der Structured Outputs: 16)", () => {
+    const text = JSON.stringify(readingJsonSchema);
+    expect((text.match(/"anyOf"|"oneOf"|"type":\[/g) ?? []).length).toBe(0);
+  });
+  it("parseNum", () => {
+    expect([parseNum("13,956"), parseNum("13.956"), parseNum("−2334"), parseNum("+1,695"), parseNum("-"), parseNum(""), parseNum("12"), parseNum("2.519")]).toEqual([13956, 13956, -2334, 1695, null, null, 12, 2519]);
+  });
+  for (const f of golds) {
+    it(`${f}: Gold → API-Format → Lesung ist verlustfrei`, () => {
+      const gold = readingSchema.parse(load(f));
+      const api = apiSchema.parse(JSON.parse(JSON.stringify(readingToApi(gold))));
+      const back = apiToReading(api);
+      expect(back.rows.map((r) => [r.x, r.y, r.cells.length])).toEqual(gold.rows.map((r) => [r.x, r.y, r.cells.length]));
+      expect(back.rows.map((r) => r.cells)).toEqual(gold.rows.map((r) => r.cells));
+      expect(back.totals?.cells ?? null).toEqual(gold.totals?.cells ?? null);
+      expect(back.fields.map((x) => x.level)).toEqual(gold.fields.map((x) => x.level));
+      expect(back.buildings.map((x) => x.level)).toEqual(gold.buildings.map((x) => x.level));
+      expect(back.topBar?.wood ?? null).toEqual(gold.topBar?.wood ?? null);
+    });
+  }
 });

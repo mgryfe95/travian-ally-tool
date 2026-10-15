@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { glossaryBlock, SYSTEM_PROMPT, type Alias } from "./prompt";
-import { readingJsonSchema, readingSchema, type Reading } from "./reading";
+import { apiSchema, apiToReading, readingJsonSchema, readingSchema, readingToApi, type Reading } from "./reading";
 
 export type Example = { image: Buffer; gold: Reading };
 export type ReadOptions = { examples?: Example[]; aliases?: Alias[] };
@@ -33,7 +33,7 @@ export class ClaudeVision {
       messages.push({ role: "user", content: [imageBlock(ex.image), { type: "text", text: ASK }] });
       messages.push({
         role: "assistant",
-        content: [{ type: "text", text: JSON.stringify(ex.gold), ...(i === examples.length - 1 ? { cache_control: { type: "ephemeral" as const } } : {}) }],
+        content: [{ type: "text", text: JSON.stringify(readingToApi(ex.gold)), ...(i === examples.length - 1 ? { cache_control: { type: "ephemeral" as const } } : {}) }],
       });
     });
     messages.push({ role: "user", content: [imageBlock(image), { type: "text", text: ASK }] });
@@ -49,7 +49,7 @@ export class ClaudeVision {
     if (res.stop_reason === "max_tokens") throw new VisionError("Antwort abgeschnitten");
     const text = res.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
     try {
-      return readingSchema.parse(JSON.parse(text));
+      return readingSchema.parse(apiToReading(apiSchema.parse(JSON.parse(text))));
     } catch (e) {
       throw new VisionError(`Ungültige Antwort der KI: ${(e as Error).message.slice(0, 200)}`);
     }

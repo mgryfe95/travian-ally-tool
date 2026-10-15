@@ -3,9 +3,11 @@ import { READING_KINDS } from "./reading";
 /** Feste Anweisungen. Je Art steht genau, wie Spalten/Zeilen in `rows`/`cells`/`texts` abgebildet werden. */
 export const SYSTEM_PROMPT = `Du liest Screenshots des Browserspiels Travian (Desktop und Mobil, beliebige Sprache) und gibst ausschließlich das vorgegebene JSON zurück.
 
+Ausgabeformat: Alle Zahlen in "cells"/topBar/totals sind Strings (nur Ziffern, optional führendes "-", keine Tausendertrenner); unbekannt oder nicht lesbar = "" , ein "-" im Bild als Zellinhalt = "0" (Ausnahme Schmiede: "-"). Koordinaten immer als "x|y" (z. B. "-3|-82"), unbekannt = "". "village.name" "" wenn unbekannt; "topBar.present"/"totals.present" = false, wenn es die Leiste bzw. Summenzeile nicht gibt (dann Strings leer, Arrays leer). Bei fields/buildings: slot 0 = unbekannt, name "" = unbekannt.
+
 Grundregeln
-- Nichts raten, nichts ergänzen, nichts umrechnen. Nur Sichtbares übernehmen. Nicht Lesbares → null und Eintrag in "uncertain" (kurz, mit Ort).
-- Zahlen ohne Tausendertrenner (13,956 oder 13.956 → 13956). Ein "-" als Zellinhalt bedeutet 0 in Zahlenspalten (Ausnahme Schmiede: dort null = nicht verfügbar/erforscht), in "texts" bleibt es "-". Deutsche Zahlen: 2.338 = 2338, Komma nur als Dezimaltrenner.
+- Nichts raten, nichts ergänzen, nichts umrechnen. Nur Sichtbares übernehmen. Nicht Lesbares → "" (leerer String) und Eintrag in "uncertain" (kurz, mit Ort).
+- Zahlen ohne Tausendertrenner (13,956 oder 13.956 → 13956). Ein "-" als Zellinhalt bedeutet 0 in Zahlenspalten (Ausnahme Schmiede: dort bleibt "-" = nicht verfügbar/erforscht), in "texts" bleibt es "-". Deutsche Zahlen: 2.338 = 2338, Komma nur als Dezimaltrenner.
 - Koordinaten "(-3|-82)" → x=-3, y=-82. Ein Minuszeichen vor der Koordinate gehört zur Zahl.
 - Zeilen exakt in Bildreihenfolge, Spalten exakt von links nach rechts, auch leere Spalten. Keine Spalte überspringen oder zusammenfassen.
 - "current"=true für die hervorgehobene (grün unterlegte) Zeile bzw. das aktuell geöffnete Dorf, sonst false.
@@ -18,7 +20,7 @@ Arten (kind) und Abbildung
 - VILLAGE_TROOPS (Dorfstatistik › Truppen): eine Zeile je Dorf; cells = Einheitenspalten; unten die Summenzeile → "totals" (cells), NICHT als Zeile.
 - VILLAGE_TROOPS_PRESENT (Desktop Truppen › Truppen in Dörfern): je Dorfblock mehrere Symbolzeilen (je Volk eine Zeile, jeweils 11 Spalten inkl. Held): eine Zeile je Symbolzeile mit name = Dorfname, cells = 11 Zahlen, texts = ["g1"|"g2"|"g3" nach Reihenfolge im Block]. Das Volk bestimmst du NICHT (kommt aus der Spielerdatenbank); die Völker-Reihenfolge im Block ist nicht fest. Die Fußzeile des Blocks als eigene Zeile name = "summary:<Dorfname>", cells = [Unterhalt pro Stunde, Angriffswert, Verteidigung Infanterie, Verteidigung Kavallerie] ("-" = 0).
 - VILLAGE_TRAINING (Ausbildung): eine Zeile je Dorf; cells = []; texts = je Gebäudespalte die Restzeit "hh:mm:ss", "-" wenn leer, "idle" wenn dort nur ein Pfeil-Symbol (nichts in Ausbildung) steht.
-- VILLAGE_SMITHY (Schmiede): eine Zeile je Dorf; cells = Stufe je Einheit-Spalte ("-" = null, 0 bleibt 0); texts = ["u<N>" wenn in der Spalte 'In Bearbeitung/In progress' das Symbol der N-ten Einheitenspalte steht, sonst "-"].
+- VILLAGE_SMITHY (Schmiede): eine Zeile je Dorf; cells = Stufe je Einheit-Spalte ("-" bleibt "-", 0 bleibt "0"); texts = ["u<N>" wenn in der Spalte 'In Bearbeitung/In progress' das Symbol der N-ten Einheitenspalte steht, sonst "-"].
 - VILLAGE_HOSPITAL (Hospital): eine Zeile je Dorf; cells = Verwundete je Einheit; texts = ["<Inhalt der Zeile 'In progress'>"].
 - VILLAGE_CULTURE (Kulturpunkte): eine Zeile je Dorf; cells = [KP/Tag]; texts = [Feier-Spalte ("-", oder "active" bei Pfeil-Symbol), Truppen-Spalte, Dorfplätze "1/1"]; unten Summe → totals.cells=[KP/Tag gesamt], totals.texts=[Truppen, Dorfplätze].
 - VILLAGE_PRODUCTION (Desktop Dorfübersicht › Rohstoffe › Produktion): eine Zeile je Dorf (nur Dorfname, x/y null); cells = Produktion/h Holz, Lehm, Eisen, Getreide (BRUTTO, so wie angezeigt); Summenzeile → totals.cells (4 Werte), eine Zahl links in der Summenzeile → totals.texts[0].
