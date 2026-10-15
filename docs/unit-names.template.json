@@ -10,77 +10,77 @@
   },
   "3": {
    "en": "Imperian",
-   "de": ""
+   "de": "Imperianer"
   },
   "4": {
    "en": "Equites Legati",
-   "de": ""
+   "de": "Equites Legati"
   },
   "5": {
    "en": "Equites Imperatoris",
-   "de": ""
+   "de": "Equites Imperatoris"
   },
   "6": {
    "en": "Equites Caesaris",
-   "de": ""
+   "de": "Equites Caesaris"
   },
   "7": {
-   "en": "",
-   "de": ""
+   "en": "Battering Ram",
+   "de": "Rammbock"
   },
   "8": {
-   "en": "",
-   "de": ""
+   "en": "Fire Catapult",
+   "de": "Feuerkatapult"
   },
   "9": {
-   "en": "",
-   "de": ""
+   "en": "Senator",
+   "de": "Senator"
   },
   "10": {
-   "en": "",
-   "de": ""
+   "en": "Settler",
+   "de": "Siedler"
   }
  },
  "2": {
   "1": {
    "en": "Clubswinger",
-   "de": ""
+   "de": "Keulenschwinger"
   },
   "2": {
    "en": "Spearman",
-   "de": ""
+   "de": "Speerkämpfer"
   },
   "3": {
    "en": "Axeman",
-   "de": ""
+   "de": "Axtkämpfer"
   },
   "4": {
    "en": "Scout",
-   "de": ""
+   "de": "Kundschafter"
   },
   "5": {
    "en": "Paladin",
-   "de": ""
+   "de": "Paladin"
   },
   "6": {
    "en": "Teutonic Knight",
-   "de": ""
+   "de": "Teutonenreiter"
   },
   "7": {
-   "en": "",
-   "de": ""
+   "en": "Ram",
+   "de": "Ramme"
   },
   "8": {
-   "en": "",
-   "de": ""
+   "en": "Catapult",
+   "de": "Katapult"
   },
   "9": {
-   "en": "",
-   "de": ""
+   "en": "Chief",
+   "de": "Stammesführer"
   },
   "10": {
-   "en": "",
-   "de": ""
+   "en": "Settler",
+   "de": "Siedler"
   }
  },
  "3": {
@@ -90,7 +90,7 @@
   },
   "2": {
    "en": "Swordsman",
-   "de": ""
+   "de": "Schwertkämpfer"
   },
   "3": {
    "en": "Pathfinder",
@@ -98,7 +98,7 @@
   },
   "4": {
    "en": "Theutates Thunder",
-   "de": ""
+   "de": "Theutates Blitz"
   },
   "5": {
    "en": "Druidrider",
@@ -106,23 +106,23 @@
   },
   "6": {
    "en": "Haeduan",
-   "de": ""
+   "de": "Haeduaner"
   },
   "7": {
-   "en": "",
-   "de": ""
+   "en": "Ram",
+   "de": "Rammholz"
   },
   "8": {
-   "en": "",
-   "de": ""
+   "en": "Trebuchet",
+   "de": "Kriegskatapult"
   },
   "9": {
-   "en": "",
-   "de": ""
+   "en": "Chieftain",
+   "de": "Häuptling"
   },
   "10": {
-   "en": "",
-   "de": ""
+   "en": "Settler",
+   "de": "Siedler"
   }
  },
  "6": {
