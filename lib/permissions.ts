@@ -69,8 +69,8 @@ export function assertCanModerateUser(actor: Role, target: Role, matrix: Matrix)
 /** Rechte-Matrix bearbeiten. `role` ist die Rolle, deren Recht geändert wird. */
 export function assertCanEditPermission(actor: Role, role: Role, perm: Permission, matrix: Matrix) {
   if (!hasPermission(actor, "permissions.edit", matrix)) deny("Fehlendes Recht permissions.edit");
-  if (role === "SYSTEMADMIN") deny("Rechte von SYSTEMADMIN sind nicht änderbar");
+  if (role === "SYSTEMADMIN") deny("Diese Rechte sind nicht änderbar");
   if (actor !== "SYSTEMADMIN" && role === "ADMIN" && ADMIN_LOCKED_PERMISSIONS.includes(perm)) {
-    deny(`${perm} der Rolle ADMIN darf nur SYSTEMADMIN ändern`);
+    deny(`${perm} der Rolle ADMIN darf nur ein gesperrtes Admin-Konto ändern`);
   }
 }

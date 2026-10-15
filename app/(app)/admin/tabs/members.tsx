@@ -1,10 +1,9 @@
 import { BulkInviteButton, InviteButton } from "@/components/InviteButton";
 import { RoleSelect } from "@/components/AdminControls";
-import { maskEmail, type MemberRow } from "@/lib/admin-members";
+import type { MemberRow } from "@/lib/admin-members";
 import { db } from "@/lib/db";
-import { env } from "@/lib/env";
 import { fmt } from "@/lib/format";
-import { effectiveRole, hasPermission, rank, STORED_ROLES, type Role } from "@/lib/permissions";
+import { hasPermission, rank, STORED_ROLES, type Role } from "@/lib/permissions";
 import { loadMatrix, type Actor } from "@/lib/services/context";
 import { approveLinkAction, rejectLinkAction } from "../actions";
 import { loadMemberRows } from "./data";
@@ -24,7 +23,6 @@ export async function MembersTab({ actor }: { actor: Actor }) {
   const canApprove = hasPermission(actor.role, "members.approve", matrix);
   const canRoles = hasPermission(actor.role, "roles.assign", matrix);
   const rows = await loadMemberRows(db);
-  const sys = env().SYSTEMADMIN_EMAILS;
   const assignable = STORED_ROLES.filter((r) => actor.role === "SYSTEMADMIN" || rank(r) < rank(actor.role)).reverse() as string[];
   const withAccount = rows.filter((r) => r.state === "verified").length;
 
@@ -49,17 +47,16 @@ export async function MembersTab({ actor }: { actor: Actor }) {
         {rows.length === 0 && <p className="sub" style={{ margin: 12 }}>Keine Allianz als „Eigene Allianz“ oder „Allianz“ markiert – siehe Tab Allianzen.</p>}
         <div className="scroll">
           <table style={{ minWidth: 860 }}>
-            <thead><tr><th>Spieler</th><th className="r">Einw.</th><th>Account</th><th>Verifizierung</th><th>Rolle</th><th /></tr></thead>
+            <thead><tr><th>Spieler</th><th className="r">Einw.</th><th>Konto</th><th>Verifizierung</th><th>Rolle</th><th /></tr></thead>
             <tbody>
               {rows.map((r) => {
-                const target: Role | undefined = r.user ? effectiveRole({ email: r.user.email, role: "" }, sys) : undefined;
                 return (
                   <tr key={r.key}>
                     <td style={{ fontWeight: 500 }}>{r.player.name}</td>
                     <td className="mono r">{fmt(r.player.population)}</td>
-                    <td style={{ color: "var(--text2)" }}>{r.user ? maskEmail(r.user.email) : "—"}{r.extraAccounts > 0 && <span className="sub"> +{r.extraAccounts}</span>}</td>
+                    <td style={{ color: "var(--text2)" }}>{r.user ? r.user.name : "—"}{r.extraAccounts > 0 && <span className="sub"> +{r.extraAccounts}</span>}</td>
                     <td>{status(r)}</td>
-                    <td><RoleCell row={r} actor={actor} canRoles={canRoles} assignable={assignable} sysTarget={target === "SYSTEMADMIN"} /></td>
+                    <td><RoleCell row={r} actor={actor} canRoles={canRoles} assignable={assignable} sysTarget={r.user?.locked === true} /></td>
                     <td className="r" style={{ whiteSpace: "nowrap" }}>
                       {canInvite && r.state === "none" && <InviteButton playerId={r.player.id} playerName={r.player.name} />}
                       {canInvite && r.state === "invite_open" && <InviteButton playerId={r.player.id} playerName={r.player.name} label="Neuen Link erzeugen" ghost />}
@@ -91,7 +88,7 @@ export async function MembersTab({ actor }: { actor: Actor }) {
 async function RoleCell({ row, actor, canRoles, assignable, sysTarget }: { row: MemberRow; actor: Actor; canRoles: boolean; assignable: string[]; sysTarget: boolean }) {
   if (!row.user) return <span className="sub">—</span>;
   if (sysTarget)
-    return (<><span style={{ color: "var(--link-h)", fontWeight: 600 }}>🔒 Systemadmin</span><div className="sub" style={{ fontSize: 12 }}>aus .env – nicht änderbar</div></>);
+    return (<><span style={{ color: "var(--link-h)", fontWeight: 600 }}>🔒 Admin</span><div className="sub" style={{ fontSize: 12 }}>nicht änderbar</div></>);
   const u = await db.user.findUnique({ where: { id: row.user.id }, select: { role: true } });
   const current = u?.role ?? "GUEST";
   const editable = canRoles && (actor.role === "SYSTEMADMIN" || rank(current as Role) < rank(actor.role));

@@ -5,7 +5,7 @@ import { Md } from "@/components/Md";
 import type { MessageView } from "@/lib/services/chat";
 
 const AV = ["#d9a441", "#8cc4de", "#c99be0", "#9fd39a"];
-const ROLE: Record<string, string> = { SYSTEMADMIN: "Systemadmin", ADMIN: "Admin", MODERATOR: "Moderator", MEMBER: "Member", GUEST: "Gast" };
+const ROLE: Record<string, string> = { SYSTEMADMIN: "Admin", ADMIN: "Admin", MODERATOR: "Moderator", MEMBER: "Member", GUEST: "Gast" };
 const size = (b: number) => (b > 1_048_576 ? `${(b / 1_048_576).toFixed(1).replace(".", ",")} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
 
 export function MessageItem(props: {

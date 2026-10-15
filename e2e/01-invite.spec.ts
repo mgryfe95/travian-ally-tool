@@ -15,7 +15,7 @@ test("Einladung erzeugen → einlösen → verifiziert; Systemadmin bleibt unant
   await page.waitForURL("**/claim");
   await page.getByRole("link", { name: /Als Gast weiter/ }).click();
   await page.waitForURL((u) => u.pathname === "/");
-  await expect(page.locator(".me")).toContainText("Systemadmin");
+  await expect(page.locator(".me")).toContainText("Admin");
 
   // Einladung für ein Mitglied der Gruppe (Allianz 36 laut ENV) erzeugen.
   await page.goto("/admin?tab=members");
@@ -56,7 +56,7 @@ test("Einladung erzeugen → einlösen → verifiziert; Systemadmin bleibt unant
   await expect(page.getByText(/Spieler in der Gruppe/).first()).toContainText(/1 mit verifiziertem Konto/);
   await expect(page.locator(".pill", { hasText: "Einladung ✓" })).toHaveCount(1);
   await page.goto("/admin?tab=users");
-  const bossRow = page.locator("tr", { hasText: "boss@example.com" });
-  await expect(bossRow).toContainText("Systemadmin");
+  const bossRow = page.locator("tr", { hasText: "Boss" });
+  await expect(bossRow).toContainText("🔒 Admin");
   await expect(bossRow.getByRole("button", { name: /Sperren|Löschen/ })).toHaveCount(0);
 });

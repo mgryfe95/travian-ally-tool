@@ -1,4 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
+import { env } from "@/lib/env";
+import { effectiveRole } from "@/lib/permissions";
 import { buildMemberRows, type LinkInfo } from "@/lib/admin-members";
 import { loadGroupPlayers, loadRelations } from "@/lib/alliance-group";
 
@@ -9,8 +11,9 @@ export async function loadMemberRows(db: PrismaClient) {
   const ids = players.map((p) => p.id);
   const links = await db.playerLink.findMany({ where: { travianPlayerId: { in: ids } }, include: { user: { select: { name: true, email: true } } }, orderBy: { id: "asc" } });
   const invites = await db.invite.findMany({ where: { travianPlayerId: { in: ids }, usedAt: null, revokedAt: null } });
+  const sys = env().SYSTEMADMIN_EMAILS;
   const infos: LinkInfo[] = links.map((l) => ({
-    id: l.id, userId: l.userId, userName: l.user.name, email: l.user.email, playerId: l.travianPlayerId,
+    id: l.id, userId: l.userId, userName: l.user.name, locked: effectiveRole({ email: l.user.email, role: "" }, sys) === "SYSTEMADMIN", playerId: l.travianPlayerId,
     status: l.status as LinkInfo["status"], method: l.method as LinkInfo["method"], claimCode: l.claimCode,
   }));
   return buildMemberRows(players, infos, invites.map((i) => ({ id: i.id, playerId: i.travianPlayerId, expiresAt: i.expiresAt })));

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildMemberRows, maskEmail, type LinkInfo } from "./admin-members";
+import { buildMemberRows, type LinkInfo } from "./admin-members";
 
 const P = (id: number) => ({ id, name: `p${id}`, allianceId: 36, population: 10 });
 const L = (o: Partial<LinkInfo> & { id: number; playerId: number }): LinkInfo => ({
-  userId: `u${o.id}`, userName: `n${o.id}`, email: `m${o.id}@x.de`, status: "verified", method: "invite", claimCode: null, ...o,
+  userId: `u${o.id}`, userName: `n${o.id}`, locked: false, status: "verified", method: "invite", claimCode: null, ...o,
 });
 const now = new Date("2026-10-14T00:00:00Z");
 
@@ -27,7 +27,7 @@ describe("buildMemberRows", () => {
   it("abgelehnter Link zählt als nicht verknüpft", () => {
     expect(rows[4]?.state).toBe("none");
   });
-  it("E-Mail wird gekürzt", () => {
-    expect(maskEmail("maximilian@example.com")).toBe("maximi@…");
+  it("gibt nie eine E-Mail-Adresse heraus", () => {
+    expect(JSON.stringify(rows)).not.toMatch(/@/);
   });
 });

@@ -62,3 +62,8 @@ Was & Warum: Spieldaten-Import aus der Legends-Wissensdatenbank (Gebäude: 49, 9
 
 ## 2026-10-15 · travian-ally-tool/gamedata/unit-names
 Was & Warum: Einheitennamen je Volk (Plätze 1–6 für alle 7 Völker) aus dem offiziellen Legends-Support-Artikel, nur Namen; Truppen aus Screenshots erhalten dadurch echte Namen (Volk aus map.sql); Probe-Skript für Support-Artikel; Migration `unit_names`. Offen: Plätze 7–10, deutsche Namen (Probe der DE-Fassung). Anker `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.
+
+## 2026-10-15 · UI-Datenschutz (E-Mail/Admin-Rolle) · Notion-Root 3f912988-7097-813a-be0b-e9ee8831f987
+- Keine fremden E-Mail-Adressen mehr im Frontend (auch nicht für Admins): Spalte aus Admin→Konten entfernt, Admin→Mitglieder zeigt den Namen; `email` verlässt `loadMemberRows`/`MemberRow` nicht mehr, `maskEmail` entfernt.
+- Rolle „Systemadmin“ ist im UI nicht mehr sichtbar (Anzeige „Admin“, 🔒 nicht änderbar); Rechte-Matrix ohne Systemadmin-Spalte. Backend-Logik und `SYSTEMADMIN_EMAILS` unverändert.
+- Entscheidung: Englisch ist Pflicht für die Beta und wird Basissprache (i18n-Dateien, Nutzersprache am Konto) – nächster Schritt.

@@ -59,7 +59,7 @@ export function RegisterForm({ inviteToken }: { inviteToken?: string }) {
       <div><label className="lbl" htmlFor="ip2">Passwort wiederholen</label><input id="ip2" name="password2" className="field" type="password" required minLength={10} autoComplete="new-password" /></div>
       {!inviteToken && (
         <details className="sub">
-          <summary style={{ cursor: "pointer" }}>Setup-Code (nur für Systemadmin-Adressen)</summary>
+          <summary style={{ cursor: "pointer" }}>Setup-Code (nur für reservierte Admin-Adressen)</summary>
           <input name="setupCode" type="password" className="field" style={{ marginTop: 8 }} aria-label="Setup-Code" />
         </details>
       )}

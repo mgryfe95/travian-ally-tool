@@ -11,7 +11,7 @@ import { unreadCounts } from "@/lib/services/messenger";
 import { getWorldStatus } from "@/lib/services/world";
 import { requireUser } from "@/lib/session";
 
-const ROLE_LABEL: Record<string, string> = { SYSTEMADMIN: "Systemadmin", ADMIN: "Admin", MODERATOR: "Moderator", MEMBER: "Member", GUEST: "Gast" };
+const ROLE_LABEL: Record<string, string> = { SYSTEMADMIN: "Admin", ADMIN: "Admin", MODERATOR: "Moderator", MEMBER: "Member", GUEST: "Gast" };
 const ADMIN_PERMS: Permission[] = ["members.invite", "members.approve", "roles.assign", "permissions.edit", "alliances.classify"];
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
