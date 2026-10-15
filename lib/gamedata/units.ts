@@ -58,3 +58,43 @@ export function mergeLanguages(en: ParsedTribe[], de?: ParsedTribe[]): UnitNameR
   }
   return rows;
 }
+
+/** Händisch gepflegte Ergänzungen (deutsche Namen, Plätze 7–10): { "<Volk-ID>": { "<Platz>": { "de": "…", "en": "…" } } }. Leere Namen werden ignoriert. */
+export type NameOverrides = Record<string, Record<string, { de?: string; en?: string }>>;
+
+export function applyOverrides(rows: UnitNameRow[], overrides: NameOverrides): UnitNameRow[] {
+  const out = rows.map((r) => ({ ...r }));
+  for (const [vidRaw, slots] of Object.entries(overrides)) {
+    const vid = Number(vidRaw);
+    if (!Object.values(TRIBE_VID).includes(vid)) throw new UnitsError(`Unbekannte Volk-ID „${vidRaw}“`);
+    for (const [slotRaw, v] of Object.entries(slots)) {
+      const slot = Number(slotRaw);
+      if (!Number.isInteger(slot) || slot < 1 || slot > 10) throw new UnitsError(`Volk ${vid}: ungültiger Platz „${slotRaw}“ (erlaubt 1–10)`);
+      const de = v.de?.trim() || null;
+      const en = v.en?.trim() || null;
+      if (!de && !en) continue;
+      const row = out.find((r) => r.tribeVid === vid && r.slot === slot);
+      if (row) {
+        if (en && en !== row.nameEn) throw new UnitsError(`Volk ${vid}, Platz ${slot}: englischer Name „${en}“ widerspricht der Quelle („${row.nameEn}“)`);
+        if (de) row.nameDe = de;
+      } else {
+        if (!en) throw new UnitsError(`Volk ${vid}, Platz ${slot}: neuer Platz braucht einen englischen Namen („en“)`);
+        out.push({ tribeVid: vid, slot, nameEn: en, nameDe: de });
+      }
+    }
+  }
+  return out.sort((a, b) => a.tribeVid - b.tribeVid || a.slot - b.slot);
+}
+
+/** Vorlage zum Ausfüllen: alle Plätze 1–10 je Volk mit den englischen Namen aus der Quelle; deutsche Namen leer (Plätze 7–10 komplett leer). */
+export function overridesTemplate(rows: UnitNameRow[], known: NameOverrides = {}): NameOverrides {
+  const t: NameOverrides = {};
+  for (const vid of [...new Set(rows.map((r) => r.tribeVid))]) {
+    t[vid] = {};
+    for (let slot = 1; slot <= 10; slot++) {
+      const r = rows.find((x) => x.tribeVid === vid && x.slot === slot);
+      t[vid]![slot] = { en: r?.nameEn ?? "", de: known[vid]?.[slot]?.de ?? r?.nameDe ?? "" };
+    }
+  }
+  return t;
+}

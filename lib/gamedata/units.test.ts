@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mergeLanguages, parseUnitTables, UnitsError } from "./units";
+import { applyOverrides, mergeLanguages, overridesTemplate, parseUnitTables, UnitsError } from "./units";
 
 // Synthetische Struktur nach dem Muster des Artikels – keine echten Spielwerte.
 const table = (heads: string[]) => `<table><tr><th>Stat</th>${heads.map((h) => `<th>${h}</th>`).join("")}</tr><tr><td>Attack</td>${heads.map(() => "<td>1</td>").join("")}</tr></table>`;
@@ -23,5 +23,25 @@ describe("Einheitennamen aus dem Support-Artikel", () => {
   });
   it("lehnt veränderte Seitenstruktur ab", () => {
     expect(() => parseUnitTables("<html>nichts</html>")).toThrow(/Keine Völker-Tabellen/);
+  });
+});
+
+describe("Händische Ergänzungen", () => {
+  const base = mergeLanguages(parseUnitTables(page([["Gauls", ["Phalanx", "Swordsman", "Pathfinder", "Theutates Thunder", "Druidrider", "Haeduan"]]])));
+  it("deutsche Namen ergänzen, neue Plätze 7–10 nur mit englischem Namen, Widerspruch zur Quelle wird abgelehnt", () => {
+    const r = applyOverrides(base, { "3": { "3": { de: "Späher", en: "Pathfinder" }, "7": { en: "Battering Ram", de: "Rammbock" }, "8": { de: "" } } });
+    expect(r.find((x) => x.slot === 3)).toMatchObject({ nameEn: "Pathfinder", nameDe: "Späher" });
+    expect(r.find((x) => x.slot === 7)).toMatchObject({ nameEn: "Battering Ram", nameDe: "Rammbock" });
+    expect(r.some((x) => x.slot === 8)).toBe(false);
+    expect(() => applyOverrides(base, { "3": { "3": { en: "Scout" } } })).toThrow(/widerspricht/);
+    expect(() => applyOverrides(base, { "3": { "9": { de: "Häuptling" } } })).toThrow(/englischen Namen/);
+    expect(() => applyOverrides(base, { "3": { "11": { en: "x" } } })).toThrow(/ungültiger Platz/);
+    expect(() => applyOverrides(base, { "42": {} })).toThrow(/Unbekannte Volk-ID/);
+  });
+  it("Vorlage enthält 10 Plätze mit englischen Namen und bekannten deutschen Namen", () => {
+    const t = overridesTemplate(base, { "3": { "1": { de: "Phalanx" } } });
+    expect(Object.keys(t["3"]!)).toHaveLength(10);
+    expect(t["3"]!["1"]).toEqual({ en: "Phalanx", de: "Phalanx" });
+    expect(t["3"]!["7"]).toEqual({ en: "", de: "" });
   });
 });
