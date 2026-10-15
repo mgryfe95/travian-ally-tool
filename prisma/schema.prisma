@@ -670,3 +670,17 @@ model BroadcastRecipient {
   @@id([broadcastId, userId])
   @@index([userId, readAt])
 }
+
+/// Einheitennamen je Volk (map.sql-Volk-ID) und Einheitenplatz in Spielreihenfolge. Nur Namen: Kampfwerte/Zeiten nennt die Quelle nur mit Schmiede/Kaserne 20, ihr „Crop“-Wert passt nicht zum Spiel (Unterhalt 1/Einheit) und wird nicht übernommen.
+model UnitName {
+  tribeVid    Int
+  /// Einheitenplatz in der Reihenfolge des Spiels (1 = erste Truppenspalte)
+  slot        Int
+  nameEn      String
+  nameDe      String?
+  gameVersion String
+  source      String
+  updatedAt   DateTime @updatedAt
+
+  @@id([tribeVid, slot])
+}

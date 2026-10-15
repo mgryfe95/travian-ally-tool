@@ -59,3 +59,6 @@ Was & Warum: Vertrags-Invariante für Spieldaten — Import nur für die eigene 
 
 ## 2026-10-15 · travian-ally-tool/gamedata/kb-buildings
 Was & Warum: Spieldaten-Import aus der Legends-Wissensdatenbank (Gebäude: 49, 995 Stufen, 9 Völker) mit eigenem sicheren Literal-Parser, Welt-/Speed-Bindung und Trockenlauf; `Building.gid`; Migration `building_gid`. Befund: die Wissensdatenbank enthält keine Truppen → Einheitennamen brauchen eine andere Quelle. Anker `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.
+
+## 2026-10-15 · travian-ally-tool/gamedata/unit-names
+Was & Warum: Einheitennamen je Volk (Plätze 1–6 für alle 7 Völker) aus dem offiziellen Legends-Support-Artikel, nur Namen; Truppen aus Screenshots erhalten dadurch echte Namen (Volk aus map.sql); Probe-Skript für Support-Artikel; Migration `unit_names`. Offen: Plätze 7–10, deutsche Namen (Probe der DE-Fassung). Anker `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.

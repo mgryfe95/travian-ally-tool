@@ -89,6 +89,7 @@ export async function applyReading(db: PrismaClient, userId: string, screenshotI
   const plan = planApply(r, known, hintVillageId, preferHint);
   const applied: Applied[] = [];
   for (const [villageId, p] of plan) {
+    if (p.troops) p.troops = await nameUnits(db, villageId, p.troops);
     const cur = await db.villageState.findUnique({ where: { villageId } });
     const merge = (a: unknown, b: Record<string, unknown> | undefined) => ({ ...((a as Record<string, unknown> | null) ?? {}), ...(b ?? {}) });
     const data: Prisma.VillageStateUncheckedUpdateInput = { userId, capturedAt: now, sourceScreenshotId: screenshotId };
@@ -122,4 +123,16 @@ export async function applyReading(db: PrismaClient, userId: string, screenshotI
     applied.push({ villageId, areas });
   }
   return applied;
+}
+
+/** „Einheit N“ → echter Name, sobald Einheitennamen für das Volk des Dorfbesitzers (map.sql) vorliegen; Held und unbekannte Plätze bleiben. */
+export async function nameUnits(db: PrismaClient, villageId: number, entries: TroopEntry[]): Promise<TroopEntry[]> {
+  const v = await db.village.findUnique({ where: { id: villageId }, select: { playerId: true } });
+  const p = v ? await db.player.findUnique({ where: { id: v.playerId }, select: { tribe: true } }) : null;
+  if (!p) return entries;
+  const names = new Map((await db.unitName.findMany({ where: { tribeVid: p.tribe } })).map((n) => [n.slot, n.nameDe ?? n.nameEn]));
+  return entries.map((e) => {
+    const m = /^Einheit (\d+)$/.exec(e.unit);
+    return m && names.has(Number(m[1])) ? { ...e, unit: names.get(Number(m[1]))! } : e;
+  });
 }

@@ -45,6 +45,18 @@ describe("applyReading", () => {
     expect((r?.resources as { stock: { crop: number }; production: { crop: number } }).stock.crop).toBe(12535);
     expect((r?.resources as { production: { crop: number } }).production.crop).toBe(-2334);
   });
+  it("Einheitennamen: Slot → Name über das Volk des Spielers (map.sql), Held und fehlende Plätze bleiben", async () => {
+    await db.$executeRaw`TRUNCATE "Player","Village","UnitName" RESTART IDENTITY CASCADE`;
+    await db.player.create({ data: { id: 7, name: "P", allianceId: 36, tribe: 3, population: 1, villageCount: 1, status: "active", noGrowthDays: 0, firstSeen: new Date() } });
+    await db.village.create({ data: { id: 9001, fieldId: 1, x: -3, y: -82, name: "MG Ryfe", playerId: 7, population: 1, extra: {} } });
+    await db.unitName.createMany({ data: [{ tribeVid: 3, slot: 1, nameEn: "Phalanx", nameDe: "Phalanx", gameVersion: "legends", source: "t" }, { tribeVid: 3, slot: 3, nameEn: "Pathfinder", nameDe: "Späher", gameVersion: "legends", source: "t" }, { tribeVid: 1, slot: 1, nameEn: "Legionnaire", gameVersion: "legends", source: "t" }] });
+    await applyReading(db, "vis-user", 5, gold("stats-troops-own-desktop-de"), known);
+    const t = (await db.villageState.findUniqueOrThrow({ where: { villageId: 9001 } })).troops as { unit: string; inVillage: number }[];
+    expect(t.find((x) => x.unit === "Phalanx")?.inVillage).toBe(700); // Platz 1, Volk 3 (Gallier)
+    expect(t.find((x) => x.unit === "Späher")?.inVillage).toBe(24); // Platz 3 deutscher Name
+    expect(t.some((x) => x.unit === "Einheit 5")).toBe(true); // kein Name hinterlegt
+    expect(t.some((x) => x.unit === "Held")).toBe(true);
+  });
   it("fremde Dörfer werden nie geschrieben", async () => {
     const applied = await applyReading(db, "vis-user", 3, gold("stats-troops-own-desktop-de"), [known[0]!]);
     expect(applied.map((a) => a.villageId)).toEqual([9001]);
