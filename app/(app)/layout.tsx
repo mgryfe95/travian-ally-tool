@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import type { MessageKey } from "@/lib/i18n";
 import { LogoutButton } from "@/components/AuthForms";
@@ -20,6 +21,7 @@ const ADMIN_PERMS: Permission[] = ["members.invite", "members.approve", "roles.a
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const user = await requireUser();
+  if (user.role === "GUEST") redirect("/claim"); // unverifizierte Konten sehen nur die Verifizierungsseite
   const { t, locale } = await getT();
   const matrix = await loadMatrix(db);
   const can = (p: Permission) => hasPermission(user.role, p, matrix);
@@ -33,7 +35,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   if (can("messenger.use")) items.push({ href: "/messages", label: t("nav.messages"), badge: (await unreadCounts(db, user.id)).total });
   if (can("schedule.view")) items.push({ href: "/schedule", label: t("nav.schedule") });
   if (can("troops.view")) items.push({ href: "/troops", label: t("nav.troops") });
-  if (user.role !== "GUEST") items.push({ href: "/screenshots", label: t("nav.screenshots") });
+  items.push({ href: "/screenshots", label: t("nav.screenshots") });
   if (ADMIN_PERMS.some(can)) items.push({ href: "/admin", label: t("nav.admin"), sepBefore: true });
   items.push({ href: "/gamedata", label: t("nav.gameData"), sepBefore: !ADMIN_PERMS.some(can) });
   const tag = await ownAllianceTag(db);

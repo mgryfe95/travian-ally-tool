@@ -81,3 +81,9 @@ Was & Warum: Einheitennamen je Volk (Plätze 1–6 für alle 7 Völker) aus dem 
 - Screenshots in eigenem S3-kompatiblen Bucket (`S3_BUCKET_SCREENSHOTS`, …; alte lokale Dateien bleiben lesbar); Chat-Dateien bleiben lokal.
 - Speicherplatz 10 MB je Nutzer (`USER_QUOTA_MB`) für Screenshots + Chat-Dateien; Upload über Limit → 413; Anzeige auf „Meine Bilder & Dateien“.
 - Gelöschte Chat-Dateien hinterlassen einen Platzhalter („Datei vom Uploader entfernt“), zählen nicht mehr zum Kontingent (Migration `attachment_removed`).
+
+## 2026-10-16 · Registrierung nur für berechtigte Allianzen, Verifizierungssperre · Notion-Root 3f912988-7097-813a-be0b-e9ee8831f987
+- Neuer Allianz-Typ „Enge Bündnispartner“ (`CLOSE_ALLY`, Migration `close_ally`): nicht Teil der eigenen Gruppe, aber verifizierbar.
+- Registrierung ohne Einladung nur mit Ingame-Spielernamen, dessen Allianz eigene Gruppe oder enger Bündnispartner ist; der Code zum Dorf-Umbenennen wird sofort erzeugt.
+- Unverifizierte Konten (Rolle GUEST) sind komplett gesperrt: alle App-Seiten leiten auf `/claim`; GUEST-Rechte entfernt (Migration löscht sie). „Als Gast weiter“ entfällt.
+- Knopf „Verlinkung nachweisen“ (`proveLink`): prüft sofort gegen den letzten Import, lädt sonst map.sql neu (global höchstens alle 5 Minuten) und verifiziert bei Treffer. Travian veröffentlicht map.sql nur etwa einmal täglich – ist die Datei unverändert, meldet die Seite das.

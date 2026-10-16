@@ -142,3 +142,30 @@ describe("assignPlayer (direkte Zuordnung)", () => {
     await expect(assignPlayer(db, member, "u2", 1, t0)).rejects.toBeInstanceOf(ForbiddenError);
   });
 });
+
+describe("Enge Bündnispartner und „Verlinkung nachweisen“", () => {
+  it("Spieler enger Bündnispartner sind verifizierbar, Feinde nicht; Code im Dorfnamen schaltet das Konto frei", async () => {
+    const { proveLink } = await import("@/lib/services/verification");
+    await db.player.createMany({ data: [
+      { id: 50, name: "Freund", tribe: 1, allianceId: 88, population: 1, villageCount: 1, status: "active", noGrowthDays: 0, firstSeen: new Date() },
+      { id: 51, name: "Feind", tribe: 1, allianceId: 77, population: 1, villageCount: 1, status: "active", noGrowthDays: 0, firstSeen: new Date() },
+    ], skipDuplicates: true });
+    await db.allianceClassification.createMany({ data: [{ allianceId: 88, relation: "CLOSE_ALLY" }, { allianceId: 77, relation: "ENEMY" }], skipDuplicates: true });
+    await expect(startClaim(db, "u1", 51)).rejects.toMatchObject({ key: "err.verify.playerNotEligible" });
+    const link = await startClaim(db, "u1", 50);
+    expect(link.claimCode).toMatch(/^ALLY-/);
+    await db.village.create({ data: { id: 9050, fieldId: 1, x: 0, y: 0, name: "Hof", playerId: 50, population: 5, extra: {} } });
+    // 1) Code noch nicht im Dorfnamen, Datei unverändert → „unchanged“
+    let calls = 0;
+    const same = async () => { calls++; return "unchanged" as const; };
+    expect(await proveLink(db, "u1", { fetchAndImport: same, now: () => 1_000_000 })).toBe("unchanged");
+    // 2) Zweiter Knopfdruck kurz danach → gedrosselt, kein weiterer Abruf
+    expect(await proveLink(db, "u1", { fetchAndImport: same, now: () => 1_000_500 })).toBe("throttled");
+    expect(calls).toBe(1);
+    // 3) Neue Datei enthält den Code → verifiziert, Rolle MEMBER
+    await db.village.updateMany({ where: { playerId: 50 }, data: { name: `Hof ${link.claimCode}` } });
+    expect(await proveLink(db, "u1", { fetchAndImport: same, now: () => 9_000_000 })).toBe("verified");
+    expect(await db.user.findUnique({ where: { id: "u1" } })).toMatchObject({ role: "MEMBER" });
+    expect(await proveLink(db, "u1")).toBe("no_claim");
+  });
+});

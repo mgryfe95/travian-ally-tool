@@ -1,20 +1,23 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { loadGroupPlayers } from "@/lib/alliance-group";
 import { nextHourlyRun } from "@/lib/cron-label";
 import { env } from "@/lib/env";
-import { INTL_TAG } from "@/lib/i18n";
+import { INTL_TAG, type MessageKey } from "@/lib/i18n";
 import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/lib/session";
-import { startClaimAction } from "./actions";
+import { LogoutButton } from "@/components/AuthForms";
+import { fmtDate } from "@/lib/format";
+import { proveLinkAction, startClaimAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function ClaimPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+export default async function ClaimPage({ searchParams }: { searchParams: Promise<{ error?: string; r?: string }> }) {
   const user = await requireUser();
   const { t, locale } = await getT();
-  const { error } = await searchParams;
+  const { error, r } = await searchParams;
+  if (user.role !== "GUEST") redirect("/");
+  const lastMap = await db.snapshot.findFirst({ orderBy: { id: "desc" }, select: { fetchedAt: true } });
   const links = await db.playerLink.findMany({ where: { userId: user.id }, orderBy: { id: "desc" } });
   if (links.some((l) => l.status === "verified")) redirect("/");
   const pending = links.find((l) => l.status === "pending");
@@ -45,11 +48,16 @@ export default async function ClaimPage({ searchParams }: { searchParams: Promis
                 <li>{t("auth.claim.step3")}</li>
               </ol>
             </div>
-            <div className="row"><span className="pill p-wait">{t("auth.claim.waiting")}</span></div>
+            <div className="row" style={{ gap: 10, alignItems: "center" }}>
+              <form action={proveLinkAction}><button className="btn">{t("auth.claim.prove")}</button></form>
+              <span className="pill p-wait">{t("auth.claim.waiting")}</span>
+            </div>
+            {r && ["unchanged", "not_found", "throttled", "error", "no_claim"].includes(r) && <p className="sub" role="status">{t(`auth.claim.res.${r}` as MessageKey)}</p>}
+            {lastMap && <p className="sub" style={{ fontSize: 12, margin: 0 }}>{t("auth.claim.mapState", { time: fmtDate(lastMap.fetchedAt, locale) })}</p>}
           </>
         )}
         <div className="sub" style={{ fontSize: 13 }}>{t("auth.claim.manual")}</div>
-        <Link className="btn ghost" href="/">{t("auth.claim.guest")}</Link>
+        <div><LogoutButton /></div>
       </div>
     </>
   );

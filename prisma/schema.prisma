@@ -116,6 +116,7 @@ model Event {
 enum AllianceRelation {
   OWN
   ALLIED
+  CLOSE_ALLY
   NAP
   NEUTRAL
   ENEMY

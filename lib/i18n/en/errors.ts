@@ -211,5 +211,10 @@ const en = {
   "err.mapsql.expectedParen": "Expected “(” at offset {i}",
   "err.mapsql.expectedCommaOrParen": "Expected “,” or “)” at offset {i}",
   "err.quota.exceeded": "Storage limit reached ({used} of {limit} MB used). Delete images or files under “My images & files” to free space.",
+  "err.verify.playerNotEligible": "Player does not belong to our alliance or a close ally",
+  "err.register.playerRequired": "Please enter your in-game player name",
+  "err.register.playerUnknown": "No player with this name was found on the map",
+  "err.register.playerAmbiguous": "This player name is not unique",
+  "err.register.notEligible": "Registration is only open to members of our alliance and close allies",
 } as const;
 export default en;

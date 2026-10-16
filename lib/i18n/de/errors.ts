@@ -213,5 +213,10 @@ const de: Record<keyof typeof en, string> = {
   "err.mapsql.expectedParen": "„(“ erwartet bei Position {i}",
   "err.mapsql.expectedCommaOrParen": "„,“ oder „)“ erwartet bei Position {i}",
   "err.quota.exceeded": "Speicherlimit erreicht ({used} von {limit} MB belegt). Lösche Bilder oder Dateien unter „Meine Bilder & Dateien“, um Platz zu schaffen.",
+  "err.verify.playerNotEligible": "Spieler gehört weder zu unserer Allianz noch zu einem engen Bündnispartner",
+  "err.register.playerRequired": "Bitte gib deinen Ingame-Spielernamen ein",
+  "err.register.playerUnknown": "Kein Spieler mit diesem Namen auf der Karte gefunden",
+  "err.register.playerAmbiguous": "Dieser Spielername ist nicht eindeutig",
+  "err.register.notEligible": "Die Registrierung ist nur für Mitglieder unserer Allianz und enge Bündnispartner offen",
 };
 export default de;

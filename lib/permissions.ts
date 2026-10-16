@@ -19,7 +19,7 @@ export const PERMISSIONS = [
 export type Permission = (typeof PERMISSIONS)[number];
 
 export const DEFAULT_PERMISSIONS: Record<StoredRole, Permission[]> = {
-  GUEST: ["map.view", "chat.read"],
+  GUEST: [], // unverifizierte Konten sehen nur die Verifizierungsseite
   MEMBER: ["map.view", "chat.read", "chat.write", "chat.upload", "schedule.view", "messenger.use"],
   MODERATOR: ["map.view", "chat.read", "chat.write", "chat.upload", "chat.moderate", "tags.manage", "taskforce.create", "members.invite", "members.approve", "troops.view", "schedule.view", "messenger.use", "messenger.broadcast"],
   ADMIN: [...PERMISSIONS],

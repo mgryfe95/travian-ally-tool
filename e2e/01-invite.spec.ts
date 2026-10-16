@@ -5,16 +5,14 @@ const PW = "correct-horse-battery";
 test("Einladung erzeugen → einlösen → verifiziert; Systemadmin bleibt unantastbar", async ({ page, browser }) => {
   // Systemadmin registriert sich (Setup-Code = AUTH_SECRET) und landet bei der Spieler-Verknüpfung.
   await page.goto("/register");
-  await page.getByLabel("Anzeigename").fill("Boss");
+  await page.getByLabel("Anzeigename (optional)").fill("Boss");
   await page.getByLabel("E-Mail").fill("boss@example.com");
   await page.getByLabel("Passwort", { exact: true }).fill(PW);
   await page.getByLabel("Passwort wiederholen").fill(PW);
   await page.getByText("Setup-Code").click();
   await page.getByLabel("Setup-Code").fill("e2e-secret-e2e-secret");
   await page.getByRole("button", { name: "Account erstellen" }).click();
-  await page.waitForURL("**/claim");
-  await page.getByRole("link", { name: /Als Gast weiter/ }).click();
-  await page.waitForURL((u) => u.pathname === "/");
+  await page.waitForURL((u) => u.pathname === "/"); // Admin-Konto braucht keine Verifizierung (/claim leitet weiter)
   await expect(page.locator(".me")).toContainText("Admin");
 
   // Einladung für ein Mitglied der Gruppe (Allianz 36 laut ENV) erzeugen.

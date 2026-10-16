@@ -235,5 +235,6 @@ const en = {
   "overview.fxGroup.defense": "Defence",
   "overview.fxGroup.economy": "Trade & celebrations",
   "overview.fxGroup.info": "Other",
+  "overview.relation.CLOSE_ALLY": "Close ally",
 } as const;
 export default en;

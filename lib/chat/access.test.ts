@@ -12,7 +12,7 @@ describe("Allianz-Kanäle", () => {
     expect(canReadChannel(ally(), ctx("MEMBER"))).toBe(true);
     expect(canWriteChannel(ally(), ctx("MEMBER"))).toBe(true);
     expect(canReadChannel(ally(), ctx("GUEST"))).toBe(false);
-    expect(canReadChannel(ally({ minReadRole: "GUEST" }), ctx("GUEST"))).toBe(true);
+    expect(canReadChannel(ally({ minReadRole: "GUEST" }), ctx("GUEST"))).toBe(false); // GUEST hat keine Rechte mehr (gesperrt bis zur Verifizierung)
     expect(canWriteChannel(ally({ minReadRole: "GUEST", minWriteRole: "GUEST" }), ctx("GUEST"))).toBe(false);
   });
   it("Schreib-Mindestrolle wird geprüft", () => {

@@ -1,6 +1,6 @@
 import { createHash, randomBytes, randomInt } from "node:crypto";
 import type { PrismaClient } from "@prisma/client";
-import { loadRelations, ownGroupIds } from "../alliance-group";
+import { loadRelations, ownGroupIds, verifiableIds } from "../alliance-group";
 import { ForbiddenError, hasPermission, type Permission } from "../permissions";
 import { audit, loadMatrix, type Actor } from "./context";
 import { AppError } from "../i18n/errors";
@@ -21,6 +21,14 @@ async function requireGroupPlayer(db: PrismaClient, playerId: number) {
   const player = await db.player.findUnique({ where: { id: playerId } });
   if (!player) throw new VerificationError("err.verify.playerNotFound");
   if (!ownGroupIds(await loadRelations(db)).has(player.allianceId)) throw new VerificationError("err.verify.playerNotInGroup");
+  return player;
+}
+
+/** Wie `requireGroupPlayer`, aber auch enge Bündnispartner sind verifizierbar (Registrierung, Dorf-Umbenennen, manuelle Bestätigung). */
+export async function requireVerifiablePlayer(db: PrismaClient, playerId: number) {
+  const player = await db.player.findUnique({ where: { id: playerId } });
+  if (!player) throw new VerificationError("err.verify.playerNotFound");
+  if (!verifiableIds(await loadRelations(db)).has(player.allianceId)) throw new VerificationError("err.verify.playerNotEligible");
   return player;
 }
 
@@ -87,7 +95,7 @@ function newCode() {
 
 /** Der User beansprucht einen Spieler und bekommt einen Code, den er als Dorfnamen setzen muss. */
 export async function startClaim(db: PrismaClient, userId: string, playerId: number) {
-  await requireGroupPlayer(db, playerId);
+  await requireVerifiablePlayer(db, playerId);
   const existing = await db.playerLink.findUnique({ where: { userId_travianPlayerId: { userId, travianPlayerId: playerId } } });
   if (existing?.status === "verified") throw new VerificationError("err.verify.alreadyVerified");
   let code = newCode();
@@ -103,7 +111,7 @@ export async function startClaim(db: PrismaClient, userId: string, playerId: num
 export async function checkClaims(db: PrismaClient, now = new Date()): Promise<number> {
   const pending = await db.playerLink.findMany({ where: { status: "pending", method: "village_rename", claimCode: { not: null } } });
   if (pending.length === 0) return 0;
-  const group = ownGroupIds(await loadRelations(db));
+  const group = verifiableIds(await loadRelations(db));
   let verified = 0;
   for (const link of pending) {
     const player = await db.player.findUnique({ where: { id: link.travianPlayerId }, select: { allianceId: true } });
@@ -129,7 +137,7 @@ export async function approveLink(db: PrismaClient, actor: Actor, linkId: number
   await requirePerm(db, actor, "members.approve");
   const link = await db.playerLink.findUnique({ where: { id: linkId } });
   if (!link) throw new VerificationError("err.verify.linkNotFound");
-  await requireGroupPlayer(db, link.travianPlayerId);
+  await requireVerifiablePlayer(db, link.travianPlayerId);
   await db.playerLink.update({ where: { id: linkId }, data: { status: "verified", method: "admin", verifiedBy: actor.id, verifiedAt: now } });
   await promoteGuest(db, link.userId);
   await audit(db, actor.id, "link.verify.admin", `user:${link.userId}`, { status: link.status }, { status: "verified", playerId: link.travianPlayerId });
@@ -148,7 +156,7 @@ export async function assignPlayer(db: PrismaClient, actor: Actor, userId: strin
   await requirePerm(db, actor, "members.approve");
   const user = await db.user.findUnique({ where: { id: userId } });
   if (!user) throw new VerificationError("err.verify.accountNotFound");
-  await requireGroupPlayer(db, playerId);
+  await requireVerifiablePlayer(db, playerId);
   const prev = await db.playerLink.findUnique({ where: { userId_travianPlayerId: { userId, travianPlayerId: playerId } } });
   await db.playerLink.upsert({
     where: { userId_travianPlayerId: { userId, travianPlayerId: playerId } },
@@ -157,4 +165,37 @@ export async function assignPlayer(db: PrismaClient, actor: Actor, userId: strin
   });
   await promoteGuest(db, userId);
   await audit(db, actor.id, "link.assign", `user:${userId}`, { status: prev?.status ?? null }, { status: "verified", playerId });
+}
+
+// ───────── „Verlinkung nachweisen“ (Knopf auf der Verifizierungsseite) ─────────
+
+export type ProofResult = "verified" | "no_claim" | "not_found" | "unchanged" | "throttled" | "error";
+const lastFetch = { at: 0 };
+/** Mindestabstand zwischen Abrufen von map.sql durch Nutzer-Knopfdruck (schont den Travian-Server; der Worker holt ohnehin stündlich). */
+export const PROOF_FETCH_MIN_MS = 5 * 60_000;
+
+/**
+ * Prüft sofort, ob der Code im Dorfnamen steht: erst gegen den letzten Import; sonst map.sql neu laden (höchstens alle 5 Minuten, für alle
+ * Nutzer gemeinsam). Travian veröffentlicht map.sql nur ca. einmal täglich – ist die Datei unverändert, gibt es nichts Neues zu sehen.
+ */
+export async function proveLink(
+  db: PrismaClient, userId: string,
+  deps: { fetchAndImport: () => Promise<"imported" | "unchanged">; now?: () => number } = { fetchAndImport: async () => "unchanged" },
+): Promise<ProofResult> {
+  const mine = await db.playerLink.findFirst({ where: { userId, status: "pending", method: "village_rename", claimCode: { not: null } } });
+  if (!mine) return "no_claim";
+  const verifiedNow = async () => (await db.playerLink.findUnique({ where: { id: mine.id }, select: { status: true } }))?.status === "verified";
+  await checkClaims(db);
+  if (await verifiedNow()) return "verified";
+  const now = (deps.now ?? Date.now)();
+  if (now - lastFetch.at < PROOF_FETCH_MIN_MS) return "throttled";
+  lastFetch.at = now;
+  try {
+    const r = await deps.fetchAndImport();
+    if (r === "unchanged") return "unchanged";
+    await checkClaims(db);
+    return (await verifiedNow()) ? "verified" : "not_found";
+  } catch {
+    return "error";
+  }
 }

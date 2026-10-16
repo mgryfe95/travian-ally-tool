@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 const TRIBE_KEY: Record<number, MessageKey> = { 1: "overview.tribe.1", 2: "overview.tribe.2", 3: "overview.tribe.3", 4: "overview.tribe.4", 5: "overview.tribe.5", 6: "overview.tribe.6", 7: "overview.tribe.7", 8: "overview.tribe.8" };
 const lbl = (t: T, map: Record<string, MessageKey>, k: string | number) => { const key = map[k]; return key ? t(key) : String(k); };
 const STATUS_KEY: Record<string, MessageKey> = { active: "overview.status.active", stagnant: "overview.status.stagnant", inactive: "overview.status.inactive", declining: "overview.status.declining" };
-const RELATION_KEY: Record<string, MessageKey> = { OWN: "overview.relation.OWN", ALLIED: "overview.relation.ALLIED", NAP: "overview.relation.NAP", NEUTRAL: "overview.relation.NEUTRAL", ENEMY: "overview.relation.ENEMY" };
+const RELATION_KEY: Record<string, MessageKey> = { OWN: "overview.relation.OWN", ALLIED: "overview.relation.ALLIED", CLOSE_ALLY: "overview.relation.CLOSE_ALLY", NAP: "overview.relation.NAP", NEUTRAL: "overview.relation.NEUTRAL", ENEMY: "overview.relation.ENEMY" };
 
 export default async function PlayerPage({ params }: { params: Promise<{ id: string }> }) {
   const { t, locale } = await getT();

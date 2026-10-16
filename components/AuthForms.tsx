@@ -51,13 +51,14 @@ export function RegisterForm({ inviteToken }: { inviteToken?: string }) {
   const t = useT();
   const { onSubmit, error, busy } = useSubmit(
     "/api/register",
-    (f) => ({ email: f.get("email"), name: f.get("name") || undefined, password: f.get("password"), inviteToken, setupCode: f.get("setupCode") || undefined }),
+    (f) => ({ email: f.get("email"), name: f.get("name") || undefined, playerName: f.get("playerName") || undefined, password: f.get("password"), inviteToken, setupCode: f.get("setupCode") || undefined }),
     inviteToken ? "/" : "/claim",
     (f) => (f.get("password") !== f.get("password2") ? t("auth.mismatch") : undefined),
   );
   return (
     <form onSubmit={onSubmit} style={col}>
-      {!inviteToken && <div><label className="lbl" htmlFor="rn">{t("auth.displayName")}</label><input id="rn" name="name" className="field" required minLength={2} autoComplete="nickname" /></div>}
+      {!inviteToken && <div><label className="lbl" htmlFor="rp">{t("auth.register.player")}</label><input id="rp" name="playerName" className="field" autoComplete="off" aria-describedby="rph" /><div id="rph" className="sub" style={{ fontSize: 12, marginTop: 4 }}>{t("auth.register.playerHint")}</div></div>}
+      {!inviteToken && <div><label className="lbl" htmlFor="rn">{t("auth.displayName")}</label><input id="rn" name="name" className="field" minLength={2} autoComplete="nickname" /></div>}
       <div><label className="lbl" htmlFor="ie">{t("auth.email")}</label><input id="ie" name="email" className="field" type="email" required autoComplete="email" /></div>
       <div><label className="lbl" htmlFor="ip">{t("auth.password")}</label><input id="ip" name="password" className="field" type="password" required minLength={10} autoComplete="new-password" /></div>
       <div><label className="lbl" htmlFor="ip2">{t("auth.passwordRepeat")}</label><input id="ip2" name="password2" className="field" type="password" required minLength={10} autoComplete="new-password" /></div>

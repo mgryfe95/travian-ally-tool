@@ -151,5 +151,6 @@ const de: Record<keyof typeof en, string> = {
   "admin.invite.copy": "IGM-Text kopieren",
   "admin.invite.create": "Einladung erzeugen",
   "admin.invite.bulk": "Alle Uneingeladenen: Links erzeugen",
+  "admin.relation.CLOSE_ALLY": "Enger Bündnispartner",
 };
 export default de;

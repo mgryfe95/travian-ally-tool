@@ -237,5 +237,6 @@ const de: Record<keyof typeof en, string> = {
   "overview.fxGroup.defense": "Verteidigung",
   "overview.fxGroup.economy": "Handel & Feste",
   "overview.fxGroup.info": "Sonstiges",
+  "overview.relation.CLOSE_ALLY": "Enger Bündnispartner",
 };
 export default de;

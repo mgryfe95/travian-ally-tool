@@ -9,7 +9,9 @@ const db = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL
 const sent: { to: string; text: string }[] = [];
 
 beforeEach(async () => {
-  await db.$executeRaw`TRUNCATE "User","Verification" RESTART IDENTITY CASCADE`;
+  await db.$executeRaw`TRUNCATE "User","Verification","Player","Setting","PlayerLink","AllianceClassification" RESTART IDENTITY CASCADE`;
+  await db.setting.create({ data: { key: "allianceId", value: "36" } });
+  await db.player.create({ data: { id: 1, name: "Alpha", tribe: 1, allianceId: 36, population: 1, villageCount: 1, status: "active", noGrowthDays: 0, firstSeen: new Date() } });
   sent.length = 0;
   const t = nodemailer.createTransport({ jsonTransport: true });
   const orig = t.sendMail.bind(t);
@@ -28,7 +30,7 @@ const wait = () => new Promise((r) => setTimeout(r, 50));
 
 describe("Passwort-Reset per E-Mail", () => {
   it("Link per Mail → neues Passwort gilt, altes nicht, Sitzungen werden beendet", async () => {
-    const r = await registerUser({ email: "a@x.de", name: "Alpha", password: "old-password-123" });
+    const r = await registerUser({ email: "a@x.de", name: "Alpha", password: "old-password-123", playerName: "Alpha" });
     await auth.api.requestPasswordReset({ body: { email: "a@x.de", redirectTo: "/reset-password" } });
     await wait();
     expect(sent).toHaveLength(1);

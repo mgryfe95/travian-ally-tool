@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 const lbl = (t: T, map: Record<string, MessageKey>, k: string | number) => { const key = map[k]; return key ? t(key) : String(k); };
 const STATUS_KEY: Record<string, MessageKey> = { active: "overview.status.active", stagnant: "overview.status.stagnant", inactive: "overview.status.inactive", declining: "overview.status.declining" };
-const RELATION_KEY: Record<string, MessageKey> = { OWN: "overview.relation.OWN", ALLIED: "overview.relation.ALLIED", NAP: "overview.relation.NAP", NEUTRAL: "overview.relation.NEUTRAL", ENEMY: "overview.relation.ENEMY" };
+const RELATION_KEY: Record<string, MessageKey> = { OWN: "overview.relation.OWN", ALLIED: "overview.relation.ALLIED", CLOSE_ALLY: "overview.relation.CLOSE_ALLY", NAP: "overview.relation.NAP", NEUTRAL: "overview.relation.NEUTRAL", ENEMY: "overview.relation.ENEMY" };
 
 export default async function AlliancePage({ params }: { params: Promise<{ id: string }> }) {
   const { t, locale } = await getT();

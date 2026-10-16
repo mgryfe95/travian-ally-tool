@@ -2,15 +2,19 @@ import type { PrismaClient } from "@prisma/client";
 import { getAllianceIds } from "./settings";
 import { AppError } from "./i18n/errors";
 
-export const RELATIONS = ["OWN", "ALLIED", "NAP", "NEUTRAL", "ENEMY"] as const;
+export const RELATIONS = ["OWN", "ALLIED", "CLOSE_ALLY", "NAP", "NEUTRAL", "ENEMY"] as const;
 export type Relation = (typeof RELATIONS)[number];
 
 /** Diese Typen bilden zusammen die „eigene Gruppe“: intern wie eine einzige Allianz behandelt (Abgleich, Einladungen, Filter). */
 export const OWN_GROUP_RELATIONS: readonly Relation[] = ["OWN", "ALLIED"];
 
 export const RELATION_LABEL: Record<Relation, string> = {
-  OWN: "Eigene Allianz", ALLIED: "Allianz", NAP: "NAP", NEUTRAL: "Neutral", ENEMY: "Feind",
+  OWN: "Eigene Allianz", ALLIED: "Allianz", CLOSE_ALLY: "Enge Bündnispartner", NAP: "NAP", NEUTRAL: "Neutral", ENEMY: "Feind",
 };
+
+/** Spieler dieser Typen dürfen sich registrieren und müssen sich verifizieren (eigene Gruppe + enge Bündnispartner). */
+export const VERIFY_RELATIONS: readonly Relation[] = ["OWN", "ALLIED", "CLOSE_ALLY"];
+export const canVerify = (r: Relation | undefined) => r !== undefined && VERIFY_RELATIONS.includes(r);
 
 export const isOwnGroup = (r: Relation | undefined) => r !== undefined && OWN_GROUP_RELATIONS.includes(r);
 
@@ -24,6 +28,9 @@ export function effectiveRelations(rows: { allianceId: number; relation: Relatio
 
 export const ownGroupIds = (relations: Map<number, Relation>): Set<number> =>
   new Set([...relations].filter(([, r]) => isOwnGroup(r)).map(([id]) => id));
+
+export const verifiableIds = (relations: Map<number, Relation>): Set<number> =>
+  new Set([...relations].filter(([, r]) => canVerify(r)).map(([id]) => id));
 
 export type GroupPlayer = { id: number; name: string; allianceId: number; population: number };
 export type LinkRow = { userId: string; playerId: number; status: "pending" | "verified" | "rejected" };

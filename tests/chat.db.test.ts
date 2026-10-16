@@ -36,9 +36,9 @@ describe("Seed und Sichtbarkeit", () => {
     expect((await db.channel.findMany({ orderBy: { sortOrder: "asc" } })).map((c) => c.name)).toEqual(["Deff-Call", "Deff-Reports", "Off-Call", "Off-Reports", "Ressources", "Settlement", "Sitter", "Mixed topics"]);
     expect(await db.tag.count()).toBe(4);
   });
-  it("Member sieht alle, Gast nur Kanäle mit minReadRole=GUEST", async () => {
+  it("Member sieht alle, unverifizierter Gast nichts", async () => {
     expect((await listChannels(db, await ctx(member))).length).toBe(8);
-    expect((await listChannels(db, await ctx(guest))).map((c) => c.name)).toEqual(["Mixed topics"]);
+    expect((await listChannels(db, await ctx(guest))).map((c) => c.name)).toEqual([]);
   });
 });
 

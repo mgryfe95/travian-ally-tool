@@ -149,5 +149,6 @@ const en = {
   "admin.invite.copy": "Copy IGM text",
   "admin.invite.create": "Create invite",
   "admin.invite.bulk": "All uninvited: create links",
+  "admin.relation.CLOSE_ALLY": "Close ally",
 } as const;
 export default en;
