@@ -101,7 +101,7 @@ export class VisionPipeline {
   }
 
   /** Nutzer bestätigt (optional korrigiert): übernehmen und als Lern-Beispiel speichern. */
-  async confirm(screenshotId: number, userId: string, corrected?: unknown, villageId?: number): Promise<PipelineResult> {
+  async confirm(screenshotId: number, userId: string, corrected?: unknown, villageId?: number, asExample = true): Promise<PipelineResult> {
     const shot = await this.db.screenshot.findUnique({ where: { id: screenshotId } });
     if (!shot || shot.userId !== userId) return withReason("failed", "err.vision.screenshotNotFound");
     const parsed = (shot.parsed ?? {}) as ParsedShot;
@@ -120,6 +120,11 @@ export class VisionPipeline {
       where: { id: shot.id },
       data: { villageId: chosen ?? shot.villageId, status: "parsed", detectedKind: reading.data.kind, detectedDevice: reading.data.device, parsed: { ...parsed, reading: reading.data, issues: a.issues, confirmedBy: userId, corrected: corrected !== undefined, applied } as object },
     });
+    if (!asExample) {
+      // Kein Kern-Beispiel: Das Bild wird nicht mehr gebraucht und sofort gelöscht
+      await releaseScreenshotFiles(this.db, [shot.storageKey]);
+      return { status: "parsed" };
+    }
     await this.db.visionExample.create({ data: { kind: reading.data.kind, storageKey: shot.storageKey, gold: reading.data as object, createdBy: userId } });
     const old = await this.db.visionExample.findMany({ where: { kind: reading.data.kind }, orderBy: { createdAt: "desc" }, skip: KEEP_EXAMPLES_PER_KIND, select: { id: true, storageKey: true } });
     if (old.length) {

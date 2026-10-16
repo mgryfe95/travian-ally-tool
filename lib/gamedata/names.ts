@@ -36,3 +36,18 @@ export async function buildingInfos(db: PrismaClient, entries: { name?: string |
   }
   return out;
 }
+
+export type BuildingNameSets = { all: string[]; byTribe: Record<number, string[]> };
+
+/** Gebäudenamen insgesamt und je Volk (map.sql-Volk-ID): Gebäude ohne Volkbeschränkung plus die des Volkes. */
+export async function loadBuildingNameSets(db: PrismaClient, locale: Locale): Promise<BuildingNameSets> {
+  const [rows, tribes] = await Promise.all([db.building.findMany({ select: { name: true, nameEn: true, tribeRestriction: true, gid: true }, orderBy: { gid: "asc" } }), db.tribe.findMany({ select: { key: true, traits: true } })]);
+  const label = (r: { name: string; nameEn: string | null }) => (locale === "en" ? (r.nameEn ?? r.name) : r.name);
+  const uniq = (l: string[]) => [...new Set(l.filter(Boolean))];
+  const byTribe: Record<number, string[]> = {};
+  for (const t of tribes) {
+    const vid = Number((t.traits as { vid?: number } | null)?.vid);
+    if (Number.isInteger(vid)) byTribe[vid] = uniq(rows.filter((r) => !r.tribeRestriction || r.tribeRestriction === t.key).map(label));
+  }
+  return { all: uniq(rows.map(label)), byTribe };
+}

@@ -15,7 +15,7 @@ export function BuildingsEditor({ villageId, initial, names, action }: { village
         <input type="hidden" name="villageId" value={villageId} />
         <input type="hidden" name="data" value={JSON.stringify(rows)} />
         <p className="sub" style={{ fontSize: 12, marginBottom: 8 }}>{t("villages.bld.editHint")}</p>
-        <BuildingsTable rows={rows} onChange={setRows} names={names} idPrefix={`vb${villageId}`} />
+        <BuildingsTable rows={rows} onChange={setRows} names={names} slots={Array.from({ length: 22 }, (_, i) => 19 + i)} />
         <div className="row" style={{ marginTop: 8 }}><button className="btn sm">{t("villages.bld.save")}</button></div>
       </form>
     </details>

@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import sharp from "sharp";
+import { readingSchema } from "./ai/reading";
 import { screenshotStorage, storage } from "./storage";
 
 const FULL_MAX = 2600; // Handy-Screenshots (~1080×2400) bleiben in voller Auflösung, damit Ziffern lesbar bleiben
@@ -71,4 +72,27 @@ export async function deleteOwnAttachment(db: PrismaClient, userId: string, id: 
   // Zeile bleibt als Platzhalter, damit der Chat „Datei entfernt“ statt einer leeren Stelle zeigt; Speicherplatz zählt sie nicht mehr.
   await db.attachment.update({ where: { id }, data: { removedAt: new Date() } });
   return true;
+}
+
+export class ExampleError extends Error {}
+
+async function ownExample(db: PrismaClient, id: number, userId: string, isAdmin: boolean) {
+  const ex = await db.visionExample.findUnique({ where: { id } });
+  if (!ex || (ex.createdBy !== userId && !isAdmin)) throw new ExampleError("notFound");
+  return ex;
+}
+
+/** Lern-Beispiel korrigieren (nur Ersteller oder Admin); die Lesung wird wie bei der Prüfung validiert. */
+export async function updateExample(db: PrismaClient, userId: string, isAdmin: boolean, id: number, reading: unknown) {
+  const ex = await ownExample(db, id, userId, isAdmin);
+  const parsed = readingSchema.safeParse(reading);
+  if (!parsed.success || parsed.data.kind === "UNKNOWN") throw new ExampleError("invalid");
+  await db.visionExample.update({ where: { id: ex.id }, data: { gold: parsed.data as object, kind: parsed.data.kind } });
+}
+
+/** Lern-Beispiel entfernen; das Bild wird freigegeben, sobald nichts mehr darauf zeigt. */
+export async function deleteExample(db: PrismaClient, userId: string, isAdmin: boolean, id: number) {
+  const ex = await ownExample(db, id, userId, isAdmin);
+  await db.visionExample.delete({ where: { id: ex.id } });
+  await releaseScreenshotFiles(db, [ex.storageKey]);
 }

@@ -87,5 +87,15 @@ const en = {
   "screenshots.retract": "Take confirmation back",
   "screenshots.retract.hint": "Removes the learning example and puts the screenshot back into review. Village data already applied stays and can be corrected in the village.",
   "screenshots.retract.failed": "Could not take back",
+  "screenshots.review.asExample": "Save as core example",
+  "screenshots.review.asExampleHint": "Only core examples teach the recognition and keep the image. Unchecked, the image is deleted after applying (saves storage).",
+  "screenshots.example.save": "Save example",
+  "screenshots.example.saved": "Saved.",
+  "screenshots.example.remove": "Remove example",
+  "screenshots.example.confirmRemove": "Remove this example? The image is deleted once nothing needs it any more.",
+  "screenshots.examples.title": "Learning examples",
+  "screenshots.examples.intro": "These confirmed screenshots serve as models for the recognition (the newest {n} per type). You can correct or remove them. Deleted screenshots no longer count as examples.",
+  "screenshots.examples.edit": "Edit",
+  "screenshots.examples.of": "by {user}",
 } as const;
 export default en;

@@ -6,7 +6,7 @@ import { applyReading, inheritNames } from "@/lib/ai/apply";
 import { setAiClient, StubAiClient } from "@/lib/ai/client";
 import { VisionPipeline } from "@/lib/ai/pipeline";
 import { readingSchema, type Reading } from "@/lib/ai/reading";
-import { releaseScreenshotFiles } from "@/lib/screenshots";
+import { deleteExample, deleteScreenshotFiles, ExampleError, releaseScreenshotFiles, updateExample } from "@/lib/screenshots";
 import { screenshotStorage, storage } from "@/lib/storage";
 
 const db = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL! } } });
@@ -112,6 +112,11 @@ describe("Bestätigen: Dorfzuordnung", () => {
     // ausdrücklich gewähltes Dorf (MG) schlägt die erkannte Dorfzeile (MG Ryfe)
     expect((await p.confirm(shot.id, "vu", undefined, 9003)).status).toBe("parsed");
     expect(((await db.villageState.findUniqueOrThrow({ where: { villageId: 9003 } })).buildings as unknown[]).length).toBe(20);
+    // ohne Kern-Beispiel: Auswertung wird übernommen, aber Bild gelöscht und kein Beispiel gespeichert
+    await db.visionExample.deleteMany();
+    expect((await p.confirm(shot.id, "vu", undefined, 9001, false)).status).toBe("parsed");
+    expect(await db.visionExample.count()).toBe(0);
+    expect((await db.screenshot.findUniqueOrThrow({ where: { id: shot.id } })).removedAt).not.toBeNull();
   });
 });
 
@@ -154,5 +159,29 @@ describe("Bestätigung zurücknehmen", () => {
     expect((after.parsed as { confirmedBy?: string; reading?: unknown }).confirmedBy).toBeUndefined();
     expect((after.parsed as { reading?: unknown }).reading).toBeTruthy();
     expect((await p.retract(shot.id, "rt")).status).toBe("failed"); // nicht mehr bestätigt
+  });
+});
+
+describe("Lern-Beispiele verwalten", () => {
+  it("korrigieren (nur Ersteller/Admin), entfernen gibt das Bild frei; gelöschte Screenshots zählen nicht mehr", async () => {
+    await screenshotStorage().put("shots/ex/a.webp", Buffer.from("x"));
+    await screenshotStorage().put("shots/ex/b.webp", Buffer.from("y"));
+    const a = await db.screenshot.create({ data: { userId: "ex", storageKey: "shots/ex/a.webp", sizeBytes: 3, status: "parsed" } });
+    await db.screenshot.create({ data: { userId: "ex", storageKey: "shots/ex/b.webp", sizeBytes: 3, status: "parsed" } });
+    const ea = await db.visionExample.create({ data: { kind: "VILLAGE_HOSPITAL", storageKey: "shots/ex/a.webp", gold: {}, createdBy: "ex" } });
+    const eb = await db.visionExample.create({ data: { kind: "VILLAGE_HOSPITAL", storageKey: "shots/ex/b.webp", gold: {}, createdBy: "ex" } });
+    const fixed = { ...gold("stats-hospital-mobile-en"), selfRating: 0.5 };
+    await expect(updateExample(db, "anderer", false, ea.id, fixed)).rejects.toBeInstanceOf(ExampleError);
+    await expect(updateExample(db, "ex", false, ea.id, { kaputt: true })).rejects.toBeInstanceOf(ExampleError);
+    await updateExample(db, "ex", false, ea.id, fixed);
+    expect((await db.visionExample.findUniqueOrThrow({ where: { id: ea.id } })).kind).toBe("VILLAGE_HOSPITAL");
+    await updateExample(db, "admin", true, ea.id, fixed); // Admin darf
+    await deleteExample(db, "ex", false, ea.id);
+    expect(await db.visionExample.count({ where: { id: ea.id } })).toBe(0);
+    expect((await db.screenshot.findUniqueOrThrow({ where: { id: a.id } })).removedAt).not.toBeNull();
+    // Screenshot löschen entfernt auch das daraus entstandene Beispiel
+    const sb = await db.screenshot.findFirstOrThrow({ where: { storageKey: "shots/ex/b.webp" } });
+    await deleteScreenshotFiles(db, [sb.id]);
+    expect(await db.visionExample.count({ where: { id: eb.id } })).toBe(0);
   });
 });

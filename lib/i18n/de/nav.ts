@@ -28,6 +28,7 @@ const de: Record<keyof typeof en, string> = {
   "table.slot": "Platz",
   "table.building": "Gebäude",
   "table.level": "Stufe",
+  "table.fillSlots": "Fehlende Plätze ergänzen ({n})",
   "table.add": "Zeile hinzufügen",
   "table.remove": "Zeile entfernen",
   "table.namePh": "Name wählen oder tippen",

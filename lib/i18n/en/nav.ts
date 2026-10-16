@@ -26,6 +26,7 @@ const en = {
   "table.slot": "Slot",
   "table.building": "Building",
   "table.level": "Level",
+  "table.fillSlots": "Add missing slots ({n})",
   "table.add": "Add row",
   "table.remove": "Remove row",
   "table.namePh": "Pick or type a name",

@@ -79,4 +79,6 @@ Registrieren können sich nur Spieler unserer Allianz(en) und enger Bündnispart
 - Bei der Prüfung steht alles in Tabellen: Gebäude mit Platz/Name/Stufe (Namen aus den Spieldaten wählbar), Rohstofffelder, Zeilen. Art, Dorf und Werte lassen sich ändern, erst „Bestätigen“ übernimmt sie.
 - Aus Versehen bestätigt? „Bestätigung zurücknehmen“ am Screenshot stellt ihn wieder zur Prüfung und entfernt das Lern-Beispiel. Schon übernommene Dorfdaten korrigierst du im Dorf unter „Gebäude bearbeiten“.
 - Das Dorfzentrum-Bild zeigt keine Gebäudenamen. Gib sie einmal je Platz an; bei den nächsten Screenshots bleiben sie erhalten. Mit Namen zeigt die Dorfseite Nutzen und Kosten der nächsten Stufe.
+- **Kern-Beispiel:** Bei der Prüfung entscheidest du per Haken, ob der Screenshot als Lernvorlage dient. Ohne Haken wird das Bild nach der Übernahme gelöscht. Unter „Lern-Beispiele“ (Screenshots-Seite) kannst du Beispiele korrigieren oder entfernen. Gelöschte Screenshots zählen nicht als Beispiel.
+- Gebäude wählst du aus einer Liste, die nur die Gebäude des Volkes des Dorfes enthält; „Fehlende Plätze ergänzen“ legt leere Zeilen für noch nicht erkannte Plätze an.
 

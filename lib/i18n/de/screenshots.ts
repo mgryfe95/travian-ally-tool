@@ -89,5 +89,15 @@ const de: Record<keyof typeof en, string> = {
   "screenshots.retract": "Bestätigung zurücknehmen",
   "screenshots.retract.hint": "Entfernt das Lern-Beispiel und stellt den Screenshot wieder zur Prüfung. Bereits übernommene Dorfdaten bleiben und lassen sich im Dorf korrigieren.",
   "screenshots.retract.failed": "Zurücknehmen fehlgeschlagen",
+  "screenshots.review.asExample": "Als Kern-Beispiel speichern",
+  "screenshots.review.asExampleHint": "Nur Kern-Beispiele helfen der Erkennung beim Lernen und behalten das Bild. Ohne Haken wird das Bild nach der Übernahme gelöscht (spart Speicher).",
+  "screenshots.example.save": "Beispiel speichern",
+  "screenshots.example.saved": "Gespeichert.",
+  "screenshots.example.remove": "Beispiel entfernen",
+  "screenshots.example.confirmRemove": "Beispiel entfernen? Das Bild wird gelöscht, sobald es nirgends mehr gebraucht wird.",
+  "screenshots.examples.title": "Lern-Beispiele",
+  "screenshots.examples.intro": "Diese bestätigten Screenshots dienen der Erkennung als Vorbild (je Art die neuesten {n}). Du kannst sie korrigieren oder entfernen. Gelöschte Screenshots zählen nicht mehr als Beispiel.",
+  "screenshots.examples.edit": "Bearbeiten",
+  "screenshots.examples.of": "von {user}",
 };
 export default de;

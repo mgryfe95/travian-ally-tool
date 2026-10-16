@@ -13,7 +13,7 @@ import { requireUser } from "@/lib/session";
 import { readTroops, troopsToText } from "@/lib/troops";
 import { loadUnitLabels, unitLabel } from "@/lib/unit-labels";
 import { BuildingsEditor } from "@/components/BuildingsEditor";
-import { buildingInfos, loadBuildingNames } from "@/lib/gamedata/names";
+import { buildingInfos, loadBuildingNameSets } from "@/lib/gamedata/names";
 import { saveBuildingsAction, saveTroopsAction, saveVillageInstructionsAction } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -53,7 +53,8 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
   const res = obj<ResState>(s?.resources);
   const fields = arr<Level>(s?.fields);
   const buildings = arr<Level>(s?.buildings);
-  const [bInfo, bNames] = await Promise.all([buildingInfos(db, buildings, locale, (n) => fmt(n, locale)), loadBuildingNames(db, locale)]);
+  const [bInfo, bSets, owner] = await Promise.all([buildingInfos(db, buildings, locale, (n) => fmt(n, locale)), loadBuildingNameSets(db, locale), db.player.findUnique({ where: { id: village.playerId }, select: { tribe: true } })]);
+  const bNames = (owner ? bSets.byTribe[owner.tribe] : undefined) ?? bSets.all;
   const queue = arr<QueueItem>(obj<{ construction?: unknown }>(s?.queues).construction);
 
   return (
