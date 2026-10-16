@@ -28,6 +28,9 @@ test("Chat: Nachricht mit Tag in Deff-Call erscheint im Sammelraum; Screenshot e
   await expect(msg.getByText("# Deff-Call")).toBeVisible();
   await expect(msg.locator(".pill", { hasText: "Dringend" })).toBeVisible();
   await expect(msg.getByRole("link", { name: "(12|-34)" })).toHaveAttribute("href", /karte\.php\?zoom=1&x=12&y=-34$/);
+  // Persistenz: nach dem Neuladen steht die Nachricht noch im Chat.
+  await page.reload();
+  await expect(page.locator("article.msg", { hasText: "Angriff auf" })).toBeVisible();
 
   // Screenshot per Strg+V einfügen → Vorschau → senden → Lightbox.
   const png = await sharp({ create: { width: 640, height: 400, channels: 3, background: "#3a6" } }).png().toBuffer();
