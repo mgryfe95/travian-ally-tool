@@ -15,6 +15,13 @@ describe("parseEnv", () => {
   it("parst mehrere Allianz-IDs (kommagetrennt, ungültige/doppelte verworfen)", () => {
     expect(parseEnv({ ...base, TRAVIAN_ALLIANCE_ID: "36, 7;12 abc 36 -4" }).TRAVIAN_ALLIANCE_IDS).toEqual([36, 7, 12]);
   });
+  it("Produktion verlangt S3 für Screenshots (außer ALLOW_LOCAL_SCREENSHOTS)", () => {
+    expect(() => parseEnv({ ...base, NODE_ENV: "production" })).toThrow(/S3/);
+    expect(() => parseEnv({ ...base, NODE_ENV: "production", S3_BUCKET_SCREENSHOTS: "b", S3_ACCESS_KEY_ID: "k" })).toThrow(/S3/);
+    expect(parseEnv({ ...base, NODE_ENV: "production", S3_BUCKET_SCREENSHOTS: "b", S3_ACCESS_KEY_ID: "k", S3_SECRET_ACCESS_KEY: "s" }).S3_BUCKET_SCREENSHOTS).toBe("b");
+    expect(parseEnv({ ...base, NODE_ENV: "production", ALLOW_LOCAL_SCREENSHOTS: "true" }).ALLOW_LOCAL_SCREENSHOTS).toBe(true);
+    expect(parseEnv({ ...base }).USER_QUOTA_MB).toBe(50);
+  });
   it("rejects missing required values", () => {
     expect(() => parseEnv({})).toThrow();
   });

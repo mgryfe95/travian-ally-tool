@@ -448,6 +448,8 @@ model Screenshot {
   thumbKey       String?
   /// gespeicherte Größe (komprimiert) in Bytes
   sizeBytes      Int      @default(0)
+  /// Bilddatei gelöscht (nach Auswertung nicht mehr nötig); Zeile + Auswertung bleiben
+  removedAt      DateTime?
   /// uploaded | parsed | needs_review | failed
   status         String   @default("uploaded")
   parsed         Json?

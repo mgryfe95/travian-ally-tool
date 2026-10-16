@@ -72,6 +72,12 @@ OUT=$(git checkout "$BRANCH" 2>&1 && git pull --ff-only origin "$BRANCH" 2>&1) |
 NEW=$(git rev-parse --short HEAD)
 [ "$OLD" = "$NEW" ] && ok "Stand $NEW (keine neuen Commits)" || ok "$OLD → $NEW"
 
+# 2b. S3 ist Pflicht (Screenshots) – vor dem Bauen prüfen
+step "S3-Speicher (Pflicht)"
+envval() { grep -E "^$1=" .env 2>/dev/null | head -1 | cut -d= -f2- | sed 's/[[:space:]]#.*$//' | tr -d '"'"'"; }
+S3_MISSING=""; for k in S3_BUCKET_SCREENSHOTS S3_ACCESS_KEY_ID S3_SECRET_ACCESS_KEY; do [ -z "$(envval $k)" ] && S3_MISSING="$S3_MISSING $k"; done
+[ -z "$S3_MISSING" ] && ok "S3 in .env konfiguriert (Bucket $(envval S3_BUCKET_SCREENSHOTS))" || fatal "S3 nicht konfiguriert – in .env fehlen:$S3_MISSING" "Ohne S3 startet die App nicht. Siehe .env.example (S3_ENDPOINT, S3_REGION, S3_FORCE_PATH_STYLE)."
+
 # 3. Bauen und starten
 step "Bauen (dauert einige Minuten)"
 OUT=$(docker compose build 2>&1) || fatal "Build fehlgeschlagen" "$(printf '%s\n' "$OUT" | tail -25)"
@@ -85,6 +91,13 @@ PORT=$(grep -E '^APP_PORT=' .env 2>/dev/null | head -1 | cut -d= -f2 | cut -d" "
 BASE="http://127.0.0.1:$PORT"
 APP_URL=$(grep -E '^APP_URL=' .env 2>/dev/null | head -1 | cut -d= -f2- | tr -d '"')
 step "Prüfungen"
+
+S3T=$(docker compose exec -T app node -e '
+const {S3Client,HeadBucketCommand}=require("@aws-sdk/client-s3");
+const e=process.env;
+new S3Client({region:e.S3_REGION,endpoint:e.S3_ENDPOINT||undefined,forcePathStyle:e.S3_FORCE_PATH_STYLE==="true",credentials:{accessKeyId:e.S3_ACCESS_KEY_ID,secretAccessKey:e.S3_SECRET_ACCESS_KEY}})
+ .send(new HeadBucketCommand({Bucket:e.S3_BUCKET_SCREENSHOTS})).then(()=>console.log("ok"),(x)=>{console.log("FEHLER "+(x.name||"")+" "+(x.message||""));process.exit(1)})' 2>&1 | tr -d '\r' | tail -1)
+[ "$S3T" = "ok" ] && ok "S3-Bucket erreichbar" || bad "S3-Bucket nicht erreichbar: $S3T"
 
 for svc in db app worker; do
   CID=$(docker compose ps -q "$svc" 2>/dev/null)

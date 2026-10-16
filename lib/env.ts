@@ -32,11 +32,13 @@ const schema = z.object({
   IGM_WRITE_URL: z.string().default("{server}/messages/write?to={id}"),
   STORAGE_DIR: z.string().default("./storage"),
   /** Speicherplatz je Nutzer für Screenshots + Chat-Dateien in MB (0 = unbegrenzt). */
-  USER_QUOTA_MB: z.coerce.number().min(0).default(10),
+  USER_QUOTA_MB: z.coerce.number().min(0).default(50),
   /** Screenshots in einem eigenen S3-Bucket (AWS, MinIO, Hetzner, Backblaze …). Ohne S3_BUCKET_SCREENSHOTS bleibt alles lokal. */
   S3_BUCKET_SCREENSHOTS: z.preprocess(emptyToUndefined, z.string().optional()),
   S3_ENDPOINT: z.preprocess(emptyToUndefined, z.string().url().optional()),
   S3_REGION: z.string().default("us-east-1"),
+  /** Nur für Entwicklung/E2E: Screenshots lokal statt in S3 erlauben. Im Produktivbetrieb ist S3 Pflicht. */
+  ALLOW_LOCAL_SCREENSHOTS: z.preprocess((v) => v === "true" || v === "1", z.boolean()).default(false),
   S3_ACCESS_KEY_ID: z.preprocess(emptyToUndefined, z.string().optional()),
   S3_SECRET_ACCESS_KEY: z.preprocess(emptyToUndefined, z.string().optional()),
   S3_FORCE_PATH_STYLE: z.preprocess((v) => v === "true" || v === "1", z.boolean()).default(false),
@@ -63,6 +65,9 @@ export type Env = Omit<z.infer<typeof schema>, "SYSTEMADMIN_EMAILS" | "TRAVIAN_A
 
 export function parseEnv(source: Record<string, string | undefined>): Env {
   const parsed = schema.parse(source);
+  if (source.NODE_ENV === "production" && !parsed.ALLOW_LOCAL_SCREENSHOTS && !(parsed.S3_BUCKET_SCREENSHOTS && parsed.S3_ACCESS_KEY_ID && parsed.S3_SECRET_ACCESS_KEY)) {
+    throw new Error("S3 ist im Produktivbetrieb Pflicht: S3_BUCKET_SCREENSHOTS, S3_ACCESS_KEY_ID und S3_SECRET_ACCESS_KEY in .env setzen (S3_ENDPOINT/S3_REGION nach Anbieter).");
+  }
   return {
     ...parsed,
     TRAVIAN_ALLIANCE_IDS: parseIdList(parsed.TRAVIAN_ALLIANCE_ID),

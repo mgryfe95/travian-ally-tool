@@ -6,6 +6,7 @@ import { readingSchema, type Reading } from "./reading";
 import { agreementOf, assess, type Assessment, type Issue } from "./validate";
 import { env } from "../env";
 import { ownVillages } from "../services/villages";
+import { releaseScreenshotFiles } from "../screenshots";
 import { screenshotStorage } from "../storage";
 import { translate, type Locale, type MessageKey, type Params } from "../i18n";
 import { AppError } from "../i18n/errors";
@@ -88,6 +89,8 @@ export class VisionPipeline {
         where: { id: shot.id },
         data: { detectedKind: reading.kind, detectedDevice: reading.device, confidence: a.confidence, status, parsed: parsed as object, villageId: shot.villageId ?? a.village?.id ?? Object.values(a.matched)[0] ?? null },
       });
+      // Automatisch übernommen: Das Bild wird nicht mehr gebraucht (kein Lern-Beispiel) und sofort gelöscht
+      if (status === "parsed") await releaseScreenshotFiles(this.db, [shot.storageKey]);
       return { status };
     } catch (err) {
       const msg = (err as Error).message.slice(0, 300);
@@ -118,8 +121,12 @@ export class VisionPipeline {
       data: { villageId: chosen ?? shot.villageId, status: "parsed", detectedKind: reading.data.kind, detectedDevice: reading.data.device, parsed: { ...parsed, reading: reading.data, issues: a.issues, confirmedBy: userId, corrected: corrected !== undefined, applied } as object },
     });
     await this.db.visionExample.create({ data: { kind: reading.data.kind, storageKey: shot.storageKey, gold: reading.data as object, createdBy: userId } });
-    const old = await this.db.visionExample.findMany({ where: { kind: reading.data.kind }, orderBy: { createdAt: "desc" }, skip: KEEP_EXAMPLES_PER_KIND, select: { id: true } });
-    if (old.length) await this.db.visionExample.deleteMany({ where: { id: { in: old.map((o) => o.id) } } });
+    const old = await this.db.visionExample.findMany({ where: { kind: reading.data.kind }, orderBy: { createdAt: "desc" }, skip: KEEP_EXAMPLES_PER_KIND, select: { id: true, storageKey: true } });
+    if (old.length) {
+      await this.db.visionExample.deleteMany({ where: { id: { in: old.map((o) => o.id) } } });
+      // Aus der Beispielauswahl gefallene Bilder werden nicht mehr gebraucht
+      await releaseScreenshotFiles(this.db, old.map((o) => o.storageKey));
+    }
     return { status: "parsed" };
   }
 }

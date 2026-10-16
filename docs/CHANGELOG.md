@@ -133,3 +133,7 @@ Was & Warum: Calls trennen jetzt klar **Termin** (`eventAt`, Angriff/Ereignis, s
 Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`
 Was & Warum: Tags im Chat werden nach Tag-Typ gruppiert angezeigt (Filterleiste und an der Nachricht, je „Typ: Tag Tag“). `MessageView.tags` enthält dafür `typeId`/`typeName` und ist nach Typ-Reihenfolge sortiert.
 
+## 2026-10-16 · travian-ally-tool/storage/s3-pflicht-quota50
+Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`
+Was & Warum: (1) Kontingent je Nutzer 10 → 50 MB (`USER_QUOTA_MB`). (2) **S3 ist im Produktivbetrieb Pflicht**: `parseEnv` bricht bei `NODE_ENV=production` ohne `S3_BUCKET_SCREENSHOTS`/`S3_ACCESS_KEY_ID`/`S3_SECRET_ACCESS_KEY` ab (Ausnahme nur Entwicklung/E2E: `ALLOW_LOCAL_SCREENSHOTS=true`); `scripts/deploy.sh` prüft das vor dem Bauen und danach per HeadBucket, ob der Bucket erreichbar ist. (3) **Bilddatei nach Auswertung nicht mehr nötig**: Das Bild dient nur der Auslese (OCR) und als Lern-Beispiel (max. 30 je Art). Automatisch übernommene Screenshots werden sofort gelöscht, bestätigte nur, sobald sie aus der Beispielauswahl fallen (`releaseScreenshotFiles`, Spalte `Screenshot.removedAt`, Migration `screenshot_removed_at`); Auswertung und Zeile bleiben, Kontingent wird frei.
+

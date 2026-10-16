@@ -59,7 +59,7 @@ Link „Meine Bilder & Dateien“ links unten unter Deinem Namen. Dort siehst Du
 Unten in der Seitenleiste (und auf der Anmeldeseite) lässt sich zwischen Englisch und Deutsch wechseln. Die Wahl wird am Konto gespeichert; ohne Wahl gilt die Browsersprache, sonst Englisch.
 
 ## Speicherplatz
-Jeder Nutzer hat 10 MB für Screenshots und Chat-Dateien. Unter „Meine Bilder & Dateien“ siehst du die Belegung und kannst Dateien löschen; im Chat bleibt dann der Hinweis „Datei vom Uploader entfernt“. Screenshots siehst du nur selbst (Admins ausgenommen).
+Jeder Nutzer hat 50 MB für Screenshots und Chat-Dateien. Unter „Meine Bilder & Dateien“ siehst du die Belegung und kannst Dateien löschen; im Chat bleibt dann der Hinweis „Datei vom Uploader entfernt“. Screenshots siehst du nur selbst (Admins ausgenommen).
 
 ## Registrierung & Verifizierung
 Registrieren können sich nur Spieler unserer Allianz(en) und enger Bündnispartner (Admin → Allianzen → Typ „Enger Bündnispartner“). Nach dem Login sehen unverifizierte Konten nur die Verifizierungsseite: Dorf in den angezeigten Code umbenennen, dann „Verlinkung nachweisen“. Neue Kartendaten gibt es etwa einmal täglich; der Knopf prüft sofort, was schon da ist. Moderatoren können manuell bestätigen (Admin → Konten/Mitglieder).

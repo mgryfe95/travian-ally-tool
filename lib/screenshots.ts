@@ -13,12 +13,25 @@ export async function compressScreenshot(input: Buffer) {
   return { full: full.data, thumb, width: full.info.width, height: full.info.height };
 }
 
+/**
+ * Gibt die Bilddateien frei, sobald sie nicht mehr gebraucht werden (Auswertung ist übernommen, kein Lern-Beispiel). Die Zeile mit der Auswertung bleibt,
+ * Speicher und Kontingent werden frei. Dateien, auf die noch ein Lern-Beispiel zeigt, bleiben erhalten.
+ */
+export async function releaseScreenshotFiles(db: PrismaClient, storageKeys: string[]): Promise<number> {
+  if (storageKeys.length === 0) return 0;
+  const used = new Set((await db.visionExample.findMany({ where: { storageKey: { in: storageKeys } }, select: { storageKey: true } })).map((e) => e.storageKey));
+  const rows = await db.screenshot.findMany({ where: { storageKey: { in: storageKeys.filter((k) => !used.has(k)) }, removedAt: null } });
+  for (const r of rows) for (const key of [r.storageKey, r.thumbKey]) if (key) await screenshotStorage().delete(key);
+  await db.screenshot.updateMany({ where: { id: { in: rows.map((r) => r.id) } }, data: { removedAt: new Date(), sizeBytes: 0 } });
+  return rows.length;
+}
+
 /** Löscht Screenshot samt Dateien und die daraus entstandenen Lern-Beispiele (die Bilddatei existiert danach nicht mehr). */
 export async function deleteScreenshotFiles(db: PrismaClient, ids: number[]): Promise<number> {
   const rows = await db.screenshot.findMany({ where: { id: { in: ids } } });
   for (const r of rows) {
     await db.visionExample.deleteMany({ where: { storageKey: r.storageKey } });
-    for (const key of [r.storageKey, r.thumbKey]) if (key) await screenshotStorage().delete(key);
+    if (!r.removedAt) for (const key of [r.storageKey, r.thumbKey]) if (key) await screenshotStorage().delete(key);
   }
   await db.screenshot.deleteMany({ where: { id: { in: rows.map((r) => r.id) } } });
   return rows.length;
@@ -43,7 +56,7 @@ export async function listMyFiles(db: PrismaClient, userId: string): Promise<{ f
     db.attachment.findMany({ where: { uploaderId: userId, removedAt: null }, orderBy: { createdAt: "desc" }, include: { message: { select: { channel: { select: { name: true } }, deletedAt: true } } } }),
   ]);
   const files: MyFile[] = [
-    ...shots.map((s) => ({ type: "screenshot" as const, id: s.id, name: `Screenshot ${s.id}`, kind: s.detectedKind, sizeBytes: s.sizeBytes, createdAt: s.createdAt, thumbUrl: s.thumbKey ? `/api/screenshots/${s.id}/file?v=thumb` : null, url: `/api/screenshots/${s.id}/file`, note: s.status })),
+    ...shots.map((s) => ({ type: "screenshot" as const, id: s.id, name: `Screenshot ${s.id}`, kind: s.detectedKind, sizeBytes: s.sizeBytes, createdAt: s.createdAt, thumbUrl: s.thumbKey && !s.removedAt ? `/api/screenshots/${s.id}/file?v=thumb` : null, url: s.removedAt ? "" : `/api/screenshots/${s.id}/file`, note: s.status })),
     ...atts.map((a) => ({ type: "attachment" as const, id: a.id, name: a.name, kind: a.kind, sizeBytes: a.sizeBytes, createdAt: a.createdAt, thumbUrl: a.thumbKey ? `/api/attachments/${a.id}?v=thumb` : null, url: `/api/attachments/${a.id}?v=dl`, note: "", ...(a.message ? { channel: a.message.channel.name, channelDeleted: a.message.deletedAt !== null } : { unsent: true }) })),
   ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   return { files, totalBytes: files.reduce((s, f) => s + f.sizeBytes, 0) };

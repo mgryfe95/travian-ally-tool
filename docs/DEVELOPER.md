@@ -98,3 +98,7 @@ Deutsche Namen und Plätze 7–10 pflegt man händisch: `--template namen.json` 
 ## Vorteile je Stufe und Speicher
 - `BuildingLevel.effects` (JSON) enthält die Quell-Schlüssel (z. B. `production1`, `productionBoost1`, `storageWarehouse`, `trainingTimeStable`, `traps`). `lib/gamedata/effects.ts` ordnet jedem Schlüssel Art (rate/capacity/count/seconds/bonus/timeFactor), Gruppe und Richtung zu; Anzeige und KI-Kontext nutzen dieselben Formatierer. Neuer Schlüssel in der Quelle: dort eintragen + `overview.fx.<id>` in en/de (unbekannte Schlüssel erscheinen sonst als Zahl).
 - Speicher: `storage()` (lokal) für Chat-Dateien, `screenshotStorage()` für Screenshots (S3 + lokaler Fallback beim Lesen/Löschen). Kontingent in `lib/quota.ts` (zählt `sizeBytes` ohne Thumbnails von Chat-Dateien).
+
+## Screenshot-Dateien: Lebenszyklus
+Upload (WebP, S3 Pflicht in Produktion) → Auslese → bei Auto-Übernahme sofort löschen; bei manueller Bestätigung bleibt das Bild als `VisionExample` (max. 30 je Art, `KEEP_EXAMPLES_PER_KIND`) und wird freigegeben, sobald es herausfällt. `removedAt` markiert gelöschte Dateien; die 30-Tage-Aufbewahrung (`purgeOldScreenshots`) löscht weiterhin alles Übrige.
+

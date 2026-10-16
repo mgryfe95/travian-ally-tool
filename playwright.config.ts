@@ -17,7 +17,7 @@ export default defineConfig({
     reuseExistingServer: false,
     env: {
       NODE_ENV: "production", PORT: String(PORT), DATABASE_URL: DB, AUTH_SECRET: "e2e-secret-e2e-secret", APP_URL: `http://localhost:${PORT}`,
-      SYSTEMADMIN_EMAILS: "boss@example.com", TRAVIAN_SERVER_URL: "https://ts12.x1.europe.travian.com", TRAVIAN_ALLIANCE_ID: "36", AUTH_RATE_LIMIT_PER_MIN: "1000",
+      SYSTEMADMIN_EMAILS: "boss@example.com", TRAVIAN_SERVER_URL: "https://ts12.x1.europe.travian.com", TRAVIAN_ALLIANCE_ID: "36", AUTH_RATE_LIMIT_PER_MIN: "1000", ALLOW_LOCAL_SCREENSHOTS: "true",
     },
   },
 });

@@ -6,7 +6,8 @@ import { applyReading } from "@/lib/ai/apply";
 import { setAiClient, StubAiClient } from "@/lib/ai/client";
 import { VisionPipeline } from "@/lib/ai/pipeline";
 import { readingSchema, type Reading } from "@/lib/ai/reading";
-import { storage } from "@/lib/storage";
+import { releaseScreenshotFiles } from "@/lib/screenshots";
+import { screenshotStorage, storage } from "@/lib/storage";
 
 const db = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL! } } });
 const dir = join(__dirname, "fixtures/screenshots");
@@ -111,5 +112,22 @@ describe("Bestätigen: Dorfzuordnung", () => {
     // ausdrücklich gewähltes Dorf (MG) schlägt die erkannte Dorfzeile (MG Ryfe)
     expect((await p.confirm(shot.id, "vu", undefined, 9003)).status).toBe("parsed");
     expect(((await db.villageState.findUniqueOrThrow({ where: { villageId: 9003 } })).buildings as unknown[]).length).toBe(20);
+  });
+});
+
+describe("Bild nach Auswertung freigeben", () => {
+  it("löscht Datei und Größe, behält die Auswertung; Lern-Beispiele bleiben erhalten", async () => {
+    await screenshotStorage().put("shots/rel/a.webp", Buffer.from("x"));
+    await screenshotStorage().put("shots/rel/b.webp", Buffer.from("y"));
+    const a = await db.screenshot.create({ data: { userId: "rel", storageKey: "shots/rel/a.webp", sizeBytes: 5, status: "parsed" } });
+    const b = await db.screenshot.create({ data: { userId: "rel", storageKey: "shots/rel/b.webp", sizeBytes: 5, status: "parsed" } });
+    await db.visionExample.create({ data: { kind: "VILLAGE_HOSPITAL", storageKey: "shots/rel/b.webp", gold: {}, createdBy: "rel" } });
+    expect(await releaseScreenshotFiles(db, ["shots/rel/a.webp", "shots/rel/b.webp"])).toBe(1);
+    expect(await db.screenshot.findUnique({ where: { id: a.id } })).toMatchObject({ sizeBytes: 0, status: "parsed" });
+    expect((await db.screenshot.findUnique({ where: { id: a.id } }))?.removedAt).not.toBeNull();
+    expect((await db.screenshot.findUnique({ where: { id: b.id } }))?.removedAt).toBeNull();
+    await expect(screenshotStorage().get("shots/rel/a.webp")).rejects.toBeTruthy();
+    expect((await screenshotStorage().get("shots/rel/b.webp")).length).toBe(1);
+    expect(await releaseScreenshotFiles(db, ["shots/rel/a.webp"])).toBe(0);
   });
 });

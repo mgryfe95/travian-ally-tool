@@ -14,7 +14,7 @@ export function GET(req: Request, { params }: { params: Promise<{ id: string }> 
     const user = await getCurrentUser();
     if (!user) return unauthorized();
     const s = await db.screenshot.findUnique({ where: { id: Number((await params).id) } });
-    if (!s || (s.userId !== user.id && user.role !== "ADMIN")) return NextResponse.json({ error: t("screenshots.err.notFound") }, { status: 404 });
+    if (!s || s.removedAt || (s.userId !== user.id && user.role !== "ADMIN")) return NextResponse.json({ error: t("screenshots.err.notFound") }, { status: 404 });
     const thumb = new URL(req.url).searchParams.get("v") === "thumb";
     const key = thumb ? (s.thumbKey ?? s.storageKey) : s.storageKey;
     const data = await screenshotStorage().get(key);

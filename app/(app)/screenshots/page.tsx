@@ -47,7 +47,7 @@ export default async function ScreenshotsPage() {
           <section key={s.id} className="card" aria-label={t("screenshots.itemLabel", { id: s.id })}>
             <div className="row between">
               <span className="row" style={{ gap: 10 }}>
-                {s.thumbKey ? <Thumb src={`/api/screenshots/${s.id}/file?v=thumb`} size={48} /> : null}
+                {s.thumbKey && !s.removedAt ? <Thumb src={`/api/screenshots/${s.id}/file?v=thumb`} size={48} /> : null}
                 <strong>{kindLabel(s.detectedKind)}</strong>
               </span>
               <span className="sub">{STATUS[s.status] ? t(STATUS[s.status] as MessageKey) : s.status}{s.confidence !== null ? ` · ${t("screenshots.confidence", { pct: Math.round(s.confidence * 100) })}` : ""}</span>
