@@ -1,3 +1,4 @@
+import { CoordLink } from "@/components/CoordLink";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { fmt } from "@/lib/format";
@@ -80,7 +81,7 @@ function MemberRows({ m, stale, t, locale }: { m: Awaited<ReturnType<typeof troo
       </tr>
       {m.villages.map((v) => (
         <tr key={v.villageId}>
-          <td style={{ paddingLeft: 28 }}>{v.name}</td><td className="mono">({v.x}|{v.y})</td>
+          <td style={{ paddingLeft: 28 }}>{v.name}</td><td className="mono"><CoordLink x={v.x} y={v.y} /></td>
           <td className="mono" style={{ fontSize: 13 }}>{v.troops.length ? v.troops.map((u) => `${u.unit} ${fmt(u.inVillage, locale)}${u.away ? ` (+${fmt(u.away, locale)})` : ""}`).join(" · ") : <span className="sub">{t("overview.troops.noDataShort")}</span>}</td>
           <td className={stale(v.ageDays) ? "stale" : ""}>{ageText(t, v.ageDays)}</td>
         </tr>

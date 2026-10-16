@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { MapBaseProvider } from "@/components/CoordLink";
+import { env } from "@/lib/env";
 import { I18nProvider } from "@/lib/i18n/client";
 import { messagesFor } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
@@ -11,7 +13,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html lang={locale}>
       <body>
-        <I18nProvider locale={locale} messages={messagesFor(locale)}>{children}</I18nProvider>
+        <I18nProvider locale={locale} messages={messagesFor(locale)}><MapBaseProvider serverUrl={env().TRAVIAN_SERVER_URL}>{children}</MapBaseProvider></I18nProvider>
       </body>
     </html>
   );

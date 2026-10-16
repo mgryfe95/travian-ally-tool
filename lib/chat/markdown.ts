@@ -12,7 +12,8 @@ export type MdNode =
   | { t: "br" };
 
 const SAFE_URL = /^https?:\/\/[^\s<>"']+$/i;
-export const COORD_RE = /\(\s*(-?\d{1,3})\s*\|\s*(-?\d{1,3})\s*\)/;
+export const COORD_RE = /\(\s*([-−–]?\d{1,3})\s*\|\s*([-−–]?\d{1,3})\s*\)/;
+const num = (s: string) => Number(s.replace(/[−–]/g, "-"));
 
 const INLINE: { re: RegExp; make: (m: RegExpExecArray, parse: (s: string) => MdNode[]) => MdNode | null }[] = [
   { re: /`([^`\n]+)`/, make: (m) => ({ t: "code", v: m[1] as string }) },
@@ -23,8 +24,8 @@ const INLINE: { re: RegExp; make: (m: RegExpExecArray, parse: (s: string) => MdN
   {
     re: new RegExp(COORD_RE.source),
     make: (m) => {
-      const x = Number(m[1]);
-      const y = Number(m[2]);
+      const x = num(m[1] as string);
+      const y = num(m[2] as string);
       return Math.abs(x) <= 200 && Math.abs(y) <= 200 ? { t: "coord", x, y, v: m[0] } : null;
     },
   },

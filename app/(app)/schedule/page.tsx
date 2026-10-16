@@ -1,3 +1,4 @@
+import { CoordLink } from "@/components/CoordLink";
 import { db } from "@/lib/db";
 import { fmtDate } from "@/lib/format";
 import type { MessageKey } from "@/lib/i18n";
@@ -69,7 +70,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
             <tbody>{open.map((c) => (
               <tr key={c.id}>
                 <td>{when(c.at)}</td><td>{kindLabel(c.kind)}</td>
-                <td>{c.playerName ? <>{c.playerName} <span className="mono sub">({c.x}|{c.y})</span></> : c.title || "–"}</td>
+                <td>{c.playerName ? <>{c.playerName} <span className="mono sub"><CoordLink x={c.x!} y={c.y!} className="mono sub" /></span></> : c.title || "–"}</td>
                 <td>{chName.get(c.channelId) ?? "?"}</td><td><span className="pill p-wait">{statusLabel(c.status)}</span></td>
                 <td className="sub" style={{ maxWidth: 280, whiteSpace: "pre-wrap", fontSize: 12 }}>{renderCall(c)}</td>
                 <td className="r">{manage && (

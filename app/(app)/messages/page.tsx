@@ -1,3 +1,4 @@
+import { Md } from "@/components/Md";
 import Link from "next/link";
 import { DmComposer, MessengerLive } from "@/components/MessengerLive";
 import { db } from "@/lib/db";
@@ -46,7 +47,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
               <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1, overflow: "auto", maxHeight: "55vh", marginBottom: 12 }} aria-live="polite">
                 {current.messages.length === 0 && <p className="sub">{t("messenger.noMessages")}</p>}
                 {current.messages.map((m) => (
-                  <div key={m.id} className={`dm-bubble ${m.authorId === user.id ? "mine" : ""}`}>{m.body}<div className="sub" style={{ fontSize: 11, marginTop: 4 }}>{fmt(m.createdAt)}</div></div>
+                  <div key={m.id} className={`dm-bubble ${m.authorId === user.id ? "mine" : ""}`}><Md text={m.body} /><div className="sub" style={{ fontSize: 11, marginTop: 4 }}>{fmt(m.createdAt)}</div></div>
                 ))}
               </div>
               <DmComposer threadId={Number(sp.c)} />
@@ -77,7 +78,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
               <>
                 <h2>{open.subject}</h2>
                 <div className="sub" style={{ margin: "2px 0 10px" }}>{t("messenger.from", { name: open.sender.name })} · {fmt(open.createdAt)}</div>
-                <div style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{open.body}</div>
+                <div style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}><Md text={open.body} /></div>
                 <form action={openThreadAction} style={{ marginTop: 14 }}>
                   <input type="hidden" name="userId" value={open.sender.id} />
                   <button className="btn ghost sm">{t("messenger.reply", { name: open.sender.name })}</button>

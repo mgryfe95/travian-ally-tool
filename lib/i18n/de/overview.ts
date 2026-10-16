@@ -185,7 +185,7 @@ const de: Record<keyof typeof en, string> = {
   "overview.gamedata.colBuilding": "Gebäude",
   "overview.gamedata.tabEffects": "Vorteile",
   "overview.gamedata.colBenefits": "Vorteile (Wert, Änderung je Stufe)",
-  "overview.gamedata.legend": "Änderung gegenüber der Vorstufe; pp = Prozentpunkte. Zeiten: negativ = schneller.",
+  "overview.gamedata.legend": "Δ = Änderung gegenüber der Vorstufe (bei Prozentwerten absolute Differenz, nicht relativ). Zeiten: negativ = schneller.",
   "overview.gamedata.effectsHint": "Vorteil wählen und über alle Gebäude vergleichen, die ihn liefern – gleiche Einheit, gleicher Maßstab.",
   "overview.gamedata.effectsBuilding": "Gebäude",
   "overview.gamedata.unitSlot": "Platz",

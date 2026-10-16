@@ -78,15 +78,17 @@ export function formatEffect(id: string, v: number | null, locale: Locale): stri
 }
 
 /** Veränderung gegenüber der Vorstufe: Absolutwert (bei bonus/timeFactor in %-Punkten, bei seconds Dauer). */
-export function formatDelta(id: string, prev: number | null, cur: number | null, locale: Locale): string | null {
+/** `ui`: Prozentwerte als „+20 %“ (absoluter Unterschied); `ai`: eindeutig als Prozentpunkte („+20 pp“), damit nichts relativ gelesen wird. */
+export function formatDelta(id: string, prev: number | null, cur: number | null, locale: Locale, style: "ui" | "ai" = "ai"): string | null {
+  const pct = style === "ui" ? "%" : "pp";
   if (cur === null) return null;
   const base = prev ?? (kindOf(id) === "timeFactor" ? 1 : 0);
   const d = cur - base;
   if (Math.abs(d) < 1e-9) return null;
   switch (kindOf(id)) {
     case "rate": return `${signed(d, locale)} /h`;
-    case "bonus": return `${signed(d * 100, locale)} pp`;
-    case "timeFactor": return `${signed(d * 100, locale)} pp`;
+    case "bonus": return `${signed(d * 100, locale)} ${pct}`;
+    case "timeFactor": return `${signed(d * 100, locale)} ${pct}`;
     case "seconds": return `${d > 0 ? "+" : "−"}${clock(d)}`;
     default: return signed(d, locale, 0);
   }

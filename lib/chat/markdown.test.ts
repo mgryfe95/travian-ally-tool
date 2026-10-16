@@ -28,3 +28,13 @@ describe("parseMarkdown", () => {
     expect(parseMarkdown("")).toEqual([]);
   });
 });
+
+describe("Koordinaten", () => {
+  it("erkennt (x|y) auch mit Unicode-Minus und Leerzeichen als coord-Knoten", () => {
+    const nodes = parseMarkdown("Angriff auf (−3|−81) und ( 12 | -4 )");
+    expect(nodes.filter((n) => n.t === "coord")).toEqual([
+      { t: "coord", x: -3, y: -81, v: "(−3|−81)" },
+      { t: "coord", x: 12, y: -4, v: "( 12 | -4 )" },
+    ]);
+  });
+});

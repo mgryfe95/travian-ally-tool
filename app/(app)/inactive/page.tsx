@@ -1,3 +1,4 @@
+import { CoordLink } from "@/components/CoordLink";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { loadRelations, ownGroupIds } from "@/lib/alliance-group";
@@ -70,7 +71,7 @@ export default async function InactivePage({ searchParams }: { searchParams: Pro
           <div className="row" role="group" aria-label={t("overview.inactive.originGroup")}>
             {own.map((v) => (
               <Link key={v.id} className={`opt ${origin?.key === `village:${v.id}` ? "on" : ""}`} href={keep({ origin: `village:${v.id}` })}>
-                {v.name} <span className="mono" style={{ opacity: 0.75, fontSize: 12 }}>({v.x}|{v.y})</span>
+                {v.name} <span className="mono" style={{ opacity: 0.75, fontSize: 12 }}><CoordLink x={v.x} y={v.y} /></span>
               </Link>
             ))}
             <div className="row" style={{ gap: 6 }}>
@@ -122,7 +123,7 @@ export default async function InactivePage({ searchParams }: { searchParams: Pro
                     <tr key={r.villageId}>
                       <td className="mono" style={{ color: "var(--link-h)", fontWeight: 500 }}>{roundFields(r.distance).toFixed(1)}</td>
                       <td>{r.villageName}</td>
-                      <td className="mono">({r.x}|{r.y})</td>
+                      <td className="mono"><CoordLink x={r.x} y={r.y} /></td>
                       <td><Link href={`/players/${r.playerId}`}>{r.playerName}</Link></td>
                       <td style={{ color: "var(--text2)" }}>{r.allianceId ? <Link href={`/alliances/${r.allianceId}`}>{r.allianceName}</Link> : "—"}</td>
                       <td style={{ color: "var(--text2)" }}>{lbl(t, TRIBE_KEY, r.tribe)}</td>

@@ -1,3 +1,4 @@
+import { CoordLink } from "@/components/CoordLink";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { UploadBox } from "@/components/UploadBox";
@@ -55,7 +56,7 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
       <header className="row between" style={{ alignItems: "flex-end" }}>
         <div>
           <Link href="/" style={{ fontSize: 13 }}>{t("villages.back")}</Link>
-          <h1>{village.name} <span className="mono sub" style={{ fontSize: 18, fontWeight: 400 }}>({village.x}|{village.y})</span></h1>
+          <h1>{village.name} <span className="mono sub" style={{ fontSize: 18, fontWeight: 400 }}><CoordLink x={village.x} y={village.y} className="mono sub" /></span></h1>
           <div className="sub">{t("villages.population", { n: fmt(village.population, locale) })}</div>
         </div>
         <VillageSwitch villages={all.map((v) => ({ id: v.id, label: `${v.name} (${v.x}|${v.y})` }))} current={id} />

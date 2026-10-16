@@ -99,3 +99,7 @@ Was & Warum: Einheitennamen je Volk (Plätze 1–6 für alle 7 Völker) aus dem 
 - Mobile Kontoleiste (Sprache, Dateien, Abmelden), da die Sidebar dort ausgeblendet ist.
 
 - Kulturpunkte je Gebäudestufe erscheinen jetzt als Vorteil in der Gebäude-Tabelle und im Vorteile-Vergleich (Migration `culture_points_effect` übernimmt den Bestand).
+
+- Koordinaten `(x|y)` sind überall Direktlinks auf die Travian-Karte (`/karte.php?zoom=1&x=…&y=…`, neuer Tab): in Chat/Calls/Messenger (inkl. Unicode-Minus) sowie in Dorf-, Spieler-, Inaktiven-, Ereignis-, Schedule-, Truppen- und Übersichtsseiten. Angezeigt werden weiter nur die Koordinaten (`lib/coords.ts`, `components/CoordLink.tsx`).
+
+- Vorteile-Tabelle: Änderung je Stufe als „Δ +20 %“ (absolute Differenz) statt „pp“; die KI-Ausgabe nennt weiter explizit „pp“. Koordinaten-Links: E2E angepasst.

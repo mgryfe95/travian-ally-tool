@@ -45,8 +45,8 @@ function shortSource(src: string) {
 }
 
 function Cell({ id, prev, cur, locale, hl }: { id: string; prev: number | null; cur: number | null; locale: Locale; hl?: boolean }) {
-  const d = formatDelta(id, prev, cur, locale);
-  return <td className="mono r" style={hl ? HL : undefined}>{formatEffect(id, cur, locale)}{d && <div className="sub" style={{ fontSize: 11 }}>{d}</div>}</td>;
+  const d = formatDelta(id, prev, cur, locale, "ui");
+  return <td className="mono r" style={hl ? HL : undefined}>{formatEffect(id, cur, locale)}{d && <div className="sub" style={{ fontSize: 11 }}>Δ {d}</div>}</td>;
 }
 
 async function Buildings({ versionId, speed, selected, fx, t, locale }: { versionId: number; speed: number; selected: number; fx?: string; t: T; locale: Locale }) {

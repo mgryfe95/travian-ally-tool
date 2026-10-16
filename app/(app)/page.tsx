@@ -1,3 +1,4 @@
+import { CoordLink } from "@/components/CoordLink";
 import Link from "next/link";
 import { Fragment } from "react";
 import { UploadBox } from "@/components/UploadBox";
@@ -105,7 +106,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
               {villages.map((v) => (
                 <tr key={v.id}>
                   <td><Link href={`/villages/${v.id}`} style={{ fontWeight: 600 }}>{v.name}</Link></td>
-                  <td className="mono">({v.x}|{v.y})</td><td className="mono">{fmt(v.population, locale)}</td><td className="mono sub">–</td>
+                  <td className="mono"><CoordLink x={v.x} y={v.y} /></td><td className="mono">{fmt(v.population, locale)}</td><td className="mono sub">–</td>
                   <td className={stale(v.state?.troopsAt ?? null) ? "stale" : ""}>{ageText(t, ageInDays(v.state?.troopsAt ?? null, now))}</td>
                   <td className={stale(v.state?.resourcesAt ?? null) ? "stale" : ""}>{ageText(t, ageInDays(v.state?.resourcesAt ?? null, now))}</td>
                   <td className={stale(v.state?.buildingsAt ?? null) ? "stale" : ""}>{ageText(t, ageInDays(v.state?.buildingsAt ?? null, now))}</td>

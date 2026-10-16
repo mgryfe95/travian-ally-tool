@@ -1,3 +1,4 @@
+import { CoordLink } from "@/components/CoordLink";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { getT } from "@/lib/i18n/server";
@@ -31,7 +32,7 @@ export default async function EventsPage() {
               <li key={e.id} style={{ padding: "6px 0", borderBottom: "1px solid var(--line2)" }}>
                 <span className="sub mono">{e.at.toISOString().slice(0, 10)}</span> · <span className="chip">{LABEL[e.type] ? t(LABEL[e.type] as MessageKey) : e.type}</span> {who(e.playerId)}
                 {e.otherPlayerId !== null && <> ({t("overview.events.from")} {who(e.otherPlayerId)})</>}
-                {v && <> · {v.name} <span className="mono">({v.x}|{v.y})</span></>}
+                {v && <> · {v.name} <CoordLink x={v.x} y={v.y} /></>}
               </li>
             );
           })}

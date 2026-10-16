@@ -63,3 +63,6 @@ Punkte, die Projekt, Aufbau oder andere Bereiche betreffen, aber nicht direkt zu
 
 ## 2026-10-15 · KI-Advisor
 - Advisor ist nur Stub (leere Liste, kein Cron, kein Stream). Offen: Datenbasis (Gebäude, Truppen, Dörfer, map.sql), Lauf 1–2×/Tag im Worker, gespeicherte Tipps + UI, Ausgabe in Nutzersprache (User.locale).
+
+## 2026-10-16 · Redesign
+- Nach Umsetzung des Backlogs und Deploy: komplettes Redesign des Tools. Inspiration: Gemini-Logo „HUMANS – Community · Humanity · Support“ (Pergament-Beige, Dunkelblau/Stahl, Gold-Banner, Weizen-Grün/Lorbeer, Keltischer Knoten, warme Sonne). Offen: Logo als Asset (Datei vom Nutzer), Dark/Light, Typografie.

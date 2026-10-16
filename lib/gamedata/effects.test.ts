@@ -16,6 +16,7 @@ describe("effects", () => {
   it("Delta zur Vorstufe, fehlende Vorstufe zählt als Basis", () => {
     expect(formatDelta("production1", 7, 13, "en")).toBe("+6 /h");
     expect(formatDelta("trainingTimeStable", 1, 0.9, "en")).toBe("−10 pp");
+    expect(formatDelta("productionBoost1", 0.4, 0.6, "en", "ui")).toBe("+20 %");
     expect(formatDelta("slots", null, 1, "en")).toBe("+1");
     expect(formatDelta("traps", 10, 10, "en")).toBeNull();
   });

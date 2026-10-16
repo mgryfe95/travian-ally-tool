@@ -183,7 +183,7 @@ const en = {
   "overview.gamedata.colBuilding": "Building",
   "overview.gamedata.tabEffects": "Benefits",
   "overview.gamedata.colBenefits": "Benefits (value, change per level)",
-  "overview.gamedata.legend": "Change vs previous level; pp = percentage points. Times: negative = faster.",
+  "overview.gamedata.legend": "Δ = change vs previous level (for percentages: absolute difference, not relative). Times: negative = faster.",
   "overview.gamedata.effectsHint": "Pick a benefit to compare it across all buildings that provide it – same unit, same scale.",
   "overview.gamedata.effectsBuilding": "Building",
   "overview.gamedata.unitSlot": "Slot",

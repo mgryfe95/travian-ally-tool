@@ -1,5 +1,7 @@
-import Link from "next/link";
+"use client";
+
 import { Fragment } from "react";
+import { CoordLink } from "@/components/CoordLink";
 import { parseMarkdown, type MdNode } from "@/lib/chat/markdown";
 
 function render(nodes: MdNode[]) {
@@ -11,7 +13,7 @@ function render(nodes: MdNode[]) {
       case "italic": return <em key={i}>{render(n.c)}</em>;
       case "code": return <code key={i} className="mono" style={{ background: "#2a261f", padding: "0 4px", borderRadius: 4 }}>{n.v}</code>;
       case "link": return <a key={i} href={n.href} target="_blank" rel="noopener noreferrer nofollow ugc">{render(n.c)}</a>;
-      case "coord": return <Link key={i} className="mono" href={`/inactive?origin=${encodeURIComponent(`(${n.x}|${n.y})`)}`}>{n.v}</Link>;
+      case "coord": return <CoordLink key={i} x={n.x} y={n.y} text={n.v} />;
     }
   });
 }

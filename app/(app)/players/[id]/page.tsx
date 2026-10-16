@@ -1,3 +1,4 @@
+import { CoordLink } from "@/components/CoordLink";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Sparkline } from "@/components/Sparkline";
@@ -50,7 +51,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
         <div className="scroll">
           <table>
             <thead><tr><th>{t("overview.player.colVillage")}</th><th>{t("overview.player.colCoord")}</th><th className="r">{t("overview.player.colPop")}</th></tr></thead>
-            <tbody>{villages.map((v) => <tr key={v.id}><td>{v.name}</td><td className="mono">({v.x}|{v.y})</td><td className="mono r">{fmt(v.population, locale)}</td></tr>)}</tbody>
+            <tbody>{villages.map((v) => <tr key={v.id}><td>{v.name}</td><td className="mono"><CoordLink x={v.x} y={v.y} /></td><td className="mono r">{fmt(v.population, locale)}</td></tr>)}</tbody>
           </table>
         </div>
       </section>
