@@ -5,7 +5,7 @@ import type { MessageKey } from "@/lib/i18n";
 import { LogoutButton } from "@/components/AuthForms";
 import { LanguageSelect } from "@/components/LanguageSelect";
 import { SideNav, type NavItem } from "@/components/SideNav";
-import { TabBar } from "@/components/TabBar";
+import { MobileNav } from "@/components/MobileNav";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { fmtDate } from "@/lib/format";
@@ -43,8 +43,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const world = await getWorldStatus(db);
   return (
     <div className="shell">
+      <MobileNav items={items} name={user.name} role={ROLE_LABEL[user.role] ? t(ROLE_LABEL[user.role]!) : user.role} />
       <nav className="side" aria-label={t("nav.main")}>
-        <div className="logo"><LogoMark size={40} />Humans</div>
+        <div className="logo"><LogoMark size={64} />Humans</div>
         <div className="srv">{[serverLabel(env().TRAVIAN_SERVER_URL), tag].filter(Boolean).join(" · ")}</div>
         <SideNav items={items} />
         <div className="me">
@@ -58,12 +59,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         </div>
       </nav>
       <main className="main">
-        <div className="mobilebar" aria-label={t("nav.account")}>
-          <span style={{ fontWeight: 600 }}>{user.name}</span>
-          <a href="/files" style={{ fontSize: 13 }}>{t("nav.myFiles")}</a>
-          <LanguageSelect />
-          <LogoutButton />
-        </div>
         {world.status === "ended" && (
           <section className="card warn" role="status">
             <strong style={{ color: "var(--warn)" }}>{t("nav.worldEnded")}</strong>{" "}
@@ -72,7 +67,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         )}
         {children}
       </main>
-      <TabBar />
     </div>
   );
 }

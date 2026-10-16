@@ -108,3 +108,5 @@ Was & Warum: Einheitennamen je Volk (Plätze 1–6 für alle 7 Völker) aus dem 
 - Komplettes visuelles Redesign nach dem Klick-Mockup (Redesign-Canvas): Pergament-Fläche, Marine-Seitenleiste, Gold-Aktionen, Serifen-Überschriften, Gold-Banner bei Anmeldung/Registrierung, zweigeteilte Auth-Seiten mit Wappen. Alle Farben als Tokens in `app/globals.css`; Klassennamen unverändert, keine Funktionsänderung.
 - Wappen als Platzhalter-SVG (`components/Logo.tsx`), bis die echte Logo-Datei vorliegt. Schriften: System-/Georgia-Stack (keine externen Fonts, DSGVO).
 - Chat-Persistenz als E2E ergänzt (Nachricht bleibt nach Neuladen).
+
+- Mobil: Burger-Menü (standardmäßig zu) mit der Hauptnavigation, Profilbild-Menü rechts oben (Konto, Dateien, Sprache, Abmelden); untere Tab-Leiste entfällt. Großes Wappen oben links in der Seitenleiste.

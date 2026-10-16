@@ -22,7 +22,7 @@ button, input, select, textarea { font: inherit; }
 .mono { font-family: inherit; font-variant-numeric: tabular-nums; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
-.shell { display: flex; flex-wrap: wrap; min-height: 100vh; }
+.shell { display: flex; flex-wrap: wrap; align-content: flex-start; min-height: 100vh; }
 .side { flex: 1 1 232px; max-width: 268px; background: var(--side); color: var(--side-text); border-right: 1px solid var(--navy); padding: 22px 14px; display: flex; flex-direction: column; gap: 4px; }
 .logo { display: flex; align-items: center; gap: 10px; font-family: var(--serif); font-weight: 700; letter-spacing: 0.03em; font-size: 20px; color: var(--gold-hi); padding: 0 8px 4px; }
 .srv { font-size: 12px; color: var(--side-muted); padding: 0 8px 16px; }
@@ -102,18 +102,13 @@ td { padding: 10px; border-bottom: 1px solid var(--line2); vertical-align: middl
 .attach-card { display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--soft); max-width: 360px; }
 .lightbox { position: fixed; inset: 0; z-index: 100; background: rgba(0, 0, 0, 0.88); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 20px; }
 .chat-mobile-only { display: none; }
-.tabbar { display: none; }
-.mobilebar { display: none; }
+.mobilehead { display: none; }
 @media (max-width: 760px) {
   .side { display: none; }
-  .mobilebar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 8px 0 12px; }
+  .mobilehead { display: flex; flex: 1 1 100%; align-items: center; justify-content: space-between; gap: 12px; position: sticky; top: 0; z-index: 50; background: var(--side); color: var(--side-text); padding: 8px 12px; }
   .chat-aside { display: none; }
   .chat-mobile-only { display: block; }
   .chat-msgs { padding: 14px 16px; }
-  .main { padding-bottom: 80px; }
-  .tabbar { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; border-top: 1px solid var(--navy); background: var(--side); padding: 6px 4px 14px; }
-  .tabbar a { min-height: 48px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--side-muted); }
-  .tabbar a.on { color: var(--gold-hi); font-weight: 700; }
   .btn, .field, .opt { min-height: 44px; }
 }
 
@@ -133,3 +128,13 @@ td { padding: 10px; border-bottom: 1px solid var(--line2); vertical-align: middl
 .authbox h1 { display: inline-block; background: linear-gradient(var(--gold-hi), var(--gold)); color: var(--navy); font-size: 20px; letter-spacing: 0.06em; padding: 6px 34px; margin: 0 0 14px; clip-path: polygon(0 0, 100% 0, 96% 50%, 100% 100%, 0 100%, 4% 50%); }
 .me select { background: var(--steel); color: var(--side-text); border: 1px solid var(--steel-line); border-radius: 8px; min-height: 32px; padding: 0 8px; }
 a.mono { text-decoration: underline dotted; text-underline-offset: 3px; }
+
+.iconbtn, .avatarbtn { min-width: 44px; min-height: 44px; border-radius: 10px; border: 1px solid var(--steel-line); background: var(--steel); color: var(--side-text); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.avatarbtn { border-radius: 50%; width: 44px; font-family: var(--serif); font-weight: 700; color: var(--gold-hi); }
+.mobilehead .dropdown { position: absolute; top: 100%; z-index: 60; background: var(--side); border: 1px solid var(--steel-line); border-radius: 12px; padding: 8px; margin: 4px 8px; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35); max-height: 80vh; overflow-y: auto; }
+.mobilehead .dropdown.menu { left: 0; width: min(86vw, 320px); }
+.mobilehead .dropdown.profile { right: 0; width: min(86vw, 300px); }
+.mobilehead .dropdown .sub { color: var(--side-muted); }
+.mobilehead .dropdown button:not(.avatarbtn):not(.iconbtn) { color: var(--gold-hi) !important; background: none; border: 0; cursor: pointer; padding: 0; min-height: 44px; }
+.mobilehead .dropdown select { background: var(--steel); color: var(--side-text); border: 1px solid var(--steel-line); border-radius: 8px; min-height: 40px; padding: 0 8px; }
+.side .logo { font-size: 26px; gap: 12px; padding: 0 8px 6px; }

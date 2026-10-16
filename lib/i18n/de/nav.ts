@@ -24,5 +24,6 @@ const de: Record<keyof typeof en, string> = {
   "nav.forbiddenTitle": "Kein Zugriff",
   "nav.forbiddenBody": "Dafür fehlt dir ein Recht.",
   "nav.account": "Konto",
+  "nav.menu": "Menü",
 };
 export default de;

@@ -22,5 +22,6 @@ const en = {
   "nav.forbiddenTitle": "No access",
   "nav.forbiddenBody": "You lack the permission for this.",
   "nav.account": "Account",
+  "nav.menu": "Menu",
 } as const;
 export default en;
