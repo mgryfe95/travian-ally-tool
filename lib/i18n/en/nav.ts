@@ -21,5 +21,6 @@ const en = {
   "nav.worldEndedUnknown": "a while",
   "nav.forbiddenTitle": "No access",
   "nav.forbiddenBody": "You lack the permission for this.",
+  "nav.account": "Account",
 } as const;
 export default en;

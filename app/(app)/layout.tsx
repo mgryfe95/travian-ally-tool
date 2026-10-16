@@ -57,6 +57,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         </div>
       </nav>
       <main className="main">
+        <div className="mobilebar" aria-label={t("nav.account")}>
+          <span style={{ fontWeight: 600 }}>{user.name}</span>
+          <a href="/files" style={{ fontSize: 13 }}>{t("nav.myFiles")}</a>
+          <LanguageSelect />
+          <LogoutButton />
+        </div>
         {world.status === "ended" && (
           <section className="card warn" role="status">
             <strong style={{ color: "var(--warn)" }}>{t("nav.worldEnded")}</strong>{" "}

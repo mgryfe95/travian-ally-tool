@@ -23,5 +23,6 @@ const de: Record<keyof typeof en, string> = {
   "nav.worldEndedUnknown": "längerem",
   "nav.forbiddenTitle": "Kein Zugriff",
   "nav.forbiddenBody": "Dafür fehlt dir ein Recht.",
+  "nav.account": "Konto",
 };
 export default de;
