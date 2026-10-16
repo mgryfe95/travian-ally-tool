@@ -28,7 +28,7 @@ const schema = z.object({
   /** Travian veröffentlicht map.sql täglich zwischen 23:55 und 0:05 Serverzeit; der Worker holt sie kurz danach (+5 und +15 Min. als Nachversuch). */
   MAP_RELEASE_TIME: z.string().regex(/^\d{1,2}:\d{2}$/).default("00:10"),
   /** Zeitzone der Spielserver-Uhr (für Release-Zeit und Hinweise). */
-  GAME_TIMEZONE: z.string().default("Europe/Berlin"),
+  GAME_TIMEZONE: z.string().default("Etc/GMT-1"),
   /** Schreibfenster der Ingame-Nachrichten ({server}, {id}, {name}); Standard siehe lib/igm.ts. */
   IGM_WRITE_URL: z.string().default("{server}/messages/write?to={id}"),
   STORAGE_DIR: z.string().default("./storage"),

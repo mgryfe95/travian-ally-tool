@@ -151,5 +151,6 @@ Was & Warum: Auswahl beim Tippen von `@` als Liste über dem Eingabefeld (alle N
 
 ## 2026-10-16 · travian-ally-tool/import/taeglich-0-10
 Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`
-Was & Warum: map.sql wird nur noch **einmal täglich um 0:10** (`MAP_RELEASE_TIME`, Zeitzone `GAME_TIMEZONE`, Nachversuche +5/+15 Min.) geholt; der stündliche Takt ist aus (`IMPORT_CRON` leer, optional). **Fehler behoben:** Tagesstände wurden unter dem UTC-Tag gespeichert, ein Import nach Mitternacht Berliner Zeit landete beim Vortag (zwei Importe → ein Tagesstand, daher keine Inaktiven). Jetzt zählt der Tag der Spielserver-Uhr; Migration `fix_daily_stat_date` korrigiert den bestehenden einzelnen Tag einmalig.
+Was & Warum: map.sql wird nur noch **einmal täglich um 0:10** (`MAP_RELEASE_TIME`, Zeitzone `GAME_TIMEZONE`, Nachversuche +5/+15 Min.) geholt; der stündliche Takt ist aus (`IMPORT_CRON` leer, optional). **Fehler behoben:** Tagesstände wurden unter dem UTC-Tag gespeichert, ein Import nach Mitternacht Serverzeit landete beim Vortag (zwei Importe → ein Tagesstand, daher keine Inaktiven). Jetzt zählt der Tag der Spielserver-Uhr; Migration `fix_daily_stat_date` korrigiert den bestehenden einzelnen Tag einmalig.
 
+Nachtrag: Serverzeit ist fest UTC+1 ohne Sommerzeit, deshalb Standard `GAME_TIMEZONE=Etc/GMT-1` (statt Europe/Berlin). 0:10 Serverzeit = 01:10 Berliner Sommerzeit, im Winter 00:10.

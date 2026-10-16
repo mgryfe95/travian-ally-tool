@@ -31,9 +31,9 @@ describe("importMapSql", () => {
     expect(await db.playerDailyStat.count()).toBe(await db.player.count());
   });
 
-  it("Tagesstand gehört zum Tag der Spielserver-Uhr: Import um 0:10 Berliner Zeit zählt zum neuen Tag", async () => {
-    // 2026-10-16 00:10 MESZ = 2026-10-15 22:10 UTC
-    await importMapSql(db, fixture, { inactiveDays: 3, now: new Date("2026-10-15T22:10:00Z"), timeZone: "Europe/Berlin" });
+  it("Tagesstand gehört zum Tag der Spielserver-Uhr: Import um 0:10 Serverzeit (UTC+1) zählt zum neuen Tag", async () => {
+    // 2026-10-16 00:10 Serverzeit (UTC+1) = 2026-10-15 23:10 UTC
+    await importMapSql(db, fixture, { inactiveDays: 3, now: new Date("2026-10-15T23:10:00Z"), timeZone: "Etc/GMT-1" });
     const d = await db.playerDailyStat.findFirstOrThrow();
     expect(d.date.toISOString().slice(0, 10)).toBe("2026-10-16");
   });
