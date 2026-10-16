@@ -290,7 +290,7 @@ export function ChatClient(props: ChatProps) {
             <input id="chat-q" className="field" placeholder={t("chat.search.placeholder")} value={q} onChange={(e) => setQ(e.target.value)} style={{ width: 150, minHeight: 32 }} />
             <button type="button" className={`filterchip ${tagFilter === null ? "on" : ""}`} onClick={() => setTagFilter(null)}>{t("chat.filter.allTags")}</button>
             {tagTypes.filter((tt) => tt.tags.length > 0).map((tt) => (
-              <span key={tt.id} className="row" role="group" aria-label={tt.name} style={{ gap: 4, alignItems: "center" }}>
+              <span key={tt.id} className="row" style={{ gap: 4, alignItems: "center" }}>
                 <span className="sub" style={{ fontSize: 11 }}>{tt.name}:</span>
                 {tt.tags.map((g) => <button key={g.id} type="button" className={`filterchip ${tagFilter === g.id ? "on" : ""}`} onClick={() => setTagFilter(tagFilter === g.id ? null : g.id)}>{g.name}</button>)}
               </span>
