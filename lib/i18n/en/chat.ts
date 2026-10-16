@@ -77,6 +77,7 @@ const en = {
   "chat.reply.to": "Reply to {name}",
   "chat.reply.cancel": "Cancel reply",
   "chat.reply.ref": "↳ {name}: {text}",
+  "chat.mention.you": "you",
   "chat.mention.suggest": "Pick a mention",
   "chat.mentions.link": "My mentions",
   "mentions.eyebrow": "Profile",

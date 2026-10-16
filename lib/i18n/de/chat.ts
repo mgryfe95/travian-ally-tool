@@ -79,6 +79,7 @@ const de: Record<keyof typeof en, string> = {
   "chat.reply.to": "Antwort an {name}",
   "chat.reply.cancel": "Antwort abbrechen",
   "chat.reply.ref": "↳ {name}: {text}",
+  "chat.mention.you": "du",
   "chat.mention.suggest": "Erwähnung auswählen",
   "chat.mentions.link": "Meine Erwähnungen",
   "mentions.eyebrow": "Profil",

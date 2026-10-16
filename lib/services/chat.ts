@@ -202,18 +202,18 @@ export async function postMessage(
     await tx.channelRead.upsert({ where: { userId_channelId: { userId: ctx.userId, channelId: ch.id } }, create: { userId: ctx.userId, channelId: ch.id, lastReadMsgId: m.id }, update: { lastReadMsgId: m.id } });
     return m.id;
   });
-  await syncMentions(db, ch, id, body, ctx.userId);
+  await syncMentions(db, ch, id, body);
   const view = (await loadView(db, id))!;
   publish(ch.id, "message:new", view);
   return view;
 }
 
 /** Erwähnte Nutzer ermitteln (nur aktive Nicht-Gäste, die den Kanal lesen dürfen) und speichern. */
-async function syncMentions(db: PrismaClient, ch: Parameters<typeof canReadChannel>[0] & { id: number }, messageId: number, body: string, authorId: string) {
+async function syncMentions(db: PrismaClient, ch: Parameters<typeof canReadChannel>[0] & { id: number }, messageId: number, body: string) {
   const handles = new Set(extractMentions(body));
   await db.mention.deleteMany({ where: { messageId } });
   if (handles.size === 0) return;
-  const users = await db.user.findMany({ where: { banned: false, role: { not: "GUEST" }, id: { not: authorId } }, select: { id: true, name: true, email: true, role: true } });
+  const users = await db.user.findMany({ where: { banned: false, role: { not: "GUEST" } }, select: { id: true, name: true, email: true, role: true } });
   const ids: string[] = [];
   for (const u of users.filter((x) => handles.has(mentionHandle(x.name))).slice(0, 20)) {
     const uctx = await chatCtx(db, { id: u.id, role: effectiveRole(u, env().SYSTEMADMIN_EMAILS) });
@@ -253,7 +253,7 @@ export async function editMessage(db: PrismaClient, ctx: ChatCtx, messageId: num
   const body = bodyRaw.trim();
   if (!body || body.length > MAX_BODY) throw new ChatError("err.chat.invalidText");
   await db.message.update({ where: { id: messageId }, data: { body, editedAt: new Date() } });
-  await syncMentions(db, m.channel, messageId, body, m.authorId);
+  await syncMentions(db, m.channel, messageId, body);
   const view = (await loadView(db, messageId))!;
   publish(m.channelId, "message:edit", view);
   return view;

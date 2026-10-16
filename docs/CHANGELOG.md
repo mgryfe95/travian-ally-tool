@@ -145,3 +145,7 @@ Was & Warum: @-Erwähnungen (`@Name`, Leerzeichen → `_`, Autovervollständigun
 Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`
 Was & Warum: Eigene **Call-Typen** (z. B. „Ressourcen“; Tabelle `CallKindDef`, Schlüssel `custom:<id>`, optional „Koordinaten nötig“, Löschen nur ohne zugehörige Calls). Beim Anlegen einer **Vorlage** ist jetzt der Ziel-Kanal wählbar. Je Vorlage optional **Direktnachricht** beim Senden (`sendDm`): an die verifizierten Nutzer des Zielspielers, sonst an alle aktiven Nicht-Gäste mit Leserecht im Kanal; Absender = Ersteller. Migration `call_kinds_dm`.
 
+## 2026-10-16 · travian-ally-tool/chat/mention-auswahl
+Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`
+Was & Warum: Auswahl beim Tippen von `@` als Liste über dem Eingabefeld (alle Namen, Pfeiltasten/Enter/Tab/Esc, Klick). Selbst-Erwähnungen sind erlaubt und erscheinen unter „Meine Erwähnungen“ (vorher wurde der Autor ausgeschlossen, daher fehlte die Test-Erwähnung und der eigene Name in der Auswahl).
+

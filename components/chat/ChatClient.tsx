@@ -73,7 +73,9 @@ export function ChatClient(props: ChatProps) {
     });
 
   const mentionQuery = /(?:^|\s)@([\p{L}\p{N}_.\-]*)$/u.exec(body)?.[1]?.toLowerCase();
-  const suggestions = mentionQuery === undefined ? [] : props.people.filter((p) => p.id !== me.id && mentionHandle(p.name).startsWith(mentionQuery)).slice(0, 6);
+  const suggestions = mentionQuery === undefined ? [] : props.people.filter((p) => mentionHandle(p.name).startsWith(mentionQuery)).slice(0, 8);
+  const [sugIdx, setSugIdx] = useState(0);
+  const pickMention = (name: string) => setBody((b) => b.replace(/@([\p{L}\p{N}_.\-]*)$/u, `@${name.trim().replace(/\s+/g, "_")} `));
 
   const scrollDown = () => requestAnimationFrame(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight }));
   useEffect(() => {
@@ -366,13 +368,25 @@ export function ChatClient(props: ChatProps) {
                   </label>
                 </>
               )}
-              <div style={{ flex: "1 1 260px" }}>
+              <div style={{ flex: "1 1 260px", position: "relative" }}>
                 <label className="lbl" htmlFor="msg">{t("chat.message")}</label>
-                <input id="msg" className="field" value={body} onChange={(e) => setBody(e.target.value)} onPaste={onPaste} maxLength={4000} autoComplete="off" placeholder={t("chat.message.placeholder")} />
+                <input id="msg" className="field" value={body} onChange={(e) => { setBody(e.target.value); setSugIdx(0); }} onPaste={onPaste} maxLength={4000} autoComplete="off" placeholder={t("chat.message.placeholder")}
+                  role="combobox" aria-expanded={suggestions.length > 0} aria-controls="mention-list" aria-autocomplete="list"
+                  onKeyDown={(e) => {
+                    if (suggestions.length === 0) return;
+                    if (e.key === "ArrowDown") { e.preventDefault(); setSugIdx((i) => (i + 1) % suggestions.length); }
+                    else if (e.key === "ArrowUp") { e.preventDefault(); setSugIdx((i) => (i - 1 + suggestions.length) % suggestions.length); }
+                    else if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); pickMention(suggestions[Math.min(sugIdx, suggestions.length - 1)]!.name); }
+                    else if (e.key === "Escape") setBody((b) => b.replace(/@([\p{L}\p{N}_.\-]*)$/u, ""));
+                  }} />
                 {suggestions.length > 0 && (
-                  <ul role="listbox" aria-label={t("chat.mention.suggest")} style={{ listStyle: "none", margin: "4px 0 0", padding: 4, border: "1px solid var(--line)", borderRadius: 8, background: "var(--bg)" }}>
-                    {suggestions.map((p) => (
-                      <li key={p.id} role="option" aria-selected="false"><button type="button" className="btn ghost sm" style={{ width: "100%", justifyContent: "flex-start" }} onClick={() => setBody(body.replace(/@([\p{L}\p{N}_.\-]*)$/u, `@${p.name.trim().replace(/\s+/g, "_")} `))}>@{p.name}</button></li>
+                  <ul id="mention-list" role="listbox" aria-label={t("chat.mention.suggest")} style={{ listStyle: "none", margin: 0, padding: 4, border: "1px solid var(--line)", borderRadius: 10, background: "var(--bg)", boxShadow: "0 6px 18px rgba(0,0,0,.18)", position: "absolute", left: 0, right: 0, bottom: "100%", marginBottom: 6, zIndex: 20, maxHeight: 260, overflowY: "auto" }}>
+                    {suggestions.map((p, i) => (
+                      <li key={p.id} role="option" aria-selected={i === Math.min(sugIdx, suggestions.length - 1)}>
+                        <button type="button" className={`btn sm ${i === Math.min(sugIdx, suggestions.length - 1) ? "" : "ghost"}`} style={{ width: "100%", justifyContent: "flex-start", gap: 8 }} onMouseEnter={() => setSugIdx(i)} onMouseDown={(e) => { e.preventDefault(); pickMention(p.name); }}>
+                          <span aria-hidden="true">@</span><b>{p.name}</b>{p.id === me.id ? <span className="sub" style={{ fontSize: 11 }}> ({t("chat.mention.you")})</span> : null}
+                        </button>
+                      </li>
                     ))}
                   </ul>
                 )}

@@ -304,7 +304,7 @@ describe("Antworten und Erwähnungen", () => {
     await db.user.update({ where: { id: "m2" }, data: { name: "Max Muster" } });
     const channelId = await ch("Deff-Call");
     const m = await postMessage(db, await ctx(member), { channelId, body: "Hallo @Max_Muster und @g1 und @m1", tagIds: [] });
-    expect((await db.mention.findMany({ where: { messageId: m.id } })).map((x) => x.userId)).toEqual(["m2"]); // Gast und Autor zählen nicht
+    expect((await db.mention.findMany({ where: { messageId: m.id } })).map((x) => x.userId).sort()).toEqual(["m1", "m2"]); // Gast zählt nicht; Selbst-Erwähnung ist erlaubt
     const list = await listMyMentions(db, await ctx(member2));
     expect(list).toHaveLength(1);
     expect(list[0]).toMatchObject({ messageId: m.id, channelName: "Deff-Call", author: "m1", isReply: false });
