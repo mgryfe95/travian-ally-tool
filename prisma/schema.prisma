@@ -289,9 +289,26 @@ model Message {
   deletedAt   DateTime?
   tags        MessageTag[]
   attachments Attachment[]
+  /// Antwort auf eine Nachricht (nur eine Ebene tief: Ziel ist immer eine Hauptnachricht)
+  replyToId   Int?
+  replyTo     Message?     @relation("Replies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies     Message[]    @relation("Replies")
+  mentions    Mention[]
 
   @@index([channelId, id])
   @@index([authorId])
+  @@index([replyToId])
+}
+
+/// @-Erwähnung eines Nutzers in einer Nachricht (für „Meine Erwähnungen“)
+model Mention {
+  id        Int     @id @default(autoincrement())
+  messageId Int
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+
+  @@unique([messageId, userId])
+  @@index([userId, messageId])
 }
 
 /// Tag-Typ = Achse (z. B. „Priorität“, „Status“). Ein Typ gilt für bestimmte Kanäle; `multi` erlaubt mehrere Tags dieses Typs je Nachricht.

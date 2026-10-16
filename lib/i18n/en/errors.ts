@@ -101,6 +101,7 @@ const en = {
   "err.call.msg.cancelled": "❌ **Call cancelled**\n{text}",
   "err.call.mail.updated": "Ally Tool: call updated",
   "err.call.mail.cancelled": "Ally Tool: call cancelled",
+  "err.chat.replyInvalid": "You cannot reply to this message",
   "err.call.time": "{time}",
   "err.deletedUser": "deleted",
   "err.invite.message": "Hello {name},\n\nour alliance now uses a shared coordination tool. Here is your personal invitation link (valid for 7 days, single use):\n\n{url}\n\nSee you soon!",

@@ -103,6 +103,7 @@ const de: Record<keyof typeof en, string> = {
   "err.call.msg.cancelled": "❌ **Call abgesagt**\n{text}",
   "err.call.mail.updated": "Ally Tool: Call geändert",
   "err.call.mail.cancelled": "Ally Tool: Call abgesagt",
+  "err.chat.replyInvalid": "Auf diese Nachricht lässt sich nicht antworten",
   "err.call.time": "{time} Uhr",
   "err.deletedUser": "gelöscht",
   "err.invite.message": "Hallo {name},\n\nunsere Allianz nutzt jetzt ein gemeinsames Koordinations-Tool. Hier ist dein persönlicher Einladungslink (7 Tage gültig, einmalig verwendbar):\n\n{url}\n\nBis gleich!",

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent, type DragEvent, type FormEvent } from "react";
+import { mentionHandle } from "@/lib/chat/mentions";
 import { useT } from "@/lib/i18n/client";
 import type { ChannelView, MessageView, TagTypeView } from "@/lib/services/chat";
 import { Lightbox, type LightboxImage } from "./Lightbox";
@@ -17,6 +18,8 @@ export type ChatProps = {
   tagTypes: TagTypeView[];
   current: number | "all";
   initial: { messages: MessageView[]; nextBefore: number | null };
+  focusId?: number;
+  people: { id: string; name: string }[];
   caps: { canUpload: boolean; canModerate: boolean; canCreateTf: boolean };
   limits: { maxFiles: number; maxImageMb: number; maxFileMb: number };
 };
@@ -43,6 +46,8 @@ export function ChatClient(props: ChatProps) {
   const [tagFilter, setTagFilter] = useState<number | null>(null);
   const [q, setQ] = useState("");
   const [body, setBody] = useState("");
+  const [replyTo, setReplyTo] = useState<MessageView | null>(null);
+  const [focus, setFocus] = useState(props.focusId);
   const [picked, setPicked] = useState<Record<number, number[]>>({});
   const writable = ally.filter((c) => c.canWrite);
   const [target, setTarget] = useState<number | undefined>(writable[0]?.id);
@@ -67,9 +72,18 @@ export function ChatClient(props: ChatProps) {
       return { ...p, [t.id]: next };
     });
 
+  const mentionQuery = /(?:^|\s)@([\p{L}\p{N}_.\-]*)$/u.exec(body)?.[1]?.toLowerCase();
+  const suggestions = mentionQuery === undefined ? [] : props.people.filter((p) => p.id !== me.id && mentionHandle(p.name).startsWith(mentionQuery)).slice(0, 6);
+
   const scrollDown = () => requestAnimationFrame(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight }));
   useEffect(() => {
+    if (props.focusId) {
+      requestAnimationFrame(() => document.getElementById(`msg-${props.focusId}`)?.scrollIntoView({ block: "center" }));
+      const timer = setTimeout(() => setFocus(undefined), 4000);
+      return () => clearTimeout(timer);
+    }
     scrollDown();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const markRead = useCallback(async (ids: number[]) => {
@@ -205,11 +219,12 @@ export function ChatClient(props: ChatProps) {
     setError(undefined);
     const r = await api<MessageView>("/api/chat/messages", {
       method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ channelId: sendChannel, body, tagIds: offered.flatMap((t) => picked[t.id] ?? []), attachmentIds: ready.map((p) => p.id) }),
+      body: JSON.stringify({ channelId: sendChannel, body, tagIds: offered.flatMap((t) => picked[t.id] ?? []), attachmentIds: ready.map((p) => p.id), replyToId: replyTo?.id }),
     });
     setBusy(false);
     if (!r.ok) return setError(r.data.error ?? t("chat.send.failed"));
     setBody("");
+    setReplyTo(null);
     setPending([]);
     setPicked({});
     if (tagFilter === null && !q.trim()) setMessages((list) => (list.some((x) => x.id === r.data.id) ? list : [...list, r.data]));
@@ -287,7 +302,7 @@ export function ChatClient(props: ChatProps) {
           {nextBefore && <button type="button" className="btn ghost sm" style={{ alignSelf: "center" }} onClick={loadOlder}>{t("chat.loadOlder")}</button>}
           {messages.length === 0 && <div className="sub" style={{ padding: "40px 0", textAlign: "center" }}>{hasFilter ? t("chat.noMatches") : t("chat.empty")}</div>}
           {messages.map((m) => (
-            <MessageItem key={m.id} m={m} showChannel={isAll} canEdit={m.author.id === me.id} canDelete={m.author.id === me.id || caps.canModerate}
+            <MessageItem key={m.id} m={m} showChannel={isAll} focused={focus === m.id} onReply={canWriteHere ? (x) => { setReplyTo(x); document.getElementById("msg")?.focus(); } : undefined} canEdit={m.author.id === me.id} canDelete={m.author.id === me.id || caps.canModerate}
               onEdit={editMsg} onDelete={delMsg} onOpenImage={(images, start) => setLightbox({ images, start })} />
           ))}
         </div>
@@ -307,6 +322,12 @@ export function ChatClient(props: ChatProps) {
                     <div className="sub" style={{ fontSize: 10, maxWidth: 64, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.error ?? p.name}</div>
                   </div>
                 ))}
+              </div>
+            )}
+            {replyTo && (
+              <div className="row" style={{ marginBottom: 8, gap: 8 }}>
+                <span className="sub" style={{ fontSize: 13 }}>{t("chat.reply.to", { name: replyTo.author.name })}: {replyTo.body.slice(0, 80)}</span>
+                <button type="button" className="btn ghost sm" style={{ minHeight: 28 }} onClick={() => setReplyTo(null)}>{t("chat.reply.cancel")}</button>
               </div>
             )}
             <div className="row" style={{ alignItems: "flex-end", gap: 8 }}>
@@ -348,6 +369,13 @@ export function ChatClient(props: ChatProps) {
               <div style={{ flex: "1 1 260px" }}>
                 <label className="lbl" htmlFor="msg">{t("chat.message")}</label>
                 <input id="msg" className="field" value={body} onChange={(e) => setBody(e.target.value)} onPaste={onPaste} maxLength={4000} autoComplete="off" placeholder={t("chat.message.placeholder")} />
+                {suggestions.length > 0 && (
+                  <ul role="listbox" aria-label={t("chat.mention.suggest")} style={{ listStyle: "none", margin: "4px 0 0", padding: 4, border: "1px solid var(--line)", borderRadius: 8, background: "var(--bg)" }}>
+                    {suggestions.map((p) => (
+                      <li key={p.id} role="option" aria-selected="false"><button type="button" className="btn ghost sm" style={{ width: "100%", justifyContent: "flex-start" }} onClick={() => setBody(body.replace(/@([\p{L}\p{N}_.\-]*)$/u, `@${p.name.trim().replace(/\s+/g, "_")} `))}>@{p.name}</button></li>
+                    ))}
+                  </ul>
+                )}
               </div>
               <button className="btn" disabled={busy || !sendChannel}>{t("chat.send")}</button>
             </div>

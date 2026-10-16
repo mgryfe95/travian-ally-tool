@@ -4,6 +4,7 @@ import { env } from "../env";
 import { effectiveRole, ForbiddenError, hasPermission, rank, ROLES, type Role } from "../permissions";
 import { publish } from "../realtime";
 import { storage } from "../storage";
+import { extractMentions, mentionHandle } from "../chat/mentions";
 import { audit, loadMatrix, type Actor } from "./context";
 import { AppError } from "../i18n/errors";
 import { DEFAULT_LOCALE, translate, type MessageKey, type Params } from "../i18n";
@@ -101,20 +102,29 @@ export type MessageView = {
   createdAt: string;
   editedAt: string | null;
   tags: { id: number; name: string; color: string; typeId: number; typeName: string }[];
+  /** Antwort auf (eine Ebene tief) */
+  replyTo: { id: number; authorName: string; excerpt: string } | null;
   attachments: { id: number; kind: string; mime: string; name: string; sizeBytes: number; width: number | null; height: number | null; hasThumb: boolean; snippet: string | null; removed: boolean }[];
 };
 
 type MessageRow = Prisma.MessageGetPayload<{ include: { tags: { include: { tag: { include: { tagType: true } } } }; attachments: true; channel: { select: { name: true } } } }>;
 
+const excerpt = (b: string, n = 120) => (b.length > n ? `${b.slice(0, n)}…` : b);
+
 async function toViews(db: PrismaClient, rows: MessageRow[]): Promise<MessageView[]> {
   const users = await db.user.findMany({ where: { id: { in: [...new Set(rows.map((r) => r.authorId))] } }, select: { id: true, name: true, email: true, role: true } });
   const byId = new Map(users.map((u) => [u.id, u]));
+  const parentIds = [...new Set(rows.flatMap((r) => (r.replyToId ? [r.replyToId] : [])))];
+  const parents = parentIds.length ? await db.message.findMany({ where: { id: { in: parentIds }, deletedAt: null }, select: { id: true, authorId: true, body: true } }) : [];
+  const parentNames = new Map((await db.user.findMany({ where: { id: { in: [...new Set(parents.map((p) => p.authorId))] } }, select: { id: true, name: true } })).map((u) => [u.id, u.name]));
+  const parentById = new Map(parents.map((p) => [p.id, { id: p.id, authorName: parentNames.get(p.authorId) ?? translate(DEFAULT_LOCALE, "err.deletedUser"), excerpt: excerpt(p.body) }]));
   return rows.map((m) => {
     const u = byId.get(m.authorId);
     return {
       id: m.id, channelId: m.channelId, channelName: m.channel.name,
       author: { id: m.authorId, name: u?.name ?? translate(DEFAULT_LOCALE, "err.deletedUser"), role: u ? effectiveRole(u, env().SYSTEMADMIN_EMAILS) : "GUEST" },
       body: m.body, createdAt: m.createdAt.toISOString(), editedAt: m.editedAt?.toISOString() ?? null,
+      replyTo: m.replyToId ? (parentById.get(m.replyToId) ?? null) : null,
       tags: [...m.tags].sort((a, b) => a.tag.tagType.sortOrder - b.tag.tagType.sortOrder || a.tag.tagTypeId - b.tag.tagTypeId || a.tag.id - b.tag.id).map((t) => ({ id: t.tag.id, name: t.tag.name, color: t.tag.color, typeId: t.tag.tagTypeId, typeName: t.tag.tagType.name })),
       attachments: m.attachments.map((a) => ({ id: a.id, kind: a.kind, mime: a.mime, name: a.name, sizeBytes: a.sizeBytes, width: a.width, height: a.height, hasThumb: !!a.thumbKey && !a.removedAt, snippet: a.snippet, removed: a.removedAt !== null })),
     };
@@ -164,7 +174,7 @@ export async function listTagTypes(db: PrismaClient): Promise<TagTypeView[]> {
 }
 
 export async function postMessage(
-  db: PrismaClient, ctx: ChatCtx, input: { channelId: number; body: string; tagIds?: number[]; attachmentIds?: number[] },
+  db: PrismaClient, ctx: ChatCtx, input: { channelId: number; body: string; tagIds?: number[]; attachmentIds?: number[]; replyToId?: number },
 ): Promise<MessageView> {
   const ch = await db.channel.findUnique({ where: { id: input.channelId } });
   if (!ch || !canWriteChannel(ch, ctx)) throw new ForbiddenError("err.chat.noWriteAccess");
@@ -176,18 +186,63 @@ export async function postMessage(
   if (attachmentIds.length > 0 && !hasPermission(ctx.role, "chat.upload", ctx.matrix)) throw new ForbiddenError("err.perm.missing", { perm: "chat.upload" });
   const tagIds = [...new Set(input.tagIds ?? [])];
   await validateTags(db, ch, tagIds);
+  // Antworten gehen nur eine Ebene tief: Antwort auf eine Antwort hängt an der Hauptnachricht
+  let replyToId: number | null = null;
+  if (input.replyToId) {
+    const parent = await db.message.findUnique({ where: { id: input.replyToId } });
+    if (!parent || parent.deletedAt || parent.channelId !== ch.id) throw new ChatError("err.chat.replyInvalid");
+    replyToId = parent.replyToId ?? parent.id;
+  }
 
   const id = await db.$transaction(async (tx) => {
     const own = attachmentIds.length ? await tx.attachment.findMany({ where: { id: { in: attachmentIds }, uploaderId: ctx.userId, messageId: null } }) : [];
     if (own.length !== attachmentIds.length) throw new ChatError("err.chat.invalidAttachment");
-    const m = await tx.message.create({ data: { channelId: ch.id, authorId: ctx.userId, body, tags: { create: tagIds.map((tagId) => ({ tagId })) } } });
+    const m = await tx.message.create({ data: { channelId: ch.id, authorId: ctx.userId, body, replyToId, tags: { create: tagIds.map((tagId) => ({ tagId })) } } });
     if (attachmentIds.length) await tx.attachment.updateMany({ where: { id: { in: attachmentIds } }, data: { messageId: m.id } });
     await tx.channelRead.upsert({ where: { userId_channelId: { userId: ctx.userId, channelId: ch.id } }, create: { userId: ctx.userId, channelId: ch.id, lastReadMsgId: m.id }, update: { lastReadMsgId: m.id } });
     return m.id;
   });
+  await syncMentions(db, ch, id, body, ctx.userId);
   const view = (await loadView(db, id))!;
   publish(ch.id, "message:new", view);
   return view;
+}
+
+/** Erwähnte Nutzer ermitteln (nur aktive Nicht-Gäste, die den Kanal lesen dürfen) und speichern. */
+async function syncMentions(db: PrismaClient, ch: Parameters<typeof canReadChannel>[0] & { id: number }, messageId: number, body: string, authorId: string) {
+  const handles = new Set(extractMentions(body));
+  await db.mention.deleteMany({ where: { messageId } });
+  if (handles.size === 0) return;
+  const users = await db.user.findMany({ where: { banned: false, role: { not: "GUEST" }, id: { not: authorId } }, select: { id: true, name: true, email: true, role: true } });
+  const ids: string[] = [];
+  for (const u of users.filter((x) => handles.has(mentionHandle(x.name))).slice(0, 20)) {
+    const uctx = await chatCtx(db, { id: u.id, role: effectiveRole(u, env().SYSTEMADMIN_EMAILS) });
+    if (canReadChannel(ch, uctx)) ids.push(u.id);
+  }
+  if (ids.length) await db.mention.createMany({ data: ids.map((userId) => ({ messageId, userId })), skipDuplicates: true });
+}
+
+export type MentionView = { messageId: number; channelId: number; channelName: string; channelTree: string; author: string; at: string; excerpt: string; isReply: boolean };
+
+/** „Meine Erwähnungen“: neueste zuerst, nur aus Kanälen, die der Nutzer lesen darf. */
+export async function listMyMentions(db: PrismaClient, ctx: ChatCtx, limit = 100): Promise<MentionView[]> {
+  const rows = await db.mention.findMany({
+    where: { userId: ctx.userId, message: { deletedAt: null } }, orderBy: { messageId: "desc" }, take: limit * 2,
+    include: { message: { include: { channel: true } } },
+  });
+  const visible = rows.filter((r) => !r.message.channel.archivedAt && canReadChannel(r.message.channel, ctx)).slice(0, limit);
+  const names = new Map((await db.user.findMany({ where: { id: { in: [...new Set(visible.map((r) => r.message.authorId))] } }, select: { id: true, name: true } })).map((u) => [u.id, u.name]));
+  return visible.map((r) => ({
+    messageId: r.messageId, channelId: r.message.channelId, channelName: r.message.channel.name, channelTree: r.message.channel.tree,
+    author: names.get(r.message.authorId) ?? translate(DEFAULT_LOCALE, "err.deletedUser"), at: r.message.createdAt.toISOString(), excerpt: excerpt(r.message.body, 160), isReply: r.message.replyToId !== null,
+  }));
+}
+
+/** Nachrichten rund um eine Zielnachricht (für den Sprung aus „Meine Erwähnungen“). */
+export async function listMessagesAround(db: PrismaClient, ctx: ChatCtx, channelId: number, messageId: number): Promise<{ messages: MessageView[]; nextBefore: number | null }> {
+  const older = await listMessages(db, ctx, { channelId, before: messageId + 1, limit: 30 });
+  const rows = await db.message.findMany({ where: { channelId, deletedAt: null, id: { gt: messageId } }, orderBy: { id: "asc" }, take: 30, include: INCLUDE });
+  return { messages: [...older.messages, ...(await toViews(db, rows))], nextBefore: older.nextBefore };
 }
 
 export async function editMessage(db: PrismaClient, ctx: ChatCtx, messageId: number, bodyRaw: string): Promise<MessageView> {
@@ -198,6 +253,7 @@ export async function editMessage(db: PrismaClient, ctx: ChatCtx, messageId: num
   const body = bodyRaw.trim();
   if (!body || body.length > MAX_BODY) throw new ChatError("err.chat.invalidText");
   await db.message.update({ where: { id: messageId }, data: { body, editedAt: new Date() } });
+  await syncMentions(db, m.channel, messageId, body, m.authorId);
   const view = (await loadView(db, messageId))!;
   publish(m.channelId, "message:edit", view);
   return view;

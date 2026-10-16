@@ -26,10 +26,10 @@ export function POST(req: Request) {
     const user = await getCurrentUser();
     if (!user) return unauthorized();
     if (!postLimiter.check(user.id)) return tooMany();
-    const b = (await req.json().catch(() => null)) as { channelId?: number; body?: string; tagIds?: number[]; attachmentIds?: number[] } | null;
+    const b = (await req.json().catch(() => null)) as { channelId?: number; body?: string; tagIds?: number[]; attachmentIds?: number[]; replyToId?: number } | null;
     if (!b || typeof b.channelId !== "number" || typeof b.body !== "string") return NextResponse.json({ error: (await getT()).t("chat.api.invalidRequest") }, { status: 400 });
     const msg = await postMessage(db, await chatCtx(db, user), {
-      channelId: b.channelId, body: b.body, tagIds: Array.isArray(b.tagIds) ? b.tagIds.filter(Number.isInteger) : [], attachmentIds: Array.isArray(b.attachmentIds) ? b.attachmentIds.filter(Number.isInteger) : [],
+      channelId: b.channelId, body: b.body, replyToId: Number.isInteger(b.replyToId) ? b.replyToId : undefined, tagIds: Array.isArray(b.tagIds) ? b.tagIds.filter(Number.isInteger) : [], attachmentIds: Array.isArray(b.attachmentIds) ? b.attachmentIds.filter(Number.isInteger) : [],
     });
     return NextResponse.json(msg, { status: 201 });
   });

@@ -143,3 +143,7 @@ a.mono { text-decoration: underline dotted; text-underline-offset: 3px; }
 .coordinput { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
 .coordaxis { display: flex; align-items: center; gap: 6px; }
 .coordaxis .btn.sm { min-width: 40px; padding: 0 10px; }
+.mention { background: var(--raised); color: var(--accent, #8a6414); font-weight: 700; border-radius: 4px; padding: 0 4px; }
+.msg.focus { outline: 2px solid var(--accent, #c8962e); outline-offset: 4px; border-radius: 8px; }
+.msg.reply { margin-left: 36px; }
+.replyref { background: transparent; border: 0; padding: 0; color: var(--muted); font-size: 12px; cursor: pointer; text-align: left; }

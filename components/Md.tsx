@@ -13,6 +13,7 @@ function render(nodes: MdNode[]) {
       case "italic": return <em key={i}>{render(n.c)}</em>;
       case "code": return <code key={i} className="mono" style={{ background: "var(--raised)", padding: "0 4px", borderRadius: 4 }}>{n.v}</code>;
       case "link": return <a key={i} href={n.href} target="_blank" rel="noopener noreferrer nofollow ugc">{render(n.c)}</a>;
+      case "mention": return <span key={i} className="mention">{n.v}</span>;
       case "coord": return <CoordLink key={i} x={n.x} y={n.y} text={n.v} />;
     }
   });

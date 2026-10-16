@@ -18,7 +18,7 @@ const groupTags = (tags: MessageView["tags"]) => {
 const size = (b: number, locale: Locale) => (b > 1_048_576 ? `${(b / 1_048_576).toLocaleString(INTL_TAG[locale], { minimumFractionDigits: 1, maximumFractionDigits: 1 })} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
 
 export function MessageItem(props: {
-  m: MessageView; showChannel: boolean; canEdit: boolean; canDelete: boolean;
+  m: MessageView; showChannel: boolean; focused?: boolean; onReply?: (m: MessageView) => void; canEdit: boolean; canDelete: boolean;
   onEdit: (id: number, body: string) => Promise<string | undefined>; onDelete: (id: number) => void; onOpenImage: (images: { id: number; name: string }[], idx: number) => void;
 }) {
   const { m } = props;
@@ -35,9 +35,14 @@ export function MessageItem(props: {
   const grid = images.length > 1;
 
   return (
-    <article className="msg" style={{ display: "grid", gridTemplateColumns: "36px minmax(0,1fr)", gap: 12 }}>
+    <article id={`msg-${m.id}`} className={`msg${m.replyTo ? " reply" : ""}${props.focused ? " focus" : ""}`} style={{ display: "grid", gridTemplateColumns: "36px minmax(0,1fr)", gap: 12 }}>
       <div className="avatar" aria-hidden="true" style={{ background: AV[m.author.name.charCodeAt(0) % AV.length] }}>{m.author.name[0]?.toUpperCase()}</div>
       <div>
+        {m.replyTo && (
+          <button type="button" className="replyref" onClick={() => document.getElementById(`msg-${m.replyTo!.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" })}>
+            {t("chat.reply.ref", { name: m.replyTo.authorName, text: m.replyTo.excerpt })}
+          </button>
+        )}
         <div className="row" style={{ gap: 8, alignItems: "baseline" }}>
           <b>{m.author.name}</b>
           <span className="sub" style={{ fontSize: 12 }}>{roleKey ? t(roleKey) : m.author.role}</span>
@@ -50,6 +55,7 @@ export function MessageItem(props: {
             </span>
           ))}
           <span className="msg-actions">
+            {props.onReply && <button type="button" className="btn ghost sm" style={{ minHeight: 28 }} onClick={() => props.onReply!(m)}>{t("chat.msg.reply")}</button>}
             {props.canEdit && <button type="button" className="btn ghost sm" style={{ minHeight: 28 }} onClick={() => { setDraft(m.body); setEditing(true); }}>{t("chat.msg.edit")}</button>}
             {props.canDelete && <button type="button" className="btn ghost sm" style={{ minHeight: 28 }} onClick={() => confirm(t("chat.msg.confirmDelete")) && props.onDelete(m.id)}>{t("chat.msg.delete")}</button>}
           </span>

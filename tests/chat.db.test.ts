@@ -5,7 +5,7 @@ import { ForbiddenError, type Role } from "@/lib/permissions";
 import { seedPermissions } from "@/lib/services/admin";
 import {
   addTaskforceMember, archiveTaskforce, inviteToTaskforce, listMyTaskforceInvites, respondTaskforceInvite, revokeTaskforceInvite, setTaskforceRole, ChatError, chatCtx, createChannel, createTaskforce, deleteMessage, deleteTag, deleteTagType, editMessage, listChannels,
-  listMessages, markRead, moveChannel, postMessage, removeTaskforceMember, saveTag, saveTagType, seedChat, updateChannel,
+  listMessages, listMessagesAround, listMyMentions, markRead, moveChannel, postMessage, removeTaskforceMember, saveTag, saveTagType, seedChat, updateChannel,
 } from "@/lib/services/chat";
 import { storage } from "@/lib/storage";
 
@@ -287,5 +287,33 @@ describe("Tag-Typen", () => {
     const tfChannel = await db.channel.findFirstOrThrow({ where: { taskforceId: (tf as { id: number }).id } });
     expect(await f(postMessage(db, await ctx(mod), { channelId: tfChannel.id, body: "x" }))).toBeInstanceOf(ChatError);
     expect((await postMessage(db, await ctx(mod), { channelId: tfChannel.id, body: "x", tagIds: [tag.id] })).tags.length).toBe(1);
+  });
+});
+
+describe("Antworten und Erwähnungen", () => {
+  it("Antwort nur eine Ebene tief; Antwort auf Antwort hängt an der Hauptnachricht; falscher Kanal wird abgelehnt", async () => {
+    const c = await ctx(member);
+    const a = await postMessage(db, c, { channelId: await ch("Deff-Call"), body: "Hauptnachricht" });
+    const r1 = await postMessage(db, await ctx(member2), { channelId: a.channelId, body: "Antwort", replyToId: a.id });
+    expect(r1.replyTo).toMatchObject({ id: a.id, authorName: "m1" });
+    const r2 = await postMessage(db, c, { channelId: a.channelId, body: "Antwort auf Antwort", replyToId: r1.id });
+    expect(r2.replyTo?.id).toBe(a.id);
+    expect(await f(postMessage(db, c, { channelId: await ch("Off-Call"), body: "x", replyToId: a.id }))).toBeInstanceOf(ChatError);
+  });
+  it("@Name erzeugt eine Erwähnung (nur lesende, aktive Nutzer); Bearbeiten aktualisiert; Liste + Sprung", async () => {
+    await db.user.update({ where: { id: "m2" }, data: { name: "Max Muster" } });
+    const channelId = await ch("Deff-Call");
+    const m = await postMessage(db, await ctx(member), { channelId, body: "Hallo @Max_Muster und @g1 und @m1", tagIds: [] });
+    expect((await db.mention.findMany({ where: { messageId: m.id } })).map((x) => x.userId)).toEqual(["m2"]); // Gast und Autor zählen nicht
+    const list = await listMyMentions(db, await ctx(member2));
+    expect(list).toHaveLength(1);
+    expect(list[0]).toMatchObject({ messageId: m.id, channelName: "Deff-Call", author: "m1", isReply: false });
+    await editMessage(db, await ctx(member), m.id, "Doch niemand");
+    expect(await listMyMentions(db, await ctx(member2))).toHaveLength(0);
+    const later = await postMessage(db, await ctx(member), { channelId, body: "ping @max_muster" });
+    for (let i = 0; i < 3; i++) await postMessage(db, await ctx(member), { channelId, body: `n${i}` });
+    const around = await listMessagesAround(db, await ctx(member2), channelId, later.id);
+    expect(around.messages.map((x) => x.id)).toContain(later.id);
+    expect(around.messages.at(-1)!.body).toBe("n2");
   });
 });

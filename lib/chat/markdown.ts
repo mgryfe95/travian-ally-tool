@@ -9,7 +9,10 @@ export type MdNode =
   | { t: "code"; v: string }
   | { t: "link"; href: string; c: MdNode[] }
   | { t: "coord"; x: number; y: number; v: string }
+  | { t: "mention"; v: string }
   | { t: "br" };
+
+import { MENTION_RE } from "./mentions";
 
 const SAFE_URL = /^https?:\/\/[^\s<>"']+$/i;
 export const COORD_RE = /\(\s*([-−–]?\d{1,3})\s*\|\s*([-−–]?\d{1,3})\s*\)/;
@@ -21,6 +24,7 @@ const INLINE: { re: RegExp; make: (m: RegExpExecArray, parse: (s: string) => MdN
   { re: /(?<![*\w])\*([^*\n]+)\*(?![*\w])/, make: (m, p) => ({ t: "italic", c: p(m[1] as string) }) },
   { re: /\[([^\]\n]+)\]\(([^)\s]+)\)/, make: (m, p) => (SAFE_URL.test(m[2] as string) ? { t: "link", href: m[2] as string, c: p(m[1] as string) } : null) },
   { re: /https?:\/\/[^\s<>"'()]+/i, make: (m) => ({ t: "link", href: m[0], c: [{ t: "text", v: m[0] }] }) },
+  { re: new RegExp(MENTION_RE.source, "u"), make: (m) => ({ t: "mention", v: m[0] }) },
   {
     re: new RegExp(COORD_RE.source),
     make: (m) => {

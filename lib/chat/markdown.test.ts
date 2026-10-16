@@ -38,3 +38,10 @@ describe("Koordinaten", () => {
     ]);
   });
 });
+
+describe("Erwähnungen", () => {
+  it("erkennt @Name, nicht E-Mail-Adressen", () => {
+    const nodes = parseMarkdown("Hi @MG.RYFE, mail a@b.de und @Max_Mustermann!");
+    expect(nodes.filter((n) => n.t === "mention").map((n) => (n as { v: string }).v)).toEqual(["@MG.RYFE", "@Max_Mustermann"]);
+  });
+});

@@ -4,13 +4,13 @@ import { env } from "@/lib/env";
 import { hasPermission } from "@/lib/permissions";
 import { tfRoleLabel } from "@/components/chat/roles";
 import { getT } from "@/lib/i18n/server";
-import { chatCtx, listChannels, listMessages, listMyTaskforceInvites, listTagTypes } from "@/lib/services/chat";
+import { chatCtx, listChannels, listMessages, listMessagesAround, listMyTaskforceInvites, listTagTypes } from "@/lib/services/chat";
 import { requirePermission } from "@/lib/session";
 import { respondInviteAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function ChatPage({ searchParams }: { searchParams: Promise<{ c?: string; tf?: string }> }) {
+export default async function ChatPage({ searchParams }: { searchParams: Promise<{ c?: string; tf?: string; m?: string }> }) {
   const { t } = await getT();
   const user = await requirePermission("chat.read");
   const sp = await searchParams;
@@ -23,7 +23,9 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
   const byId = Number.isInteger(requested) ? channels.find((c) => c.id === requested) : undefined;
   // Standard: Sammelraum; „Task-Forces“ aus der Navigation springt in die erste Task-Force.
   const current: number | "all" = sp.c === "all" ? "all" : byId ? byId.id : sp.tf ? (channels.find((c) => c.tree === "TASKFORCE")?.id ?? "all") : "all";
-  const initial = await listMessages(db, ctx, { channelId: current });
+  const focusId = Number.isInteger(Number(sp.m)) && typeof current === "number" ? Number(sp.m) : undefined;
+  const initial = focusId ? await listMessagesAround(db, ctx, current as number, focusId) : await listMessages(db, ctx, { channelId: current });
+  const people = await db.user.findMany({ where: { banned: false, role: { not: "GUEST" } }, select: { id: true, name: true }, orderBy: { name: "asc" } });
   const cfg = env();
 
   return (
@@ -42,12 +44,14 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
         </section>
       )}
     <ChatClient
-      key={String(current)}
+      key={`${current}-${focusId ?? ""}`}
       me={{ id: user.id, role: user.role }}
       channels={channels}
       tagTypes={tagTypes}
       current={current}
       initial={initial}
+      focusId={focusId && initial.messages.some((m) => m.id === focusId) ? focusId : undefined}
+      people={people}
       caps={{ canUpload: hasPermission(user.role, "chat.upload", ctx.matrix), canModerate: hasPermission(user.role, "chat.moderate", ctx.matrix), canCreateTf: hasPermission(user.role, "taskforce.create", ctx.matrix) }}
       limits={{ maxFiles: cfg.UPLOAD_MAX_FILES, maxImageMb: cfg.UPLOAD_MAX_IMAGE_MB, maxFileMb: cfg.UPLOAD_MAX_FILE_MB }}
     />

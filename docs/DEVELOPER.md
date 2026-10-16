@@ -102,3 +102,6 @@ Deutsche Namen und Plätze 7–10 pflegt man händisch: `--template namen.json` 
 ## Screenshot-Dateien: Lebenszyklus
 Upload (WebP, S3 Pflicht in Produktion) → Auslese → bei Auto-Übernahme sofort löschen; bei manueller Bestätigung bleibt das Bild als `VisionExample` (max. 30 je Art, `KEEP_EXAMPLES_PER_KIND`) und wird freigegeben, sobald es herausfällt. `removedAt` markiert gelöschte Dateien; die 30-Tage-Aufbewahrung (`purgeOldScreenshots`) löscht weiterhin alles Übrige.
 
+## Erwähnungen & Antworten
+`lib/chat/mentions.ts` (Regex/Handle) wird von Markdown (Hervorhebung), Client (Autovervollständigung) und Server (`syncMentions`) genutzt. Handle = Name klein, Leerzeichen → `_`. `Mention` ist pro Nachricht eindeutig je Nutzer. Antworten: `Message.replyToId`, Flattening auf die Hauptnachricht in `postMessage`.
+
