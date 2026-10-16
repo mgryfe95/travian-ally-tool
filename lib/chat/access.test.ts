@@ -33,9 +33,8 @@ describe("Task-Force-Kanäle", () => {
     expect(canReadChannel(tf(1), ctx("MODERATOR"))).toBe(false);
     expect(canWriteChannel(tf(1), ctx("MODERATOR"))).toBe(false);
   });
-  it("ADMIN und SYSTEMADMIN sehen alle", () => {
+  it("ADMIN sieht alle", () => {
     expect(canReadChannel(tf(1), ctx("ADMIN"))).toBe(true);
-    expect(canReadChannel(tf(9), ctx("SYSTEMADMIN"))).toBe(true);
   });
   it("Verwaltung: Lead, taskforce.manage oder Admin", () => {
     expect(canManageTaskforce(ctx("MEMBER"), true)).toBe(true);

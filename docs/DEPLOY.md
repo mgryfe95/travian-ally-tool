@@ -3,7 +3,7 @@
 Annahme: Ubuntu 22.04/24.04 oder Debian 12, Root- oder sudo-Zugang, DNS-A-Record `humans-travian.com` (und optional `www`) zeigt auf den Server.
 
 ## 0. Ablauf in Kürze
-Server vorbereiten → Deploy-Key → Klonen → `.env` → `docker compose up` → Nginx/Apache → TLS → Systemadmin registrieren → Allianzen markieren → Backup-Cron.
+Server vorbereiten → Deploy-Key → Klonen → `.env` → `docker compose up` → Nginx/Apache → TLS → Admin registrieren → Allianzen markieren → Backup-Cron.
 
 ## 1. Server vorbereiten
 ```bash
@@ -124,7 +124,7 @@ sudo certbot --apache -d humans-travian.com -d www.humans-travian.com --redirect
 Certbot kopiert den vhost nach 443; dort muss `RequestHeader set X-Forwarded-Proto "https"` stehen (`sudo sed -i 's/"http"/"https"/' /etc/apache2/sites-available/humans-travian.com-le-ssl.conf && sudo systemctl reload apache2`).
 
 ## 7. Erster Login und Einrichtung
-1. `https://humans-travian.com/register` → Anzeigename, E-Mail aus `SYSTEMADMIN_EMAILS`, Passwort (≥ 10 Zeichen), aufklappen „Setup-Code“ → den Code von oben eintragen. Du bist damit Systemadmin.
+1. `https://humans-travian.com/register` → Anzeigename, E-Mail aus `SYSTEMADMIN_EMAILS`, Passwort (≥ 10 Zeichen), aufklappen „Setup-Code“ → den Code von oben eintragen. Du bist damit Admin (die Adresse in `SYSTEMADMIN_EMAILS` bleibt als Notzugang immer Admin).
 2. **Admin → Allianzen:** deine Allianz(en) als „Eigene Allianz“, verbündete als „Allianz“ markieren (oder gleich `TRAVIAN_ALLIANCE_ID=36,7` in der `.env`).
 3. **Admin → Mitglieder & Einladungen:** „Alle Uneingeladenen: Links erzeugen“ → IGM-Texte kopieren und ingame verschicken (nur jetzt sichtbar!).
 4. Optional SMTP in `.env` (dann `docker compose up -d`), damit „Passwort vergessen?“ funktioniert.

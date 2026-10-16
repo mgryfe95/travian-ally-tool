@@ -2,7 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 import { defaultMatrix, PERMISSIONS, STORED_ROLES, type Matrix, type Permission, type Role, type StoredRole } from "../permissions";
 import { DEFAULT_LOCALE, isLocale, type Locale } from "../i18n";
 
-/** Wer handelt. `role` ist die bereits abgeleitete effektive Rolle (inkl. SYSTEMADMIN aus ENV). */
+/** Wer handelt. `role` ist die bereits abgeleitete effektive Rolle (Notzugangs-Adressen aus der ENV sind ADMIN). */
 export type Actor = { id: string; role: Role };
 
 /** Sprache des Nutzers (für persistierte Texte); unbekannt → Englisch. */

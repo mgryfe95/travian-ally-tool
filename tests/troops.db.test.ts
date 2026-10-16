@@ -52,7 +52,7 @@ describe("Truppenübersicht für Admins/Moderatoren", () => {
     await expect(troopsOverview(db, { id: "mem", role: "MEMBER" })).rejects.toBeInstanceOf(ForbiddenError);
     await expect(troopsOverview(db, { id: "x", role: "GUEST" })).rejects.toBeInstanceOf(ForbiddenError);
     await expect(troopsOverview(db, { id: "a", role: "ADMIN" })).resolves.toBeTruthy();
-    await expect(troopsOverview(db, { id: "s", role: "SYSTEMADMIN" })).resolves.toBeTruthy();
+    await expect(troopsOverview(db, { id: "s", role: "ADMIN" })).resolves.toBeTruthy();
     await db.rolePermission.deleteMany({ where: { role: "MODERATOR", permission: "troops.view" } });
     await expect(troopsOverview(db, mod)).rejects.toBeInstanceOf(ForbiddenError);
   });

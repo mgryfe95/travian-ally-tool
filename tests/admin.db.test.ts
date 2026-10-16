@@ -7,7 +7,6 @@ import type { Actor } from "@/lib/services/context";
 const db = new PrismaClient({ datasources: { db: { url: process.env.TEST_DATABASE_URL! } } });
 const SYS = ["boss@example.com"];
 const admin: Actor = { id: "admin", role: "ADMIN" };
-const sysadmin: Actor = { id: "boss", role: "SYSTEMADMIN" };
 
 const mk = (id: string, email: string, role = "MEMBER") =>
   db.user.create({ data: { id, name: id, email, role } });
@@ -19,7 +18,7 @@ async function expect403(p: Promise<unknown>) {
 beforeEach(async () => {
   await db.$executeRaw`TRUNCATE "User","RolePermission","AuditLog","AllianceClassification" RESTART IDENTITY CASCADE`;
   await seedPermissions(db);
-  await mk("boss", "boss@example.com", "GUEST"); // DB-Rolle egal: ENV macht ihn zum SYSTEMADMIN
+  await mk("boss", "boss@example.com", "GUEST"); // DB-Rolle egal: ENV (Notzugang) macht ihn zum Admin
   await mk("admin", "admin@example.com", "ADMIN");
   await mk("admin2", "admin2@example.com", "ADMIN");
   await mk("mod", "mod@example.com", "MODERATOR");
@@ -27,28 +26,23 @@ beforeEach(async () => {
 });
 afterAll(() => db.$disconnect());
 
-describe("SYSTEMADMIN-Schutz (ADMIN versucht Änderungen → 403)", () => {
-  it("ändern/degradieren", async () => {
+describe("Notzugangs-Konto (ENV) und eigenes Konto", () => {
+  it("Notzugangs-Admin ist ein normaler Admin, Rolle/Sperre/Löschen werden aber nur über die Server-Konfiguration bestimmt", async () => {
     await expect403(setUserRole(db, admin, "boss", "MEMBER", SYS));
-    await expect403(setUserRole(db, admin, "boss", "GUEST", SYS));
-  });
-  it("sperren und löschen", async () => {
     await expect403(setUserBanned(db, admin, "boss", true, SYS));
     await expect403(deleteUser(db, admin, "boss", SYS));
     expect((await db.user.findUnique({ where: { id: "boss" } }))?.banned).toBe(false);
   });
-  it("niemanden zum SYSTEMADMIN machen", async () => {
-    await expect403(setUserRole(db, admin, "m1", "SYSTEMADMIN", SYS));
-    await expect403(setUserRole(db, sysadmin, "m1", "SYSTEMADMIN", SYS));
-    expect((await db.user.findUnique({ where: { id: "m1" } }))?.role).toBe("MEMBER");
+  it("niemand sperrt oder löscht das eigene Konto", async () => {
+    await expect403(setUserBanned(db, admin, "admin", true, SYS));
+    await expect403(deleteUser(db, admin, "admin", SYS));
   });
-  it("Rechte der Rolle SYSTEMADMIN nicht änderbar", async () => {
-    await expect403(setRolePermission(db, admin, "SYSTEMADMIN", "chat.read", false));
-    await expect403(setRolePermission(db, sysadmin, "SYSTEMADMIN", "chat.read", false));
+  it("Rechte der Rolle ADMIN gibt es nicht (Admins haben immer alles)", async () => {
+    await expect403(setRolePermission(db, admin, "ADMIN", "chat.read", false));
   });
-  it("auch ein Account mit DB-Rolle SYSTEMADMIN wird nicht zum SYSTEMADMIN", async () => {
+  it("Alt-Rolle SYSTEMADMIN in der DB zählt als Gast", async () => {
     await db.user.update({ where: { id: "m1" }, data: { role: "SYSTEMADMIN" } });
-    await expect403(setUserRole(db, { id: "m1", role: "MEMBER" }, "mod", "GUEST", SYS));
+    await expect403(setUserRole(db, { id: "m1", role: "GUEST" }, "mod", "GUEST", SYS));
   });
 });
 
@@ -58,11 +52,11 @@ describe("Rollenvergabe", () => {
     expect((await db.user.findUnique({ where: { id: "m1" } }))?.role).toBe("MODERATOR");
     expect(await db.auditLog.findFirst({ where: { action: "user.role", actorId: "admin" } })).toMatchObject({ target: "user:m1", after: { role: "MODERATOR" } });
   });
-  it("ADMIN kann weder ADMINs ändern noch ernennen; SYSTEMADMIN schon", async () => {
-    await expect403(setUserRole(db, admin, "admin2", "MEMBER", SYS));
-    await expect403(setUserRole(db, admin, "m1", "ADMIN", SYS));
-    await setUserRole(db, sysadmin, "m1", "ADMIN", SYS);
-    await setUserRole(db, sysadmin, "admin2", "MEMBER", SYS);
+  it("Admins können Admins ernennen und ändern, jeder Admin alle Rechte der Matrix", async () => {
+    await setUserRole(db, admin, "m1", "ADMIN", SYS);
+    await setUserRole(db, admin, "admin2", "MEMBER", SYS);
+    await setRolePermission(db, admin, "MEMBER", "troops.view", true);
+    expect((await db.rolePermission.count({ where: { role: "MEMBER", permission: "troops.view" } }))).toBe(1);
   });
   it("Moderator darf keine Rollen vergeben", async () => {
     await expect403(setUserRole(db, { id: "mod", role: "MODERATOR" }, "m1", "MEMBER", SYS));

@@ -66,3 +66,6 @@ Punkte, die Projekt, Aufbau oder andere Bereiche betreffen, aber nicht direkt zu
 
 ## 2026-10-16 · Redesign
 - Nach Umsetzung des Backlogs und Deploy: komplettes Redesign des Tools. Inspiration: Gemini-Logo „HUMANS – Community · Humanity · Support“ (Pergament-Beige, Dunkelblau/Stahl, Gold-Banner, Weizen-Grün/Lorbeer, Keltischer Knoten, warme Sonne). Offen: Logo als Asset (Datei vom Nutzer), Dark/Light, Typografie.
+
+## 2026-10-16 · Backlog
+- S3 (Hetzner Object Storage) für Screenshots später anschließen: Bucket + Zugangsdaten in `.env` (siehe docs/DEPLOY.md); Code ist vorbereitet, derzeit lokale Ablage.

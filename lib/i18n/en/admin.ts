@@ -41,7 +41,6 @@ const en = {
   "admin.audit.colTarget": "Target",
   "admin.audit.colChange": "Before → after",
   "admin.rights.title": "Permission matrix",
-  "admin.rights.hint": "Some admin permissions are locked and can only be changed by locked admin accounts (🔒).",
   "admin.rights.colPermission": "Permission",
   "admin.perm.chat.read": "Read channels",
   "admin.perm.chat.write": "Write in channels",
@@ -78,7 +77,6 @@ const en = {
   "admin.users.unban": "Unban",
   "admin.users.ban": "Ban",
   "admin.users.delete": "Delete",
-  "admin.locked": "🔒 {role}",
   "admin.members.title": "Players in the alliance group according to map.sql",
   "admin.members.summary": "{total} players in the group · {withAccount} with a verified account · {without} without. Create an invite link and send it to exactly that player via in-game message – only they can read it.",
   "admin.members.noGroup": "No alliance is marked as “Own alliance” or “Ally” – see the Alliances tab.",
@@ -99,7 +97,6 @@ const en = {
   "admin.members.reject": "Reject",
   "admin.members.orphansTitle": "Accounts outside the group",
   "admin.members.orphansHint": "According to the last import, the linked player no longer belongs to the alliance group. Marker only, no automatic ban.",
-  "admin.members.notChangeable": "cannot be changed",
   "admin.channels.readFrom": "Read from",
   "admin.channels.writeFrom": "Write from",
   "admin.channels.colorRed": "Red",
@@ -154,5 +151,6 @@ const en = {
   "admin.invite.copied": "Invitation text copied to the clipboard – paste it into the message.",
   "admin.invite.copyManual": "Could not copy automatically – use “Copy IGM text” below.",
   "admin.alliances.closeAllyNote": "Note: players of “{type}” alliances can register as guests just like members and must verify themselves (village rename or invitation) – until then their account stays locked.",
+  "admin.rights.hint": "Rights of moderators, members and guests. Admins always have all permissions.",
 } as const;
 export default en;

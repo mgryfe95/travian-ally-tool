@@ -19,7 +19,7 @@ export default async function TaskforcePage({ params, searchParams }: { params: 
   // Nicht-Mitglieder erfahren nicht einmal, dass es die Task-Force gibt.
   if (!tf || !tf.channel || tf.archivedAt || !canReadChannel(tf.channel, ctx)) notFound();
   const me = tf.members.find((m) => m.userId === user.id);
-  const isFounder = me?.role === "founder" || ctx.role === "ADMIN" || ctx.role === "SYSTEMADMIN";
+  const isFounder = me?.role === "founder" || ctx.role === "ADMIN";
   const manage = canManageTaskforce(ctx, me?.role === "founder" || me?.role === "lead");
   const invites = manage ? await db.taskforceInvite.findMany({ where: { taskforceId: tf.id, status: "pending" }, orderBy: { id: "asc" } }) : [];
   const users = await db.user.findMany({ where: { banned: false, role: { not: "GUEST" } }, orderBy: { name: "asc" }, select: { id: true, name: true } });

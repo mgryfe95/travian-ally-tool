@@ -29,7 +29,7 @@ const safeEqual = (a: string, b: string) => timingSafeEqual(digest(a), digest(b)
 
 /**
  * Registrierung. Ohne Einladung → GUEST (nur Spieler der Gruppe oder enger Bündnispartner, mit Code-Claim). Mit gültiger Einladung → MEMBER + verifizierter PlayerLink.
- * SYSTEMADMIN-Adressen (ENV) lassen sich nur mit Setup-Code registrieren, damit sie niemand vorab belegen kann.
+ * Notzugangs-Adressen (ENV, Admin) lassen sich nur mit Setup-Code registrieren, damit sie niemand vorab belegen kann.
  */
 export async function registerUser(raw: unknown) {
   const parsed = registerSchema.safeParse(raw);

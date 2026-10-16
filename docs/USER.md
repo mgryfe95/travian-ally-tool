@@ -21,7 +21,7 @@ Allianzen, die zusammengehören, als **Eigene Allianz** oder **Allianz** markier
 6. Verlässt ein Spieler die Gruppe, erscheint sein Konto unter „Konten außerhalb der Gruppe“ (nur Markierung, keine Sperre).
 
 ## Rollen & Rechte
-Rollen: SYSTEMADMIN > ADMIN > MODERATOR > MEMBER > GUEST. ADMIN vergibt Rollen unterhalb von ADMIN; ADMINs ernennt nur SYSTEMADMIN. Die Rechte-Matrix (Admin → Rechte) ist editierbar; `permissions.edit` und `roles.assign` der Rolle ADMIN ändert nur SYSTEMADMIN. Alle Änderungen stehen im Audit-Log.
+Rollen: ADMIN > MODERATOR > MEMBER > GUEST. Admins sind gleichberechtigt: Sie haben immer alle Rechte, vergeben und ändern jede Rolle (auch andere Admins) und bearbeiten die Rechte-Matrix (Admin → Rechte) für Moderator, Mitglied und Gast. Nicht möglich: das eigene Konto sperren/löschen. Adressen in `SYSTEMADMIN_EMAILS` (.env) sind ein Notzugang: Diese Konten sind immer Admin und lassen sich nicht sperren oder löschen – so kommst du im Zweifel wieder an. Alle Änderungen stehen im Audit-Log.
 
 ## Chat (Admin → Kanäle & Tags)
 - **Kanäle:** Die 8 Standardkanäle (Deff-Call, Deff-Reports, Off-Call, Off-Reports, Ressources, Settlement, Sitter, Mixed topics) lassen sich umbenennen, sortieren (↑/↓) und archivieren; neue Kanäle legst du unten an. Je Kanal gilt „lesen ab“ und „schreiben ab“ (Gast/Member/Moderator/Admin). Gäste sehen nur Kanäle mit „lesen ab = Gast“ (Standard: Mixed topics). Recht: `settings.edit`.

@@ -70,7 +70,7 @@ describe("Registrierung", () => {
     const r = await registerUser({ email: "h2@x.de", name: "Hax", password: PW, role: "ADMIN", playerName: "Alpha" });
     expect((await db.user.findUnique({ where: { id: r.userId } }))?.role).toBe("GUEST");
   });
-  it("SYSTEMADMIN-Adresse nur mit Setup-Code (Default AUTH_SECRET)", async () => {
+  it("Notzugangs-Adresse (Admin) nur mit Setup-Code (Default AUTH_SECRET)", async () => {
     await expect(registerUser({ email: "boss@example.com", name: "Boss", password: PW })).rejects.toMatchObject({ status: 403 });
     await expect(registerUser({ email: "boss@example.com", name: "Boss", password: PW, setupCode: "falsch" })).rejects.toMatchObject({ status: 403 });
     const r = await registerUser({ email: "boss@example.com", name: "Boss", password: PW, setupCode: "test-secret-test-secret" });

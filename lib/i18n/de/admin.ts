@@ -43,7 +43,6 @@ const de: Record<keyof typeof en, string> = {
   "admin.audit.colTarget": "Ziel",
   "admin.audit.colChange": "Vorher → Nachher",
   "admin.rights.title": "Rechte-Matrix",
-  "admin.rights.hint": "Einzelne Admin-Rechte sind gesperrt und nur von gesperrten Admin-Konten (🔒) änderbar.",
   "admin.rights.colPermission": "Recht",
   "admin.perm.chat.read": "Kanäle lesen",
   "admin.perm.chat.write": "In Kanälen schreiben",
@@ -80,7 +79,6 @@ const de: Record<keyof typeof en, string> = {
   "admin.users.unban": "Entsperren",
   "admin.users.ban": "Sperren",
   "admin.users.delete": "Löschen",
-  "admin.locked": "🔒 {role}",
   "admin.members.title": "Spieler der Allianz-Gruppe laut map.sql",
   "admin.members.summary": "{total} Spieler in der Gruppe · {withAccount} mit verifiziertem Konto · {without} ohne. Einladungslink erzeugen und per Ingame-Nachricht an genau diesen Spieler schicken – nur er kann sie lesen.",
   "admin.members.noGroup": "Keine Allianz als „Eigene Allianz“ oder „Allianz“ markiert – siehe Tab Allianzen.",
@@ -101,7 +99,6 @@ const de: Record<keyof typeof en, string> = {
   "admin.members.reject": "Ablehnen",
   "admin.members.orphansTitle": "Konten außerhalb der Gruppe",
   "admin.members.orphansHint": "Der verknüpfte Spieler gehört laut letztem Import nicht mehr zur Allianz-Gruppe. Nur eine Markierung, keine automatische Sperre.",
-  "admin.members.notChangeable": "nicht änderbar",
   "admin.channels.readFrom": "Lesen ab",
   "admin.channels.writeFrom": "Schreiben ab",
   "admin.channels.colorRed": "Rot",
@@ -156,5 +153,6 @@ const de: Record<keyof typeof en, string> = {
   "admin.invite.copied": "Einladungstext in die Zwischenablage kopiert – füge ihn in die Nachricht ein.",
   "admin.invite.copyManual": "Automatisches Kopieren nicht möglich – nutze unten „IGM-Text kopieren“.",
   "admin.alliances.closeAllyNote": "Hinweis: Spieler von Allianzen des Typs „{type}“ können sich genauso wie Mitglieder als Gast registrieren und müssen sich verifizieren (Dorf umbenennen oder Einladung) – bis dahin bleibt ihr Konto gesperrt.",
+  "admin.rights.hint": "Rechte von Moderatoren, Mitgliedern und Gästen. Admins haben immer alle Rechte.",
 };
 export default de;

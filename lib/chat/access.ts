@@ -18,11 +18,11 @@ export type ChatCtx = {
   taskforceRoles?: ReadonlyMap<number, string>;
 };
 
-const KNOWN: readonly string[] = ["GUEST", "MEMBER", "MODERATOR", "ADMIN", "SYSTEMADMIN"];
+const KNOWN: readonly string[] = ["GUEST", "MEMBER", "MODERATOR", "ADMIN"];
 /** Unbekannte Mindestrollen werden wie ADMIN behandelt (fail closed). */
 const atLeast = (role: Role, min: string) => rank(role) >= rank(KNOWN.includes(min) ? (min as Role) : "ADMIN");
 
-/** Lesen: ALLY → Recht chat.read + Mindestrolle; TASKFORCE → Mitglied (ADMIN/SYSTEMADMIN sehen alle). */
+/** Lesen: ALLY → Recht chat.read + Mindestrolle; TASKFORCE → Mitglied (ADMIN sieht alle). */
 export function canReadChannel(ch: ChannelLike, ctx: ChatCtx): boolean {
   if (ch.archivedAt) return false;
   if (!hasPermission(ctx.role, "chat.read", ctx.matrix)) return false;
@@ -41,7 +41,7 @@ export function canWriteChannel(ch: ChannelLike, ctx: ChatCtx): boolean {
 export const canEditMessage = (authorId: string, ctx: ChatCtx) => authorId === ctx.userId;
 export const canDeleteMessage = (authorId: string, ctx: ChatCtx) => authorId === ctx.userId || hasPermission(ctx.role, "chat.moderate", ctx.matrix);
 
-/** Task-Force verwalten: taskforce.manage, ADMIN/SYSTEMADMIN oder Lead dieser Task-Force. */
+/** Task-Force verwalten: taskforce.manage, ADMIN oder Lead dieser Task-Force. */
 export function canManageTaskforce(ctx: ChatCtx, isLead: boolean): boolean {
   return hasPermission(ctx.role, "taskforce.manage", ctx.matrix) || atLeast(ctx.role, "ADMIN") || isLead;
 }

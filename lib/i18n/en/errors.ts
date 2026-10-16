@@ -9,13 +9,8 @@ const en = {
   "err.noAccess": "No access",
   "err.registerOnly": "Registration is only possible via /register",
   "err.perm.missing": "Missing permission {perm}",
-  "err.perm.sysadminImmutable": "SYSTEMADMIN cannot be changed",
-  "err.perm.sysadminNotAssignable": "SYSTEMADMIN cannot be assigned",
   "err.perm.onlyBelowOwn": "Only users below your own role can be changed",
   "err.perm.onlyRolesBelow": "Only roles below your own role can be assigned",
-  "err.perm.sysadminNoModerate": "SYSTEMADMIN cannot be banned or deleted",
-  "err.perm.rightsLocked": "These permissions cannot be changed",
-  "err.perm.adminLocked": "{perm} of the ADMIN role can only be changed by SYSTEMADMIN",
   "err.import.http": "map.sql: HTTP {status}",
   "err.import.empty": "map.sql contains no rows — import aborted, existing data remains unchanged",
   "err.role.invalid": "Invalid role",
@@ -217,5 +212,8 @@ const en = {
   "err.register.playerAmbiguous": "This player name is not unique",
   "err.register.notEligible": "Registration is only open to members of our alliance and close allies",
   "err.register.playerTaken": "This player is already linked to an account. If that is you, ask a moderator.",
+  "err.perm.adminAlwaysAll": "Admins always have all permissions – the matrix applies to moderators, members and guests.",
+  "err.perm.protectedAccount": "This account is protected by the server configuration and cannot be banned or deleted.",
+  "err.perm.notSelf": "You cannot ban or delete your own account.",
 } as const;
 export default en;

@@ -8,9 +8,8 @@ export const TF_ROLE_KEY: Record<string, MessageKey> = {
   reader: "chat.role.reader",
 };
 
-/** Konto-Rollen → Übersetzungsschlüssel (SYSTEMADMIN und ADMIN erscheinen beide als „Admin“). */
+/** Konto-Rollen → Übersetzungsschlüssel (Admin). */
 export const USER_ROLE_KEY: Record<string, MessageKey> = {
-  SYSTEMADMIN: "chat.role.admin",
   ADMIN: "chat.role.admin",
   MODERATOR: "chat.role.moderator",
   MEMBER: "chat.role.member",

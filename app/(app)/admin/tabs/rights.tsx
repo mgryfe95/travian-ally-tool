@@ -1,12 +1,12 @@
 import { PermToggle } from "@/components/AdminControls";
 import { db } from "@/lib/db";
 import { getT } from "@/lib/i18n/server";
-import { ADMIN_LOCKED_PERMISSIONS, PERMISSIONS, STORED_ROLES } from "@/lib/permissions";
-import { loadMatrix, type Actor } from "@/lib/services/context";
+import { PERMISSIONS, STORED_ROLES } from "@/lib/permissions";
+import { loadMatrix } from "@/lib/services/context";
 
-const COLS = ["ADMIN", "MODERATOR", "MEMBER", "GUEST"] as const;
+const COLS = ["MODERATOR", "MEMBER", "GUEST"] as const;
 
-export async function RightsTab({ actor }: { actor: Actor }) {
+export async function RightsTab() {
   const { t } = await getT();
   const matrix = await loadMatrix(db);
   return (
@@ -28,7 +28,7 @@ export async function RightsTab({ actor }: { actor: Actor }) {
                   <td key={c} style={{ textAlign: "center" }}>
                     <PermToggle
                       role={c} permission={p} checked={(STORED_ROLES as readonly string[]).includes(c) && matrix[c].has(p)}
-                      disabled={actor.role !== "SYSTEMADMIN" && c === "ADMIN" && ADMIN_LOCKED_PERMISSIONS.includes(p)} label={`${p} ${t(`admin.role.${c}`)}`}
+                      disabled={false} label={`${p} ${t(`admin.role.${c}`)}`}
                     />
                   </td>
                 ))}

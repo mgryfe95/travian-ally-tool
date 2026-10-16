@@ -11,13 +11,8 @@ const de: Record<keyof typeof en, string> = {
   "err.noAccess": "Kein Zugriff",
   "err.registerOnly": "Registrierung nur über /register",
   "err.perm.missing": "Fehlendes Recht {perm}",
-  "err.perm.sysadminImmutable": "SYSTEMADMIN kann nicht geändert werden",
-  "err.perm.sysadminNotAssignable": "SYSTEMADMIN kann nicht vergeben werden",
   "err.perm.onlyBelowOwn": "Nur Nutzer unterhalb der eigenen Rolle sind änderbar",
   "err.perm.onlyRolesBelow": "Nur Rollen unterhalb der eigenen Rolle sind vergebbar",
-  "err.perm.sysadminNoModerate": "SYSTEMADMIN kann nicht gesperrt oder gelöscht werden",
-  "err.perm.rightsLocked": "Diese Rechte sind nicht änderbar",
-  "err.perm.adminLocked": "{perm} der Rolle ADMIN darf nur ein gesperrtes Admin-Konto ändern",
   "err.import.http": "map.sql: HTTP {status}",
   "err.import.empty": "map.sql enthält keine Zeilen — Import abgebrochen, bestehende Daten bleiben unverändert",
   "err.role.invalid": "Ungültige Rolle",
@@ -219,5 +214,8 @@ const de: Record<keyof typeof en, string> = {
   "err.register.playerAmbiguous": "Dieser Spielername ist nicht eindeutig",
   "err.register.notEligible": "Die Registrierung ist nur für Mitglieder unserer Allianz und enge Bündnispartner offen",
   "err.register.playerTaken": "Dieser Spieler ist bereits mit einem Konto verknüpft. Falls das du bist, wende dich an einen Moderator.",
+  "err.perm.adminAlwaysAll": "Admins haben immer alle Rechte – die Matrix gilt für Moderatoren, Mitglieder und Gäste.",
+  "err.perm.protectedAccount": "Dieses Konto ist durch die Server-Konfiguration geschützt und kann nicht gesperrt oder gelöscht werden.",
+  "err.perm.notSelf": "Du kannst dein eigenes Konto nicht sperren oder löschen.",
 };
 export default de;

@@ -388,7 +388,7 @@ function requireSettings(ctx: ChatCtx) {
   if (!hasPermission(ctx.role, "settings.edit", ctx.matrix)) throw new ForbiddenError("err.perm.missing", { perm: "settings.edit" });
 }
 const checkRole = (r: string) => {
-  if (!(ROLES as readonly string[]).includes(r) || r === "SYSTEMADMIN") throw new ChatError("err.role.invalid");
+  if (!(ROLES as readonly string[]).includes(r)) throw new ChatError("err.role.invalid");
 };
 
 export async function createChannel(db: PrismaClient, ctx: ChatCtx, input: { name: string; minReadRole?: string; minWriteRole?: string }) {

@@ -1,10 +1,10 @@
 import { AppError } from "./i18n/errors";
 import type { MessageKey, Params } from "./i18n";
 
-export const ROLES = ["GUEST", "MEMBER", "MODERATOR", "ADMIN", "SYSTEMADMIN"] as const;
+export const ROLES = ["GUEST", "MEMBER", "MODERATOR", "ADMIN"] as const;
 export type Role = (typeof ROLES)[number];
-/** Rollen, die in der DB stehen dürfen. SYSTEMADMIN wird ausschließlich aus SYSTEMADMIN_EMAILS abgeleitet. */
-export const STORED_ROLES = ["GUEST", "MEMBER", "MODERATOR", "ADMIN"] as const;
+/** Rollen, die in der DB stehen dürfen (identisch mit ROLES). */
+export const STORED_ROLES = ROLES;
 export type StoredRole = (typeof STORED_ROLES)[number];
 
 export const rank = (r: Role) => ROLES.indexOf(r);
@@ -25,9 +25,6 @@ export const DEFAULT_PERMISSIONS: Record<StoredRole, Permission[]> = {
   ADMIN: [...PERMISSIONS],
 };
 
-/** Rechte, die nur SYSTEMADMIN an der Rolle ADMIN ändern darf (Aussperr-Schutz). */
-export const ADMIN_LOCKED_PERMISSIONS: Permission[] = ["permissions.edit", "roles.assign"];
-
 export type Matrix = Record<StoredRole, ReadonlySet<Permission>>;
 
 export function defaultMatrix(): Matrix {
@@ -38,14 +35,17 @@ export class ForbiddenError extends AppError {
   readonly status = 403;
 }
 
-/** SYSTEMADMIN folgt nur aus der ENV-Liste (case-insensitiv), nie aus der DB. */
-export function effectiveRole(user: { email: string; role: string }, systemadminEmails: readonly string[]): Role {
-  if (systemadminEmails.includes(user.email.trim().toLowerCase())) return "SYSTEMADMIN";
+/** Adressen aus der ENV-Liste (Notzugang) sind immer Admin – unabhängig vom Eintrag in der DB. */
+export const isEmergencyAdmin = (email: string, emergencyEmails: readonly string[]) => emergencyEmails.includes(email.trim().toLowerCase());
+
+export function effectiveRole(user: { email: string; role: string }, emergencyEmails: readonly string[]): Role {
+  if (isEmergencyAdmin(user.email, emergencyEmails)) return "ADMIN";
   return (STORED_ROLES as readonly string[]).includes(user.role) ? (user.role as StoredRole) : "GUEST";
 }
 
+/** Admins haben immer alle Rechte (die Matrix gilt für Moderator, Mitglied und Gast). */
 export function hasPermission(role: Role, perm: Permission, matrix: Matrix): boolean {
-  if (role === "SYSTEMADMIN") return true;
+  if (role === "ADMIN") return true;
   return matrix[role].has(perm);
 }
 
@@ -53,27 +53,22 @@ const deny = (key: MessageKey, params?: Params): never => {
   throw new ForbiddenError(key, params);
 };
 
-/** Rolle eines Nutzers ändern. Wirft ForbiddenError (→ HTTP 403). */
+/** Rolle eines Nutzers ändern. Admins dürfen jede Rolle vergeben und ändern; andere nur unterhalb ihrer eigenen. */
 export function assertCanAssignRole(actor: Role, target: Role, newRole: Role, matrix: Matrix) {
   if (!hasPermission(actor, "roles.assign", matrix)) deny("err.perm.missing", { perm: "roles.assign" });
-  if (target === "SYSTEMADMIN") deny("err.perm.sysadminImmutable");
-  if (newRole === "SYSTEMADMIN") deny("err.perm.sysadminNotAssignable");
-  if (rank(target) >= rank(actor) && actor !== "SYSTEMADMIN") deny("err.perm.onlyBelowOwn");
-  if (actor !== "SYSTEMADMIN" && rank(newRole) >= rank(actor)) deny("err.perm.onlyRolesBelow");
+  if (actor !== "ADMIN" && rank(target) >= rank(actor)) deny("err.perm.onlyBelowOwn");
+  if (actor !== "ADMIN" && rank(newRole) >= rank(actor)) deny("err.perm.onlyRolesBelow");
 }
 
-/** Sperren, entsperren oder löschen. */
+/** Sperren, entsperren oder löschen. Notzugangs-Konten und das eigene Konto sind ausgenommen (siehe Service). */
 export function assertCanModerateUser(actor: Role, target: Role, matrix: Matrix) {
   if (!hasPermission(actor, "roles.assign", matrix)) deny("err.perm.missing", { perm: "roles.assign" });
-  if (target === "SYSTEMADMIN") deny("err.perm.sysadminNoModerate");
-  if (rank(target) >= rank(actor) && actor !== "SYSTEMADMIN") deny("err.perm.onlyBelowOwn");
+  if (actor !== "ADMIN" && rank(target) >= rank(actor)) deny("err.perm.onlyBelowOwn");
 }
 
-/** Rechte-Matrix bearbeiten. `role` ist die Rolle, deren Recht geändert wird. */
+/** Rechte-Matrix bearbeiten (Moderator, Mitglied, Gast). Admins haben immer alles. */
 export function assertCanEditPermission(actor: Role, role: Role, perm: Permission, matrix: Matrix) {
   if (!hasPermission(actor, "permissions.edit", matrix)) deny("err.perm.missing", { perm: "permissions.edit" });
-  if (role === "SYSTEMADMIN") deny("err.perm.rightsLocked");
-  if (actor !== "SYSTEMADMIN" && role === "ADMIN" && ADMIN_LOCKED_PERMISSIONS.includes(perm)) {
-    deny("err.perm.adminLocked", { perm });
-  }
+  void perm;
+  if (role === "ADMIN") deny("err.perm.adminAlwaysAll");
 }

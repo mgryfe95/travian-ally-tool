@@ -122,3 +122,5 @@ Was & Warum: Einheitennamen je Volk (Plätze 1–6 für alle 7 Völker) aus dem 
 - Seitenleiste immer über die volle Höhe (sticky, 100vh), auch bei kurzen Seiten.
 
 - Echtes Humans-Logo (aus dem Gemini-Entwurf freigestellt): `public/logo.png` (Anmeldeseiten), `public/logo-small.png` (Seitenleiste, Handy-Kopfzeile), `app/icon.png` (Browser-Tab). Platzhalter-SVG entfällt.
+
+- **Keine Systemadmin-Rolle mehr**: Rollen sind GUEST < MEMBER < MODERATOR < ADMIN. Admins sind gleichberechtigt (immer alle Rechte, ändern jede Rolle und die Rechte-Matrix für Moderator/Mitglied/Gast), kein Schloss im UI. `SYSTEMADMIN_EMAILS` bleibt als Notzugang: diese Konten sind immer Admin und nicht sperr-/löschbar; das eigene Konto kann niemand sperren/löschen.

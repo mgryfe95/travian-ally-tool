@@ -8,7 +8,7 @@ import { loadMatrix, type Actor } from "./services/context";
 
 export type CurrentUser = Actor & { email: string; name: string; locale: string | null };
 
-/** Frisch aus der DB: Rolle und Sperre gelten bei jedem Request sofort; SYSTEMADMIN kommt nur aus der ENV-Liste. */
+/** Frisch aus der DB: Rolle und Sperre gelten bei jedem Request sofort; Adressen aus der ENV-Liste (Notzugang) sind immer ADMIN. */
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return null;

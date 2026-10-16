@@ -26,7 +26,7 @@ export async function MembersTab({ actor }: { actor: Actor }) {
   const canApprove = hasPermission(actor.role, "members.approve", matrix);
   const canRoles = hasPermission(actor.role, "roles.assign", matrix);
   const rows = await loadMemberRows(db);
-  const assignable = STORED_ROLES.filter((r) => actor.role === "SYSTEMADMIN" || rank(r) < rank(actor.role)).reverse() as string[];
+  const assignable = STORED_ROLES.filter((r) => actor.role === "ADMIN" || rank(r) < rank(actor.role)).reverse() as string[];
   const withAccount = rows.filter((r) => r.state === "verified").length;
 
   const orphans = await db.playerLink.findMany({
@@ -59,7 +59,7 @@ export async function MembersTab({ actor }: { actor: Actor }) {
                     <td className="mono r">{fmt(r.player.population, locale)}</td>
                     <td style={{ color: "var(--text2)" }}>{r.user ? r.user.name : "—"}{r.extraAccounts > 0 && <span className="sub"> +{r.extraAccounts}</span>}</td>
                     <td>{status(r, t)}</td>
-                    <td><RoleCell t={t} row={r} actor={actor} canRoles={canRoles} assignable={assignable} sysTarget={r.user?.locked === true} /></td>
+                    <td><RoleCell t={t} row={r} actor={actor} canRoles={canRoles} assignable={assignable} emergency={r.user?.locked === true} /></td>
                     <td className="r" style={{ whiteSpace: "nowrap" }}>
                       {canInvite && r.state === "none" && <InviteButton playerId={r.player.id} playerName={r.player.name} />}
                       {canInvite && r.state === "invite_open" && <InviteButton playerId={r.player.id} playerName={r.player.name} label={t("admin.members.newLink")} ghost />}
@@ -88,12 +88,11 @@ export async function MembersTab({ actor }: { actor: Actor }) {
   );
 }
 
-async function RoleCell({ t, row, actor, canRoles, assignable, sysTarget }: { t: T; row: MemberRow; actor: Actor; canRoles: boolean; assignable: string[]; sysTarget: boolean }) {
+async function RoleCell({ t, row, actor, canRoles, assignable, emergency }: { t: T; row: MemberRow; actor: Actor; canRoles: boolean; assignable: string[]; emergency: boolean }) {
   if (!row.user) return <span className="sub">—</span>;
-  if (sysTarget)
-    return (<><span style={{ color: "var(--link-h)", fontWeight: 600 }}>{t("admin.locked", { role: t("admin.role.ADMIN") })}</span><div className="sub" style={{ fontSize: 12 }}>{t("admin.members.notChangeable")}</div></>);
+  if (emergency) return <span>{t("admin.role.ADMIN")}</span>; // Admin per Server-Konfiguration: Rolle wird dort bestimmt
   const u = await db.user.findUnique({ where: { id: row.user.id }, select: { role: true } });
   const current = u?.role ?? "GUEST";
-  const editable = canRoles && (actor.role === "SYSTEMADMIN" || rank(current as Role) < rank(actor.role));
+  const editable = canRoles && (actor.role === "ADMIN" || rank(current as Role) < rank(actor.role));
   return editable ? <RoleSelect userId={row.user.id} current={current} options={assignable} tab="members" /> : <span>{t(`admin.role.${current as Role}`)}</span>;
 }

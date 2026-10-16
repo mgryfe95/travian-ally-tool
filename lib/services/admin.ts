@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { env } from "../env";
 import {
-  assertCanAssignRole, assertCanEditPermission, assertCanModerateUser, effectiveRole, ForbiddenError, STORED_ROLES,
+  assertCanAssignRole, assertCanEditPermission, assertCanModerateUser, effectiveRole, ForbiddenError, isEmergencyAdmin, STORED_ROLES,
   type Permission, type Role, type StoredRole,
 } from "../permissions";
 import { audit, loadMatrix, type Actor } from "./context";
@@ -10,13 +10,14 @@ import { AppError } from "../i18n/errors";
 async function loadTarget(db: PrismaClient, userId: string, sysadmins: readonly string[]) {
   const user = await db.user.findUnique({ where: { id: userId } });
   if (!user) throw new AppError("err.user.notFound");
-  return { user, role: effectiveRole(user, sysadmins) as Role };
+  return { user, role: effectiveRole(user, sysadmins) as Role, emergency: isEmergencyAdmin(user.email, sysadmins) };
 }
 
 export async function setUserRole(
   db: PrismaClient, actor: Actor, userId: string, newRole: Role, sysadmins: readonly string[] = env().SYSTEMADMIN_EMAILS,
 ) {
-  const { user, role } = await loadTarget(db, userId, sysadmins);
+  const { user, role, emergency } = await loadTarget(db, userId, sysadmins);
+  if (emergency) throw new ForbiddenError("err.perm.protectedAccount");
   assertCanAssignRole(actor.role, role, newRole, await loadMatrix(db));
   if (!(STORED_ROLES as readonly string[]).includes(newRole)) throw new ForbiddenError("err.role.invalid");
   await db.user.update({ where: { id: userId }, data: { role: newRole as StoredRole } });
@@ -26,7 +27,9 @@ export async function setUserRole(
 export async function setUserBanned(
   db: PrismaClient, actor: Actor, userId: string, banned: boolean, sysadmins: readonly string[] = env().SYSTEMADMIN_EMAILS,
 ) {
-  const { user, role } = await loadTarget(db, userId, sysadmins);
+  const { user, role, emergency } = await loadTarget(db, userId, sysadmins);
+  if (emergency) throw new ForbiddenError("err.perm.protectedAccount");
+  if (banned && userId === actor.id) throw new ForbiddenError("err.perm.notSelf");
   assertCanModerateUser(actor.role, role, await loadMatrix(db));
   await db.$transaction([
     db.user.update({ where: { id: userId }, data: { banned } }),
@@ -38,7 +41,9 @@ export async function setUserBanned(
 export async function deleteUser(
   db: PrismaClient, actor: Actor, userId: string, sysadmins: readonly string[] = env().SYSTEMADMIN_EMAILS,
 ) {
-  const { user, role } = await loadTarget(db, userId, sysadmins);
+  const { user, role, emergency } = await loadTarget(db, userId, sysadmins);
+  if (emergency) throw new ForbiddenError("err.perm.protectedAccount");
+  if (userId === actor.id) throw new ForbiddenError("err.perm.notSelf");
   assertCanModerateUser(actor.role, role, await loadMatrix(db));
   await db.user.delete({ where: { id: userId } });
   await audit(db, actor.id, "user.delete", `user:${userId}`, { email: user.email, role: user.role });
@@ -54,7 +59,7 @@ export async function setRolePermission(db: PrismaClient, actor: Actor, role: Ro
   await audit(db, actor.id, "permission.set", `role:${role}`, { permission, enabled: before }, { permission, enabled });
 }
 
-/** Allianz-Typ setzen: Recht alliances.classify (ADMIN/SYSTEMADMIN per Default). */
+/** Allianz-Typ setzen: Recht alliances.classify (Admins immer). */
 export async function classifyAlliance(
   db: PrismaClient, actor: Actor, allianceId: number, relation: import("../alliance-group").Relation | "CLEAR", note?: string,
 ) {

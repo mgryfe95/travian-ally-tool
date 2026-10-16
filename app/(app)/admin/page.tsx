@@ -45,7 +45,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       </div>
       {error && <p className="errtext" role="alert">{error}</p>}
       {current?.id === "members" && <MembersTab actor={user} />}
-      {current?.id === "rights" && <RightsTab actor={user} />}
+      {current?.id === "rights" && <RightsTab />}
       {current?.id === "channels" && <ChannelsTab actor={user} />}
       {current?.id === "alliances" && <AlliancesTab q={q} />}
       {current?.id === "users" && <UsersTab actor={user} />}
