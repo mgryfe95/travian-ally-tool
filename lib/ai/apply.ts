@@ -110,7 +110,7 @@ export async function applyReading(db: PrismaClient, userId: string, screenshotI
       areas.push("fields");
     }
     if (p.buildings) {
-      data.buildings = p.buildings as Prisma.InputJsonValue;
+      data.buildings = inheritNames(p.buildings, cur?.buildings) as Prisma.InputJsonValue;
       data.buildingsAt = now;
       areas.push("buildings");
     }
@@ -123,6 +123,16 @@ export async function applyReading(db: PrismaClient, userId: string, screenshotI
     applied.push({ villageId, areas });
   }
   return applied;
+}
+
+type Bld = { slot?: number | null; name?: string | null; level: number };
+/** Das Dorfzentrum-Bild nennt kaum Namen: fehlende Namen werden vom bisherigen Stand übernommen (gleicher Platz, sonst gleiche Reihenfolge bei gleicher Anzahl). */
+export function inheritNames(next: unknown, prev: unknown): Bld[] {
+  const n = Array.isArray(next) ? (next as Bld[]) : [];
+  const o = Array.isArray(prev) ? (prev as Bld[]) : [];
+  const bySlot = new Map(o.filter((b) => b.slot != null && b.name).map((b) => [b.slot as number, b.name as string]));
+  const sameLen = n.length === o.length && n.every((b) => b.slot == null) && o.every((b) => b.slot == null);
+  return n.map((b, i) => (b.name ? b : { ...b, name: (b.slot != null ? bySlot.get(b.slot) : undefined) ?? (sameLen ? (o[i]?.name ?? null) : null) }));
 }
 
 /** „Einheit N“ → echter Name, sobald Einheitennamen für das Volk des Dorfbesitzers (map.sql) vorliegen; Held und unbekannte Plätze bleiben. */

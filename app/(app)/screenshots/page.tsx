@@ -1,4 +1,5 @@
 import { Thumb } from "@/components/Thumb";
+import { RetractButton } from "@/components/RetractButton";
 import { ScreenshotReview } from "@/components/ScreenshotReview";
 import { UploadBox } from "@/components/UploadBox";
 import type { ParsedShot } from "@/lib/ai/pipeline";
@@ -6,6 +7,7 @@ import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { getT } from "@/lib/i18n/server";
 import { translate, type MessageKey } from "@/lib/i18n";
+import { loadBuildingNames } from "@/lib/gamedata/names";
 import { ownVillages } from "@/lib/services/villages";
 import { requireUser } from "@/lib/session";
 
@@ -28,6 +30,8 @@ export default async function ScreenshotsPage() {
   const shots = await db.screenshot.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 30 });
   const confirmed = await db.visionExample.groupBy({ by: ["kind"], _count: true });
   const need = env().VISION_LEARNING_MIN;
+  const buildingNames = await loadBuildingNames(db, locale);
+  const kindLabels = Object.fromEntries(Object.entries(KINDS).map(([k, v]) => [k, t(v)]));
   const villages = (await ownVillages(db, user.id)).map((v) => ({ id: v.id, label: `${v.name} (${v.x}|${v.y})` }));
   return (
     <>
@@ -53,7 +57,8 @@ export default async function ScreenshotsPage() {
               <span className="sub">{STATUS[s.status] ? t(STATUS[s.status] as MessageKey) : s.status}{s.confidence !== null ? ` · ${t("screenshots.confidence", { pct: Math.round(s.confidence * 100) })}` : ""}</span>
             </div>
             {(p.errorKey || p.error) && <p className="errtext">{p.errorKey ? translate(locale, p.errorKey, p.errorParams) : p.error}</p>}
-            {s.status === "needs_review" && p.reading && <ScreenshotReview id={s.id} reading={p.reading} issues={(p.issues ?? []).map((i) => ({ level: i.level, message: i.key ? translate(locale, i.key, i.params) : i.message }))} villages={villages} defaultVillageId={s.villageId ?? undefined} />}
+            {s.status === "needs_review" && p.reading && <ScreenshotReview id={s.id} reading={p.reading} issues={(p.issues ?? []).map((i) => ({ level: i.level, message: i.key ? translate(locale, i.key, i.params) : i.message }))} villages={villages} defaultVillageId={s.villageId ?? undefined} buildingNames={buildingNames} kindLabels={kindLabels} />}
+            {s.status === "parsed" && p.confirmedBy && !s.removedAt && <RetractButton id={s.id} />}
           </section>
         );
       })}

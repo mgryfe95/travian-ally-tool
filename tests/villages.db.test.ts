@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { ForbiddenError } from "@/lib/permissions";
-import { getOwnVillage, getStaleDays, getVillageInstructions, ownVillages, saveAccountInstructions, saveVillageInstructions, VillageError } from "@/lib/services/villages";
+import { getOwnVillage, getStaleDays, getVillageInstructions, ownVillages, saveAccountInstructions, saveBuildings, saveVillageInstructions, VillageError } from "@/lib/services/villages";
 
 const db = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL! } } });
 
@@ -41,5 +41,17 @@ describe("KI-Instruktionen", () => {
     expect(await getStaleDays(db)).toBe(2);
     await db.setting.create({ data: { key: "staleDays", value: "5" } });
     expect(await getStaleDays(db)).toBe(5);
+  });
+});
+
+describe("Gebäude von Hand korrigieren", () => {
+  it("speichert Name/Stufe je Platz im eigenen Dorf; fremde Dörfer und ungültige Werte werden abgelehnt", async () => {
+    await saveBuildings(db, "u1", 10, [{ slot: 19, name: " Hauptgebäude ", level: 12 }, { slot: null, name: null, level: 3 }]);
+    const st = await db.villageState.findUniqueOrThrow({ where: { villageId: 10 } });
+    expect(st.buildings).toEqual([{ slot: 19, name: "Hauptgebäude", level: 12 }, { slot: null, name: null, level: 3 }]);
+    expect(st.buildingsAt).not.toBeNull();
+    await expect(saveBuildings(db, "u1", 20, [{ slot: 1, name: "x", level: 1 }])).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(saveBuildings(db, "u1", 10, [{ slot: 99, name: "x", level: 1 }])).rejects.toBeInstanceOf(VillageError);
+    await expect(saveBuildings(db, "u1", 10, [{ slot: 1, name: "x", level: 31 }])).rejects.toBeInstanceOf(VillageError);
   });
 });

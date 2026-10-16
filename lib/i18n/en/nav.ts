@@ -23,5 +23,11 @@ const en = {
   "nav.forbiddenBody": "You lack the permission for this.",
   "nav.account": "Account",
   "nav.menu": "Menu",
+  "table.slot": "Slot",
+  "table.building": "Building",
+  "table.level": "Level",
+  "table.add": "Add row",
+  "table.remove": "Remove row",
+  "table.namePh": "Pick or type a name",
 } as const;
 export default en;

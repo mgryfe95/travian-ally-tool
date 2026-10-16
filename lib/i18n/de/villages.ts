@@ -69,5 +69,10 @@ const de: Record<keyof typeof en, string> = {
   "villages.bld.building.inProgress": "im Bau",
   "villages.bld.remaining": "noch {time}",
   "villages.bld.finished": "fertig {time}",
+  "villages.bld.edit": "Gebäude bearbeiten",
+  "villages.bld.save": "Gebäude speichern",
+  "villages.bld.editHint": "Platz (1–40), Name und Stufe direkt ändern. Die Namen kommen aus den Spieldaten, eigene Eingaben sind möglich. Beim nächsten Screenshot der Dorfansicht bleiben die Namen je Platz erhalten.",
+  "villages.bld.noData": "keine Spieldaten",
+  "villages.bld.max": "max.",
 };
 export default de;

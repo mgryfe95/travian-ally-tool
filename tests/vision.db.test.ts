@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { applyReading } from "@/lib/ai/apply";
+import { applyReading, inheritNames } from "@/lib/ai/apply";
 import { setAiClient, StubAiClient } from "@/lib/ai/client";
 import { VisionPipeline } from "@/lib/ai/pipeline";
 import { readingSchema, type Reading } from "@/lib/ai/reading";
@@ -129,5 +129,30 @@ describe("Bild nach Auswertung freigeben", () => {
     await expect(screenshotStorage().get("shots/rel/a.webp")).rejects.toBeTruthy();
     expect((await screenshotStorage().get("shots/rel/b.webp")).length).toBe(1);
     expect(await releaseScreenshotFiles(db, ["shots/rel/a.webp"])).toBe(0);
+  });
+});
+
+describe("Namen je Platz übernehmen", () => {
+  it("fehlende Namen kommen vom bisherigen Stand (gleicher Platz oder gleiche Reihenfolge)", () => {
+    expect(inheritNames([{ slot: 19, name: null, level: 5 }, { slot: 20, name: "Lager", level: 2 }], [{ slot: 19, name: "Hauptgebäude", level: 4 }])).toEqual([{ slot: 19, name: "Hauptgebäude", level: 5 }, { slot: 20, name: "Lager", level: 2 }]);
+    expect(inheritNames([{ slot: null, name: null, level: 5 }, { slot: null, name: null, level: 1 }], [{ slot: null, name: "A", level: 4 }, { slot: null, name: "B", level: 1 }]).map((b) => b.name)).toEqual(["A", "B"]);
+    expect(inheritNames([{ slot: null, name: null, level: 5 }], [{ slot: null, name: "A", level: 4 }, { slot: null, name: "B", level: 1 }])[0]!.name).toBeNull();
+  });
+});
+
+describe("Bestätigung zurücknehmen", () => {
+  it("entfernt das Lern-Beispiel und stellt den Screenshot wieder zur Prüfung; nur eigene, bestätigte", async () => {
+    await storage().put("shots/rt/a.webp", Buffer.from("x"));
+    const shot = await db.screenshot.create({ data: { userId: "rt", storageKey: "shots/rt/a.webp", status: "parsed", parsed: { reading: gold("stats-hospital-mobile-en"), confirmedBy: "rt", applied: [] } } });
+    await db.visionExample.create({ data: { kind: "VILLAGE_HOSPITAL", storageKey: "shots/rt/a.webp", gold: {}, createdBy: "rt" } });
+    const p = new VisionPipeline(db);
+    expect((await p.retract(shot.id, "fremd")).status).toBe("failed");
+    expect((await p.retract(shot.id, "rt")).status).toBe("needs_review");
+    expect(await db.visionExample.count({ where: { storageKey: "shots/rt/a.webp" } })).toBe(0);
+    const after = await db.screenshot.findUniqueOrThrow({ where: { id: shot.id } });
+    expect(after.status).toBe("needs_review");
+    expect((after.parsed as { confirmedBy?: string; reading?: unknown }).confirmedBy).toBeUndefined();
+    expect((after.parsed as { reading?: unknown }).reading).toBeTruthy();
+    expect((await p.retract(shot.id, "rt")).status).toBe("failed"); // nicht mehr bestätigt
   });
 });

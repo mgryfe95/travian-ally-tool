@@ -25,5 +25,11 @@ const de: Record<keyof typeof en, string> = {
   "nav.forbiddenBody": "Dafür fehlt dir ein Recht.",
   "nav.account": "Konto",
   "nav.menu": "Menü",
+  "table.slot": "Platz",
+  "table.building": "Gebäude",
+  "table.level": "Stufe",
+  "table.add": "Zeile hinzufügen",
+  "table.remove": "Zeile entfernen",
+  "table.namePh": "Name wählen oder tippen",
 };
 export default de;

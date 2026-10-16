@@ -78,5 +78,16 @@ const de: Record<keyof typeof en, string> = {
   "screenshots.files.quota": "Belegter Speicher: {used} von {limit} MB",
   "screenshots.files.quotaUnlimited": "Belegter Speicher: {used} MB",
   "screenshots.files.quotaLabel": "Speicherbelegung",
+  "screenshots.review.kind": "Art des Screenshots",
+  "screenshots.review.expert": "Expertenmodus (JSON)",
+  "screenshots.review.fields": "Rohstofffelder",
+  "screenshots.review.buildings": "Gebäude",
+  "screenshots.review.rows": "Zeilen",
+  "screenshots.review.rowName": "Name",
+  "screenshots.review.rowCoord": "Koordinaten",
+  "screenshots.review.rowCells": "Werte (kommagetrennt, - = unbekannt)",
+  "screenshots.retract": "Bestätigung zurücknehmen",
+  "screenshots.retract.hint": "Entfernt das Lern-Beispiel und stellt den Screenshot wieder zur Prüfung. Bereits übernommene Dorfdaten bleiben und lassen sich im Dorf korrigieren.",
+  "screenshots.retract.failed": "Zurücknehmen fehlgeschlagen",
 };
 export default de;

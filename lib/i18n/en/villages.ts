@@ -67,5 +67,10 @@ const en = {
   "villages.bld.building.inProgress": "under construction",
   "villages.bld.remaining": "{time} left",
   "villages.bld.finished": "done {time}",
+  "villages.bld.edit": "Edit buildings",
+  "villages.bld.save": "Save buildings",
+  "villages.bld.editHint": "Change slot (1–40), name and level directly. Names come from the game data; custom entries are allowed. Names per slot are kept on the next village-view screenshot.",
+  "villages.bld.noData": "no game data",
+  "villages.bld.max": "max.",
 } as const;
 export default en;

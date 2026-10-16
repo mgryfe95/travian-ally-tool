@@ -47,3 +47,20 @@ export async function saveVillageInstructions(db: PrismaClient, userId: string, 
 export async function getVillageInstructions(db: PrismaClient, userId: string, villageId: number) {
   return (await db.villageProfile.findUnique({ where: { villageId_userId: { villageId, userId } } }))?.aiInstructions ?? "";
 }
+
+export type BuildingEntry = { slot: number | null; name: string | null; level: number };
+
+/** Gebäudeliste eines eigenen Dorfes von Hand korrigieren (Name je Platz, Stufe). */
+export async function saveBuildings(db: PrismaClient, userId: string, villageId: number, input: BuildingEntry[], now = new Date()) {
+  if (!(await getOwnVillage(db, userId, villageId))) throw new ForbiddenError("err.village.notOwn");
+  if (!Array.isArray(input) || input.length > 60) throw new VillageError("err.village.buildingsInvalid");
+  const list = input.map((b) => {
+    const level = Number(b.level);
+    const slot = b.slot === null || b.slot === undefined || Number.isNaN(Number(b.slot)) ? null : Number(b.slot);
+    const name = typeof b.name === "string" && b.name.trim() ? b.name.trim().slice(0, 60) : null;
+    if (!Number.isInteger(level) || level < 0 || level > 30 || (slot !== null && (!Number.isInteger(slot) || slot < 1 || slot > 40))) throw new VillageError("err.village.buildingsInvalid");
+    return { slot, name, level };
+  });
+  const data = { buildings: list, buildingsAt: now, userId, capturedAt: now };
+  await db.villageState.upsert({ where: { villageId }, create: { ...data, villageId }, update: data });
+}

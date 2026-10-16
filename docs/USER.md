@@ -75,3 +75,8 @@ Registrieren können sich nur Spieler unserer Allianz(en) und enger Bündnispart
 - Tags werden nach Tag-Typ gruppiert angezeigt.
 - Screenshots: Kontingent 50 MB; das Bild wird nach der Auswertung gelöscht (nur Lern-Beispiele bleiben, max. 30 je Art).
 
+## Screenshots prüfen und Gebäude korrigieren
+- Bei der Prüfung steht alles in Tabellen: Gebäude mit Platz/Name/Stufe (Namen aus den Spieldaten wählbar), Rohstofffelder, Zeilen. Art, Dorf und Werte lassen sich ändern, erst „Bestätigen“ übernimmt sie.
+- Aus Versehen bestätigt? „Bestätigung zurücknehmen“ am Screenshot stellt ihn wieder zur Prüfung und entfernt das Lern-Beispiel. Schon übernommene Dorfdaten korrigierst du im Dorf unter „Gebäude bearbeiten“.
+- Das Dorfzentrum-Bild zeigt keine Gebäudenamen. Gib sie einmal je Platz an; bei den nächsten Screenshots bleiben sie erhalten. Mit Namen zeigt die Dorfseite Nutzen und Kosten der nächsten Stufe.
+

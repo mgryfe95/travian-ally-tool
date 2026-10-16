@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { getLocale } from "@/lib/i18n/server";
 import { localizeError } from "@/lib/i18n/errors";
 import { ForbiddenError } from "@/lib/permissions";
-import { saveAccountInstructions, saveVillageInstructions, VillageError } from "@/lib/services/villages";
+import { saveAccountInstructions, saveBuildings, saveVillageInstructions, VillageError } from "@/lib/services/villages";
 import { parseTroopsText, TroopsError } from "@/lib/troops";
 import { saveTroops } from "@/lib/services/troops";
 import { requireUser } from "@/lib/session";
@@ -34,4 +34,17 @@ export async function saveVillageInstructionsAction(f: FormData) {
 export async function saveTroopsAction(f: FormData) {
   const id = Number(f.get("villageId"));
   return run(`/villages/${id}`, "trp", async () => saveTroops(db, (await requireUser()).id, id, parseTroopsText(String(f.get("text") ?? ""))));
+}
+
+export async function saveBuildingsAction(f: FormData) {
+  const id = Number(f.get("villageId"));
+  return run(`/villages/${id}`, "bld", async () => {
+    let list: unknown;
+    try {
+      list = JSON.parse(String(f.get("data") ?? "[]"));
+    } catch {
+      throw new VillageError("err.village.buildingsInvalid");
+    }
+    await saveBuildings(db, (await requireUser()).id, id, list as never);
+  });
 }

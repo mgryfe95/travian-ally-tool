@@ -129,4 +129,17 @@ export class VisionPipeline {
     }
     return { status: "parsed" };
   }
+
+  /** Bestätigung zurücknehmen (z. B. versehentlich bestätigt): Lern-Beispiel entfernen, Screenshot wieder zur Prüfung stellen. Bereits übernommene Dorfdaten bleiben und lassen sich im Dorf korrigieren. */
+  async retract(screenshotId: number, userId: string): Promise<PipelineResult> {
+    const shot = await this.db.screenshot.findUnique({ where: { id: screenshotId } });
+    if (!shot || shot.userId !== userId) return withReason("failed", "err.vision.screenshotNotFound");
+    const parsed = (shot.parsed ?? {}) as ParsedShot;
+    if (!parsed.confirmedBy || !parsed.reading || shot.removedAt) return withReason("failed", "err.vision.cannotRetract");
+    await this.db.visionExample.deleteMany({ where: { storageKey: shot.storageKey } });
+    const { confirmedBy: _c, applied: _a, ...rest } = parsed;
+    void _c; void _a;
+    await this.db.screenshot.update({ where: { id: shot.id }, data: { status: "needs_review", parsed: rest as object } });
+    return { status: "needs_review" };
+  }
 }

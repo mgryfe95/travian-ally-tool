@@ -12,7 +12,9 @@ import { getOwnVillage, getStaleDays, getVillageInstructions, ownVillages } from
 import { requireUser } from "@/lib/session";
 import { readTroops, troopsToText } from "@/lib/troops";
 import { loadUnitLabels, unitLabel } from "@/lib/unit-labels";
-import { saveTroopsAction, saveVillageInstructionsAction } from "../actions";
+import { BuildingsEditor } from "@/components/BuildingsEditor";
+import { buildingInfos, loadBuildingNames } from "@/lib/gamedata/names";
+import { saveBuildingsAction, saveTroopsAction, saveVillageInstructionsAction } from "../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +53,7 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
   const res = obj<ResState>(s?.resources);
   const fields = arr<Level>(s?.fields);
   const buildings = arr<Level>(s?.buildings);
+  const [bInfo, bNames] = await Promise.all([buildingInfos(db, buildings, locale, (n) => fmt(n, locale)), loadBuildingNames(db, locale)]);
   const queue = arr<QueueItem>(obj<{ construction?: unknown }>(s?.queues).construction);
 
   return (
@@ -142,17 +145,18 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
       </div>
 
       <section className="card flush" aria-labelledby="bld">
-        <div className="row between" style={{ alignItems: "baseline", margin: "12px 12px 8px" }}><h2 id="bld">{t("villages.bld.title")}</h2><span className="sub" style={{ fontSize: 12 }}>{t("villages.bld.later")} <Link href="/gamedata">{t("villages.bld.gamedata")}</Link></span></div>
+        <div className="row between" style={{ alignItems: "baseline", margin: "12px 12px 8px" }}><h2 id="bld">{t("villages.bld.title")}</h2><Link href="/gamedata" style={{ fontSize: 12 }}>{t("villages.bld.gamedata")}</Link></div>
         <div className="scroll">
           <table style={{ minWidth: 720 }}>
             <thead><tr><th>{t("villages.bld.building")}</th><th>{t("villages.bld.level")}</th><th>{t("villages.bld.benefit")}</th><th>{t("villages.bld.nextCost")}</th><th>{t("villages.bld.benefitAfter")}</th></tr></thead>
             <tbody>
               {buildings.length === 0 && <tr><td colSpan={5} className="sub">{t("villages.bld.empty")}</td></tr>}
-              {buildings.map((b, i) => <tr key={i}><td>{b.name ?? t("villages.bld.fallbackName", { n: i + 1 })}</td><td className="mono">{b.level}</td><td className="sub">–</td><td className="sub">–</td><td className="sub">–</td></tr>)}
+              {buildings.map((b, i) => { const info = bInfo.get(i); return <tr key={i}><td>{b.name ?? t("villages.bld.fallbackName", { n: b.slot ?? i + 1 })}</td><td className="mono">{b.level}{info?.maxed ? ` (${t("villages.bld.max")})` : ""}</td><td className="sub" style={{ fontSize: 12 }}>{info?.benefit ?? "–"}</td><td className="sub mono" style={{ fontSize: 12 }}>{info?.nextCost ?? "–"}</td><td className="sub" style={{ fontSize: 12 }}>{info?.benefitAfter ?? "–"}</td></tr>; })}
               {queue.map((q, i) => <tr key={`q${i}`}><td>{q.building} <span className="pill p-wait">{t("villages.bld.building.inProgress")}</span></td><td className="mono">→ {q.level ?? "?"}</td><td className="sub" colSpan={3}>{[q.remaining ? t("villages.bld.remaining", { time: q.remaining }) : null, q.finishAt ? t("villages.bld.finished", { time: q.finishAt }) : null].filter(Boolean).join(" · ")}</td></tr>)}
             </tbody>
           </table>
         </div>
+        <BuildingsEditor villageId={id} initial={buildings.map((b) => ({ slot: b.slot ?? null, name: b.name ?? null, level: b.level }))} names={bNames} action={saveBuildingsAction} />
       </section>
     </>
   );

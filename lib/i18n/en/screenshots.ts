@@ -76,5 +76,16 @@ const en = {
   "screenshots.files.quota": "Storage used: {used} of {limit} MB",
   "screenshots.files.quotaUnlimited": "Storage used: {used} MB",
   "screenshots.files.quotaLabel": "Storage usage",
+  "screenshots.review.kind": "Screenshot type",
+  "screenshots.review.expert": "Expert mode (JSON)",
+  "screenshots.review.fields": "Resource fields",
+  "screenshots.review.buildings": "Buildings",
+  "screenshots.review.rows": "Rows",
+  "screenshots.review.rowName": "Name",
+  "screenshots.review.rowCoord": "Coordinates",
+  "screenshots.review.rowCells": "Values (comma separated, - = unknown)",
+  "screenshots.retract": "Take confirmation back",
+  "screenshots.retract.hint": "Removes the learning example and puts the screenshot back into review. Village data already applied stays and can be corrected in the village.",
+  "screenshots.retract.failed": "Could not take back",
 } as const;
 export default en;

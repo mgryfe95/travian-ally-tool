@@ -154,3 +154,8 @@ Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`
 Was & Warum: map.sql wird nur noch **einmal täglich um 0:10** (`MAP_RELEASE_TIME`, Zeitzone `GAME_TIMEZONE`, Nachversuche +5/+15 Min.) geholt; der stündliche Takt ist aus (`IMPORT_CRON` leer, optional). **Fehler behoben:** Tagesstände wurden unter dem UTC-Tag gespeichert, ein Import nach Mitternacht Serverzeit landete beim Vortag (zwei Importe → ein Tagesstand, daher keine Inaktiven). Jetzt zählt der Tag der Spielserver-Uhr; Migration `fix_daily_stat_date` korrigiert den bestehenden einzelnen Tag einmalig.
 
 Nachtrag: Serverzeit ist fest UTC+1 ohne Sommerzeit, deshalb Standard `GAME_TIMEZONE=Etc/GMT-1` (statt Europe/Berlin). 0:10 Serverzeit = 01:10 Berliner Sommerzeit, im Winter 00:10.
+
+## 2026-10-16 · travian-ally-tool/vision/tabellen-pruefung-gebaeude
+Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`
+Was & Warum: (1) **Prüfung als Tabelle statt JSON:** Gebäude (Platz, Name aus den Spieldaten oder frei, Stufe), Rohstofffelder und Zeilen-Tabellen sind direkt editierbar, die Art des Screenshots ist wählbar; JSON nur noch im Expertenmodus. (2) **Gebäude im Dorf von Hand korrigieren** (`saveBuildings`, Dorfseite „Gebäude bearbeiten“). (3) **Namen je Platz bleiben erhalten:** Das Dorfzentrum-Bild liefert kaum Namen; fehlende Namen kommen vom bisherigen Stand (gleicher Platz, sonst gleiche Reihenfolge bei gleicher Anzahl, `inheritNames`). (4) **Bestätigung zurücknehmen** (`VisionPipeline.retract`, Knopf am Screenshot): entfernt das Lern-Beispiel, stellt den Screenshot zur erneuten Prüfung. (5) Dorfseite zeigt Nutzen aktuell, Kosten der nächsten Stufe und Nutzen danach aus den Spieldaten (Zuordnung über den Gebäudenamen, de/en).
+
