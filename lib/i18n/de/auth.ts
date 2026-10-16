@@ -56,5 +56,6 @@ const de: Record<keyof typeof en, string> = {
   "auth.claim.step2": "Travian veröffentlicht die Kartendaten jede Nacht zwischen 23:55 und 0:05 (nächste: {release}). Kurz nach {time} Uhr wird die Verlinkung automatisch geprüft – oder drücke „Verlinkung nachweisen“.",
   "auth.claim.mapState": "Letzter Kartenstand: {time}",
   "auth.claim.step3": "Sobald der Code gefunden wird, ist dein Konto automatisch freigeschaltet – danach kannst du das Dorf zurückbenennen (ab {time} Uhr).",
+  "auth.claim.linkedLocked": "Dein Spieler ist bereits verknüpft, dein Konto aber noch nicht freigeschaltet. Bitte wende dich an einen Moderator.",
 };
 export default de;

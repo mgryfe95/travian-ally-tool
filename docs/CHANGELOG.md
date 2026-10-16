@@ -110,3 +110,5 @@ Was & Warum: Einheitennamen je Volk (Plätze 1–6 für alle 7 Völker) aus dem 
 - Chat-Persistenz als E2E ergänzt (Nachricht bleibt nach Neuladen).
 
 - Mobil: Burger-Menü (standardmäßig zu) mit der Hauptnavigation, Profilbild-Menü rechts oben (Konto, Dateien, Sprache, Abmelden); untere Tab-Leiste entfällt. Großes Wappen oben links in der Seitenleiste.
+
+- Fix: Konto mit verifiziertem Link, aber Rolle Gast (z. B. von einem Moderator zurückgestuft) landete in einer Weiterleitungsschleife `/` ↔ `/claim` (Login „lädt ewig“). `/claim` leitet nur noch Nicht-Gäste nach `/` weiter und zeigt für verknüpfte, gesperrte Konten einen Hinweis; E2E `04-guest-lock`.

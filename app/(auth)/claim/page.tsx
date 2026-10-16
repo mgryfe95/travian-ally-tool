@@ -19,7 +19,8 @@ export default async function ClaimPage({ searchParams }: { searchParams: Promis
   if (user.role !== "GUEST") redirect("/");
   const lastMap = await db.snapshot.findFirst({ orderBy: { id: "desc" }, select: { fetchedAt: true } });
   const links = await db.playerLink.findMany({ where: { userId: user.id }, orderBy: { id: "desc" } });
-  if (links.some((l) => l.status === "verified")) redirect("/");
+  // Verknüpft, aber Rolle noch GUEST (z. B. von einem Moderator zurückgestuft): kein Redirect nach "/" – das Layout schickt GUEST sofort hierher zurück (Schleife).
+  const linkedButLocked = links.some((l) => l.status === "verified");
   const pending = links.find((l) => l.status === "pending");
   const player = pending ? await db.player.findUnique({ where: { id: pending.travianPlayerId } }) : null;
   const group = await loadRegistrablePlayers(db);
@@ -31,6 +32,7 @@ export default async function ClaimPage({ searchParams }: { searchParams: Promis
     <>
       <h1 style={{ fontSize: 22, marginBottom: 6 }}>{t("auth.claim.title")}</h1>
       <p className="sub" style={{ margin: "0 0 16px" }}>{t("auth.claim.intro")}</p>
+      {linkedButLocked && <p className="card warn" role="status" style={{ margin: "0 0 16px" }}>{t("auth.claim.linkedLocked")}</p>}
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <form action={startClaimAction} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <div>

@@ -54,5 +54,6 @@ const en = {
   "auth.claim.step2": "Travian publishes the map data every night between 23:55 and 0:05 (next: {release}). Shortly after {time} the link is checked automatically – or press “Prove link”.",
   "auth.claim.mapState": "Latest map data: {time}",
   "auth.claim.step3": "Once the code is found, your account is unlocked automatically – afterwards you can rename the village back (from {time}).",
+  "auth.claim.linkedLocked": "Your player is already linked, but your account has not been unlocked. Please ask a moderator.",
 } as const;
 export default en;
