@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { loadGroupPlayers } from "@/lib/alliance-group";
-import { nextHourlyRun } from "@/lib/cron-label";
+import { nextRelease, renameDeadline } from "@/lib/map-release";
 import { env } from "@/lib/env";
 import { INTL_TAG, type MessageKey } from "@/lib/i18n";
 import { getT } from "@/lib/i18n/server";
@@ -23,7 +23,10 @@ export default async function ClaimPage({ searchParams }: { searchParams: Promis
   const pending = links.find((l) => l.status === "pending");
   const player = pending ? await db.player.findUnique({ where: { id: pending.travianPlayerId } }) : null;
   const group = await loadGroupPlayers(db);
-  const next = nextHourlyRun(env().IMPORT_CRON);
+  const cfg = env();
+  const deadline = renameDeadline(cfg.MAP_RELEASE_TIME);
+  const release = nextRelease(new Date(), cfg.GAME_TIMEZONE, cfg.MAP_RELEASE_TIME);
+  const clock = (d: Date) => new Intl.DateTimeFormat(INTL_TAG[locale], { timeZone: cfg.GAME_TIMEZONE, weekday: "short", hour: "2-digit", minute: "2-digit" }).format(d);
   return (
     <>
       <h1 style={{ fontSize: 22, marginBottom: 6 }}>{t("auth.claim.title")}</h1>
@@ -43,9 +46,9 @@ export default async function ClaimPage({ searchParams }: { searchParams: Promis
             <div className="card" style={{ background: "#191612" }}>
               <div style={{ fontWeight: 600, marginBottom: 6 }}>{t("auth.claim.howTo")}</div>
               <ol style={{ margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 6, color: "var(--text2)" }}>
-                <li>{t("auth.claim.step1")} <span className="mono" style={{ color: "var(--link-h)", fontSize: 16 }}>{pending.claimCode}</span></li>
-                <li>{next ? t("auth.claim.step2Next", { time: next.toLocaleTimeString(INTL_TAG[locale], { hour: "2-digit", minute: "2-digit" }) }) : t("auth.claim.step2")}</li>
-                <li>{t("auth.claim.step3")}</li>
+                <li>{t("auth.claim.step1", { deadline, tz: cfg.GAME_TIMEZONE })} <span className="mono" style={{ color: "var(--link-h)", fontSize: 16 }}>{pending.claimCode}</span></li>
+                <li>{t("auth.claim.step2", { release: clock(release), time: cfg.MAP_RELEASE_TIME })}</li>
+                <li>{t("auth.claim.step3", { time: cfg.MAP_RELEASE_TIME })}</li>
               </ol>
             </div>
             <div className="row" style={{ gap: 10, alignItems: "center" }}>
@@ -53,7 +56,7 @@ export default async function ClaimPage({ searchParams }: { searchParams: Promis
               <span className="pill p-wait">{t("auth.claim.waiting")}</span>
             </div>
             {r && ["unchanged", "not_found", "throttled", "error", "no_claim"].includes(r) && <p className="sub" role="status">{t(`auth.claim.res.${r}` as MessageKey)}</p>}
-            {lastMap && <p className="sub" style={{ fontSize: 12, margin: 0 }}>{t("auth.claim.mapState", { time: fmtDate(lastMap.fetchedAt, locale), next: fmtDate(new Date(lastMap.fetchedAt.getTime() + 86_400_000), locale) })}</p>}
+            {lastMap && <p className="sub" style={{ fontSize: 12, margin: 0 }}>{t("auth.claim.mapState", { time: fmtDate(lastMap.fetchedAt, locale) })}</p>}
           </>
         )}
         <div className="sub" style={{ fontSize: 13 }}>{t("auth.claim.manual")}</div>

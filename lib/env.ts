@@ -24,6 +24,10 @@ const schema = z.object({
   SMTP_USER: z.preprocess(emptyToUndefined, z.string().optional()),
   SMTP_PASS: z.preprocess(emptyToUndefined, z.string().optional()),
   SMTP_FROM: z.string().default("Ally Tool <noreply@localhost>"),
+  /** Travian veröffentlicht map.sql täglich zwischen 23:55 und 0:05 Serverzeit; der Worker holt sie kurz danach (+5 und +15 Min. als Nachversuch). */
+  MAP_RELEASE_TIME: z.string().regex(/^\d{1,2}:\d{2}$/).default("00:05"),
+  /** Zeitzone der Spielserver-Uhr (für Release-Zeit und Hinweise). */
+  GAME_TIMEZONE: z.string().default("Europe/Berlin"),
   STORAGE_DIR: z.string().default("./storage"),
   /** Speicherplatz je Nutzer für Screenshots + Chat-Dateien in MB (0 = unbegrenzt). */
   USER_QUOTA_MB: z.coerce.number().min(0).default(10),

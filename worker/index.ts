@@ -7,6 +7,7 @@ import { purgeOldScreenshots } from "../lib/screenshots";
 import { checkClaims } from "../lib/services/verification";
 import { cleanupOrphanAttachments } from "../lib/chat/cleanup";
 import { recordImportOutcome } from "../lib/services/world";
+import { releaseCrons } from "../lib/map-release";
 
 const cfg = env();
 let running = false;
@@ -34,6 +35,8 @@ export async function runImport() {
 
 if (!cron.validate(cfg.IMPORT_CRON)) throw new Error(`Invalid IMPORT_CRON: ${cfg.IMPORT_CRON}`);
 cron.schedule(cfg.IMPORT_CRON, () => void runImport());
+// Gezielt nach der täglichen Veröffentlichung (Release-Zeit +0/+5/+15 Min.): Verifizierungen per Dorfname greifen sofort.
+for (const expr of releaseCrons(cfg.MAP_RELEASE_TIME)) cron.schedule(expr, () => void runImport(), { timezone: cfg.GAME_TIMEZONE });
 // Verwaiste Chat-Uploads (ohne Nachricht, älter als 24 h) stündlich aufräumen.
 cron.schedule("20 3 * * *", () => void purgeOldScreenshots(db, cfg.SCREENSHOT_RETENTION_DAYS).then((n) => n && console.log("[worker] alte Screenshots gelöscht:", n)).catch((e) => console.error("[worker] purge failed", e)));
 cron.schedule("40 * * * *", () => void cleanupOrphanAttachments(db).then((n) => n && console.log("[worker] verwaiste Uploads gelöscht:", n)).catch((e) => console.error("[worker] cleanup failed", e)));

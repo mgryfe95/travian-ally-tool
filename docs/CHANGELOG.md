@@ -87,3 +87,7 @@ Was & Warum: Einheitennamen je Volk (Plätze 1–6 für alle 7 Völker) aus dem 
 - Registrierung ohne Einladung nur mit Ingame-Spielernamen, dessen Allianz eigene Gruppe oder enger Bündnispartner ist; der Code zum Dorf-Umbenennen wird sofort erzeugt.
 - Unverifizierte Konten (Rolle GUEST) sind komplett gesperrt: alle App-Seiten leiten auf `/claim`; GUEST-Rechte entfernt (Migration löscht sie). „Als Gast weiter“ entfällt.
 - Knopf „Verlinkung nachweisen“ (`proveLink`): prüft sofort gegen den letzten Import, lädt sonst map.sql neu (global höchstens alle 5 Minuten) und verifiziert bei Treffer. Travian veröffentlicht map.sql nur etwa einmal täglich – ist die Datei unverändert, meldet die Seite das.
+
+## 2026-10-16 · map.sql-Abruf nach der täglichen Veröffentlichung · Notion-Root 3f912988-7097-813a-be0b-e9ee8831f987
+- Worker holt map.sql zusätzlich gezielt um `MAP_RELEASE_TIME` (00:05) +0/+5/+15 Min. in `GAME_TIMEZONE`; Verifizierung per Dorfname greift so direkt nach der Veröffentlichung (23:55–0:05).
+- Verifizierungsseite: „Benenne bis 23:55 (Serverzeit) ein Dorf in CODE um“, nächste Veröffentlichung und Zeit der Prüfung werden angezeigt; Zurückbenennen ab 0:05 möglich (`lib/map-release.ts`).
