@@ -111,7 +111,7 @@ MS=$(docker compose exec -T app npx prisma migrate status 2>&1 | tr -d '\r')
 echo "$MS" | grep -q "up to date" && ok "Datenbank-Migrationen: aktuell ($(echo "$MS" | grep -oE '[0-9]+ migrations found' | head -1))" || { bad "Datenbank-Migrationen nicht aktuell"; detail "$MS" 8; }
 
 CODE=$(curl -s -m 15 -o /tmp/ally-login.html -w '%{http_code} %{time_total}' "$BASE/login")
-[ "${CODE%% *}" = "200" ] && grep -q "HUMANS" /tmp/ally-login.html && ok "Login-Seite liefert das neue Design (HTTP 200, ${CODE#* } s)" || bad "Login-Seite: HTTP ${CODE%% *} (erwartet 200 mit Humans-Design)"
+[ "${CODE%% *}" = "200" ] && grep -qi "humans" /tmp/ally-login.html && ok "Login-Seite liefert das neue Design (HTTP 200, ${CODE#* } s)" || bad "Login-Seite: HTTP ${CODE%% *} (erwartet 200 mit Humans-Design)"
 ASSET=$(grep -oE '/_next/static/[^"]+\.(js|css)' /tmp/ally-login.html | head -1)
 [ -n "$ASSET" ] && [ "$(curl -s -m 15 -o /dev/null -w '%{http_code}' "$BASE$ASSET")" = "200" ] && ok "Statische Dateien (JS/CSS) werden ausgeliefert" || bad "Statische Dateien nicht erreichbar ($ASSET)"
 
