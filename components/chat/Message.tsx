@@ -9,6 +9,12 @@ import type { MessageView } from "@/lib/services/chat";
 import { USER_ROLE_KEY } from "./roles";
 
 const AV = ["#1e3556", "#5e7f3a", "#8a6414", "#6b3f63"];
+/** Tags nach Tag-Typ gruppieren (Reihenfolge der ersten Vorkommen bleibt erhalten). */
+const groupTags = (tags: MessageView["tags"]) => {
+  const g = new Map<number, { typeId: number; typeName: string; tags: MessageView["tags"] }>();
+  for (const t of tags) (g.get(t.typeId) ?? g.set(t.typeId, { typeId: t.typeId, typeName: t.typeName, tags: [] }).get(t.typeId)!).tags.push(t);
+  return [...g.values()];
+};
 const size = (b: number, locale: Locale) => (b > 1_048_576 ? `${(b / 1_048_576).toLocaleString(INTL_TAG[locale], { minimumFractionDigits: 1, maximumFractionDigits: 1 })} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
 
 export function MessageItem(props: {
@@ -37,7 +43,12 @@ export function MessageItem(props: {
           <span className="sub" style={{ fontSize: 12 }}>{roleKey ? t(roleKey) : m.author.role}</span>
           <span className="mono sub" style={{ fontSize: 12 }}>{time}{m.editedAt ? t("chat.msg.edited") : ""}</span>
           {props.showChannel && <span className="chip"># {m.channelName}</span>}
-          {m.tags.map((tag) => <span key={tag.id} className={`pill t-${tag.color}`}>{tag.name}</span>)}
+          {groupTags(m.tags).map((g) => (
+            <span key={g.typeId} className="row" style={{ gap: 4, alignItems: "baseline" }}>
+              <span className="sub" style={{ fontSize: 11 }}>{g.typeName}:</span>
+              {g.tags.map((tag) => <span key={tag.id} className={`pill t-${tag.color}`}>{tag.name}</span>)}
+            </span>
+          ))}
           <span className="msg-actions">
             {props.canEdit && <button type="button" className="btn ghost sm" style={{ minHeight: 28 }} onClick={() => { setDraft(m.body); setEditing(true); }}>{t("chat.msg.edit")}</button>}
             {props.canDelete && <button type="button" className="btn ghost sm" style={{ minHeight: 28 }} onClick={() => confirm(t("chat.msg.confirmDelete")) && props.onDelete(m.id)}>{t("chat.msg.delete")}</button>}

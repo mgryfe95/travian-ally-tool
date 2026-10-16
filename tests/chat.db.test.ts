@@ -46,7 +46,7 @@ describe("Schreiben", () => {
   it("Member postet mit Tag; Gast und fremde Rolle werden abgelehnt (403)", async () => {
     const tag = await db.tag.findFirstOrThrow({ where: { name: "Dringend" } });
     const m = await postMessage(db, await ctx(member), { channelId: await ch("Deff-Call"), body: "Angriff auf (12|-34)", tagIds: [tag.id] });
-    expect(m).toMatchObject({ body: "Angriff auf (12|-34)", tags: [{ name: "Dringend" }], author: { id: "m1" } });
+    expect(m).toMatchObject({ body: "Angriff auf (12|-34)", tags: [{ name: "Dringend", typeName: expect.any(String), typeId: expect.any(Number) }], author: { id: "m1" } });
     expect(await f(postMessage(db, await ctx(guest), { channelId: await ch("Mixed topics"), body: "hi" }))).toBeInstanceOf(ForbiddenError);
     expect(await f(postMessage(db, await ctx(guest), { channelId: await ch("Deff-Call"), body: "hi" }))).toBeInstanceOf(ForbiddenError);
   });

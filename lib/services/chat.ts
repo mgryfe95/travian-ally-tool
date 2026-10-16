@@ -100,11 +100,11 @@ export type MessageView = {
   body: string;
   createdAt: string;
   editedAt: string | null;
-  tags: { id: number; name: string; color: string }[];
+  tags: { id: number; name: string; color: string; typeId: number; typeName: string }[];
   attachments: { id: number; kind: string; mime: string; name: string; sizeBytes: number; width: number | null; height: number | null; hasThumb: boolean; snippet: string | null; removed: boolean }[];
 };
 
-type MessageRow = Prisma.MessageGetPayload<{ include: { tags: { include: { tag: true } }; attachments: true; channel: { select: { name: true } } } }>;
+type MessageRow = Prisma.MessageGetPayload<{ include: { tags: { include: { tag: { include: { tagType: true } } } }; attachments: true; channel: { select: { name: true } } } }>;
 
 async function toViews(db: PrismaClient, rows: MessageRow[]): Promise<MessageView[]> {
   const users = await db.user.findMany({ where: { id: { in: [...new Set(rows.map((r) => r.authorId))] } }, select: { id: true, name: true, email: true, role: true } });
@@ -115,13 +115,13 @@ async function toViews(db: PrismaClient, rows: MessageRow[]): Promise<MessageVie
       id: m.id, channelId: m.channelId, channelName: m.channel.name,
       author: { id: m.authorId, name: u?.name ?? translate(DEFAULT_LOCALE, "err.deletedUser"), role: u ? effectiveRole(u, env().SYSTEMADMIN_EMAILS) : "GUEST" },
       body: m.body, createdAt: m.createdAt.toISOString(), editedAt: m.editedAt?.toISOString() ?? null,
-      tags: m.tags.map((t) => ({ id: t.tag.id, name: t.tag.name, color: t.tag.color })),
+      tags: [...m.tags].sort((a, b) => a.tag.tagType.sortOrder - b.tag.tagType.sortOrder || a.tag.tagTypeId - b.tag.tagTypeId || a.tag.id - b.tag.id).map((t) => ({ id: t.tag.id, name: t.tag.name, color: t.tag.color, typeId: t.tag.tagTypeId, typeName: t.tag.tagType.name })),
       attachments: m.attachments.map((a) => ({ id: a.id, kind: a.kind, mime: a.mime, name: a.name, sizeBytes: a.sizeBytes, width: a.width, height: a.height, hasThumb: !!a.thumbKey && !a.removedAt, snippet: a.snippet, removed: a.removedAt !== null })),
     };
   });
 }
 
-const INCLUDE = { tags: { include: { tag: true } }, attachments: { orderBy: { id: "asc" as const } }, channel: { select: { name: true } } };
+const INCLUDE = { tags: { include: { tag: { include: { tagType: true } } } }, attachments: { orderBy: { id: "asc" as const } }, channel: { select: { name: true } } };
 
 async function loadView(db: PrismaClient, id: number) {
   const row = await db.message.findUnique({ where: { id }, include: INCLUDE });

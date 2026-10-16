@@ -60,7 +60,6 @@ export function ChatClient(props: ChatProps) {
   const sendTree = channels.find((c) => c.id === sendChannel)?.tree;
   // Typen, die im Zielkanal angeboten werden
   const offered = useMemo(() => tagTypes.filter((t) => (sendChannel !== undefined && t.channelIds.includes(sendChannel)) || (sendTree === "TASKFORCE" && t.forTaskforces)), [tagTypes, sendChannel, sendTree]);
-  const allTags = useMemo(() => tagTypes.flatMap((t) => t.tags), [tagTypes]);
   const togglePick = (t: TagTypeView, id: number) =>
     setPicked((p) => {
       const cur = p[t.id] ?? [];
@@ -275,7 +274,12 @@ export function ChatClient(props: ChatProps) {
             <label className="sr" htmlFor="chat-q">{t("chat.search")}</label>
             <input id="chat-q" className="field" placeholder={t("chat.search.placeholder")} value={q} onChange={(e) => setQ(e.target.value)} style={{ width: 150, minHeight: 32 }} />
             <button type="button" className={`filterchip ${tagFilter === null ? "on" : ""}`} onClick={() => setTagFilter(null)}>{t("chat.filter.allTags")}</button>
-            {allTags.map((t) => <button key={t.id} type="button" className={`filterchip ${tagFilter === t.id ? "on" : ""}`} onClick={() => setTagFilter(tagFilter === t.id ? null : t.id)}>{t.name}</button>)}
+            {tagTypes.filter((tt) => tt.tags.length > 0).map((tt) => (
+              <span key={tt.id} className="row" role="group" aria-label={tt.name} style={{ gap: 4, alignItems: "center" }}>
+                <span className="sub" style={{ fontSize: 11 }}>{tt.name}:</span>
+                {tt.tags.map((g) => <button key={g.id} type="button" className={`filterchip ${tagFilter === g.id ? "on" : ""}`} onClick={() => setTagFilter(tagFilter === g.id ? null : g.id)}>{g.name}</button>)}
+              </span>
+            ))}
           </div>
         </header>
 
