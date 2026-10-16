@@ -6,3 +6,8 @@ coverage
 storage
 test-results
 playwright-report
+
+deploy.log
+deploy.result
+.deploy-run.sh
+backups/

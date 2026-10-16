@@ -138,9 +138,9 @@ Das sichert Datenbank-Dump, Chat-Anhänge und `.env` (14 Tage, `KEEP_DAYS` ände
 
 ## 9. Updates
 ```bash
-cd /opt/travian-ally-tool && ./scripts/deploy.sh          # Backup → git pull → build → up -d → Health-Check
+cd /opt/travian-ally-tool && git pull && ./scripts/deploy.sh
 ```
-(`./scripts/deploy.sh claude/new-session-hlffy1` für einen anderen Branch.)
+Das Skript sichert zuerst (Datenbank, Dateien, `.env`), holt den Code, baut, startet (Migrationen laufen beim Start) und prüft danach selbst: Container gesund, Health-Check, Migrationen, Login-Seite im neuen Design, Anmelde-Endpunkt (antwortet auf falsche Zugangsdaten statt zu hängen), Chat-API, Worker, Kartendaten, Spieldaten, Fehler in den Logs. Am Ende steht **„✔ Deployment erfolgreich“** oder **„✘ Deployment fehlgeschlagen“** mit den Gründen und den letzten App-Logzeilen. Der Lauf geschieht im Hintergrund und überlebt einen SSH-Abbruch; das Ergebnis zeigt danach `./scripts/deploy.sh --status`, Details stehen in `deploy.log`. Anderer Branch: `./scripts/deploy.sh <branch>` (Standard: der aktuell ausgecheckte).
 
 ## 10. Spielwelt endet / neue Welt
 - Ist `map.sql` ~36 Stunden in Folge nicht abrufbar, markiert der Worker die Welt als **beendet**: oben erscheint ein Hinweis, der Stand bleibt als Archiv sichtbar, Chat und Konten funktionieren weiter. Kommt die Datei wieder, setzt sich der Status automatisch zurück.
