@@ -4,6 +4,8 @@ import { ForbiddenError, hasPermission, type Permission } from "../permissions";
 import { publish } from "../realtime";
 import { audit, loadMatrix, userLocale, type Actor } from "./context";
 import { ChatError } from "./chat";
+import { mailEnabled, sendMail } from "../mail";
+import { AppError } from "../i18n/errors";
 import { DEFAULT_LOCALE, INTL_TAG, translate, type Locale, type MessageKey } from "../i18n";
 
 export const CALL_KINDS = ["ATTACK", "DEFF", "ATTACK_DAY", "OTHER"] as const;
@@ -16,6 +18,7 @@ export const DEFAULT_TEMPLATES: { kind: CallKind; name: string; body: string }[]
   { kind: "ATTACK", name: "Angriff", body: "⚔️ **Angriff** auf **{spieler}** – {dorf} {koordinaten}\nZeit: {zeit}\n{link}\n{notiz}" },
   { kind: "DEFF", name: "Deff-Unterstützung", body: "🛡️ **Deff-Call** für **{spieler}** – {dorf} {koordinaten}\nBis: {zeit}\nBitte Truppen schicken: {link}\n{notiz}" },
   { kind: "ATTACK_DAY", name: "Angriffstag", body: "⚔️ **Angriffstag** {zeit}\n{titel}\n{notiz}" },
+  { kind: "OTHER", name: "Sonstiges", body: "📣 **{titel}**\n{zeit}\n{dorf} {koordinaten}\n{notiz}" },
 ];
 
 async function requirePerm(db: PrismaClient, actor: Actor, perm: Permission) {
@@ -58,13 +61,13 @@ export function berlinToDate(local: string): Date | null {
 const fmtTime = (d: Date | null, locale: Locale) =>
   d ? translate(locale, "err.call.time", { time: new Intl.DateTimeFormat(INTL_TAG[locale], { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" }).format(d) }) : "";
 
-type CallLike = { kind: string; title: string; x: number | null; y: number | null; playerId: number | null; playerName: string | null; villageName: string | null; at: Date | null; template: string; note: string };
+type CallLike = { kind: string; title: string; x: number | null; y: number | null; playerId: number | null; playerName: string | null; villageName: string | null; at: Date | null; eventAt?: Date | null; template: string; note: string };
 
 /** Setzt Platzhalter ein; leere Zeilen (nicht belegte Platzhalter) werden entfernt. Link führt zur Spielerseite im Tool. */
 export function renderCall(c: CallLike, appUrl = env().APP_URL, locale: Locale = DEFAULT_LOCALE): string {
   const vars: Record<string, string> = {
     art: c.kind in KIND_KEY ? translate(locale, KIND_KEY[c.kind as CallKind]) : c.kind, titel: c.title, spieler: c.playerName ?? "", dorf: c.villageName ?? "",
-    koordinaten: c.x !== null && c.y !== null ? `(${c.x}|${c.y})` : "", zeit: fmtTime(c.at, locale), link: c.playerId ? `${appUrl.replace(/\/+$/, "")}/players/${c.playerId}` : "", notiz: c.note,
+    koordinaten: c.x !== null && c.y !== null ? `(${c.x}|${c.y})` : "", zeit: fmtTime(c.eventAt ?? null, locale), link: c.playerId ? `${appUrl.replace(/\/+$/, "")}/players/${c.playerId}` : "", notiz: c.note,
   };
   // Englische Aliase für dieselben Platzhalter ({type}, {title}, {player}, {village}, {coords}, {time}, {note})
   Object.assign(vars, { type: vars.art, title: vars.titel, player: vars.spieler, village: vars.dorf, coords: vars.koordinaten, time: vars.zeit, note: vars.notiz });
@@ -81,7 +84,16 @@ export async function resolveTarget(db: PrismaClient, x: number, y: number) {
   return { villageId: v.id, villageName: v.name, playerId: v.playerId, playerName: p?.name ?? null };
 }
 
-export type CallInput = { kind: string; title?: string; coord?: string; at?: Date | null; channelId?: number; templateId?: number; note?: string; sendNow?: boolean };
+/** Umkehrung zu berlinToDate: Date → "2026-10-15T18:30" (für datetime-local). */
+export function dateToBerlinLocal(d: Date | null): string {
+  if (!d) return "";
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Berlin", hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(d);
+  const g = (k: string) => parts.find((p) => p.type === k)!.value;
+  return `${g("year")}-${g("month")}-${g("day")}T${g("hour")}:${g("minute")}`;
+}
+
+/** `at` = Sendezeitpunkt, `eventAt` = Termin des Angriffs/Ereignisses. */
+export type CallInput = { kind: string; title?: string; coord?: string; at?: Date | null; eventAt?: Date | null; channelId?: number; templateId?: number; note?: string; sendNow?: boolean };
 
 export async function createCall(db: PrismaClient, actor: Actor, input: CallInput, now = new Date()) {
   await requirePerm(db, actor, "schedule.manage");
@@ -95,20 +107,23 @@ export async function createCall(db: PrismaClient, actor: Actor, input: CallInpu
   if ((kind === "ATTACK" || kind === "DEFF") && !xy) throw new ChatError("err.call.coordsRequired");
   const target = xy ? await resolveTarget(db, xy[0], xy[1]) : null;
   if (xy && !target) throw new ChatError("err.call.noVillage", { x: xy[0], y: xy[1] });
-  const tpl = input.templateId ? await db.callTemplate.findUnique({ where: { id: input.templateId } }) : await db.callTemplate.findFirst({ where: { kind }, orderBy: { sortOrder: "asc" } });
+  const stored = input.templateId ? await db.callTemplate.findUnique({ where: { id: input.templateId } }) : await db.callTemplate.findFirst({ where: { kind }, orderBy: { sortOrder: "asc" } });
+  const tpl = stored ?? (input.templateId ? null : { ...DEFAULT_TEMPLATES.find((t) => t.kind === kind)!, channelId: null });
   if (!tpl) throw new ChatError("err.call.noTemplate");
   const channelId = input.channelId ?? tpl.channelId ?? (await db.channel.findFirst({ where: { tree: "ALLY", archivedAt: null }, orderBy: { sortOrder: "asc" } }))?.id;
   const ch = channelId ? await db.channel.findUnique({ where: { id: channelId } }) : null;
   if (!ch || ch.tree !== "ALLY" || ch.archivedAt) throw new ChatError("err.call.channelInvalid");
   const at = input.at ?? null;
+  const eventAt = input.eventAt ?? null;
+  if (at && eventAt && at > eventAt) throw new ChatError("err.call.sendAfterEvent");
   const note = (input.note ?? "").trim().slice(0, 500);
   const call = await db.allianceCall.create({
     data: {
       kind, title: (input.title ?? "").trim().slice(0, 80), x: xy?.[0] ?? null, y: xy?.[1] ?? null, villageId: target?.villageId, villageName: target?.villageName, playerId: target?.playerId,
-      playerName: target?.playerName, at, channelId: ch.id, template: tpl.body, note, status: at ? "scheduled" : "draft", createdBy: actor.id,
+      playerName: target?.playerName, at, eventAt, channelId: ch.id, template: tpl.body, note, status: at ? "scheduled" : "draft", createdBy: actor.id,
     },
   });
-  await audit(db, actor.id, "call.create", `call:${call.id}`, undefined, { kind, at, coord: xy });
+  await audit(db, actor.id, "call.create", `call:${call.id}`, undefined, { kind, at, eventAt, coord: xy });
   if (input.sendNow) return sendCall(db, actor, call.id, now);
   return call;
 }
@@ -155,16 +170,79 @@ export async function dispatchDueCalls(db: PrismaClient, now = new Date()): Prom
   return n;
 }
 
-export async function cancelCall(db: PrismaClient, actor: Actor, id: number) {
+/** Postet eine Folgemeldung (Änderung/Absage) in den Kanal des Calls; optional zusätzlich als Rundmail an alle Nicht-Gäste. */
+async function notifyChange(db: PrismaClient, actor: Actor, call: CallLike & { channelId: number }, key: "err.call.msg.updated" | "err.call.msg.cancelled", mail: boolean) {
+  const locale = await userLocale(db, actor.id);
+  const text = translate(locale, key, { text: renderCall(call, undefined, locale) });
+  const m = await db.message.create({ data: { channelId: call.channelId, authorId: actor.id, body: text }, include: { channel: { select: { name: true } } } });
+  const author = await db.user.findUnique({ where: { id: actor.id }, select: { name: true, role: true } });
+  publish(call.channelId, "message:new", {
+    id: m.id, channelId: m.channelId, channelName: m.channel.name, author: { id: actor.id, name: author?.name ?? translate(DEFAULT_LOCALE, "err.deletedUser"), role: author?.role ?? "MEMBER" },
+    body: m.body, createdAt: m.createdAt.toISOString(), editedAt: null, tags: [], attachments: [],
+  });
+  if (!mail) return;
+  const users = await db.user.findMany({ where: { role: { not: "GUEST" }, banned: false }, select: { email: true, locale: true } });
+  for (const u of users) {
+    const l = u.locale && (u.locale === "de" || u.locale === "en") ? u.locale : DEFAULT_LOCALE;
+    try {
+      await sendMail({ to: u.email, subject: translate(l, key === "err.call.msg.cancelled" ? "err.call.mail.cancelled" : "err.call.mail.updated"), text: translate(l, key, { text: renderCall(call, undefined, l) }) });
+    } catch (e) {
+      console.error("[schedule] Rundmail fehlgeschlagen", e);
+    }
+  }
+}
+
+function assertMail(mail: boolean) {
+  if (mail && !mailEnabled()) throw new AppError("err.mail.smtp");
+}
+
+/** Bricht ab. War der Call schon gesendet, geht automatisch eine Absage in den Kanal (und optional per Mail). */
+export async function cancelCall(db: PrismaClient, actor: Actor, id: number, opts: { mail?: boolean } = {}) {
   await requirePerm(db, actor, "schedule.manage");
-  const r = await db.allianceCall.updateMany({ where: { id, status: { in: ["scheduled", "draft"] } }, data: { status: "cancelled" } });
-  if (r.count === 0) throw new ChatError("err.call.cannotCancel");
+  assertMail(!!opts.mail);
+  const before = await db.allianceCall.findUnique({ where: { id } });
+  const r = await db.allianceCall.updateMany({ where: { id, status: { in: ["scheduled", "draft", "sent"] } }, data: { status: "cancelled" } });
+  if (r.count === 0 || !before) throw new ChatError("err.call.cannotCancel");
   await audit(db, actor.id, "call.cancel", `call:${id}`);
+  if (before.status === "sent") await notifyChange(db, actor, before, "err.call.msg.cancelled", !!opts.mail);
 }
 
 export async function deleteCall(db: PrismaClient, actor: Actor, id: number) {
   await requirePerm(db, actor, "schedule.manage");
   await db.allianceCall.deleteMany({ where: { id, status: { in: ["cancelled", "sent"] } } });
+}
+
+export type CallEdit = { title?: string; coord?: string; at?: Date | null; eventAt?: Date | null; note?: string; mail?: boolean };
+
+/** Ändert Ziel, Termin, Sendezeit, Titel oder Notiz. Ein bereits gesendeter Call meldet die Änderung automatisch im Kanal (optional zusätzlich per Rundmail). */
+export async function updateCall(db: PrismaClient, actor: Actor, id: number, input: CallEdit) {
+  await requirePerm(db, actor, "schedule.manage");
+  assertMail(!!input.mail);
+  const cur = await db.allianceCall.findUnique({ where: { id } });
+  if (!cur || cur.status === "cancelled" || cur.status === "sending") throw new ChatError("err.call.cannotEdit");
+  const sent = cur.status === "sent";
+  let xy: [number, number] | null = cur.x !== null && cur.y !== null ? [cur.x, cur.y] : null;
+  if (input.coord !== undefined) {
+    xy = input.coord.trim() ? parseCoord(input.coord) : null;
+    if (input.coord.trim() && !xy) throw new ChatError("err.call.coordFormat");
+  }
+  if ((cur.kind === "ATTACK" || cur.kind === "DEFF") && !xy) throw new ChatError("err.call.coordsRequired");
+  const target = xy ? await resolveTarget(db, xy[0], xy[1]) : null;
+  if (xy && !target) throw new ChatError("err.call.noVillage", { x: xy[0], y: xy[1] });
+  const eventAt = input.eventAt !== undefined ? input.eventAt : cur.eventAt;
+  const at = sent ? cur.at : input.at !== undefined ? input.at : cur.at;
+  if (at && eventAt && at > eventAt) throw new ChatError("err.call.sendAfterEvent");
+  const upd = await db.allianceCall.update({
+    where: { id },
+    data: {
+      title: input.title !== undefined ? input.title.trim().slice(0, 80) : undefined, note: input.note !== undefined ? input.note.trim().slice(0, 500) : undefined,
+      x: xy?.[0] ?? null, y: xy?.[1] ?? null, villageId: target?.villageId ?? null, villageName: target?.villageName ?? null, playerId: target?.playerId ?? null, playerName: target?.playerName ?? null,
+      eventAt, at, status: sent ? "sent" : at ? "scheduled" : "draft",
+    },
+  });
+  await audit(db, actor.id, "call.update", `call:${id}`, undefined, { eventAt, at, coord: xy });
+  if (sent) await notifyChange(db, actor, upd, "err.call.msg.updated", !!input.mail);
+  return upd;
 }
 
 export async function saveTemplate(db: PrismaClient, actor: Actor, input: { id?: number; kind: string; name: string; body: string; channelId?: number | null }) {

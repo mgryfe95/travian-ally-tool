@@ -1,3 +1,4 @@
+import type { PlayerStatus } from "@/lib/analytics";
 import { CoordInput } from "@/components/CoordInput";
 import { CoordLink } from "@/components/CoordLink";
 import Link from "next/link";
@@ -49,15 +50,17 @@ export default async function InactivePage({ searchParams }: { searchParams: Pro
   const ownIds = ownGroupIds(relations);
   const allyMode = sp.ally === "none" ? "none" : sp.ally === "all" ? "all" : "others";
   const minDays = int(sp.minDays) ?? inactiveDays;
+  // Unterhalb der Inaktiv-Schwelle (Testzwecke): auch noch nicht als inaktiv eingestufte Spieler berücksichtigen
+  const statuses: PlayerStatus[] = minDays < inactiveDays ? ["active", "stagnant", "declining", "inactive"] : ["inactive"];
   const results = origin
-    ? searchInactive(await loadCandidates(db), origin.coord, {
-        maxDistance: int(sp.maxDistance), maxPop: int(sp.maxPop), minDays, tribe: int(sp.tribe),
+    ? searchInactive(await loadCandidates(db, statuses), origin.coord, {
+        statuses, maxDistance: int(sp.maxDistance), maxPop: int(sp.maxPop), minDays, tribe: int(sp.tribe),
         allianceId: allyMode === "none" ? 0 : undefined,
         excludeAllianceIds: allyMode === "others" ? ownIds : undefined,
       })
     : [];
   const snap = await db.snapshot.findFirst({ orderBy: { id: "desc" }, select: { fetchedAt: true } });
-  const dayOptions = [...new Set([inactiveDays, 5, 7].filter((d) => d >= inactiveDays))];
+  const dayOptions = [...new Set([1, 2, inactiveDays, 5, 7])].sort((a, b) => a - b);
   const keep = (extra: Params) => "?" + new URLSearchParams(Object.entries({ ...sp, ...extra }).filter(([, v]) => v) as [string, string][]).toString();
 
   return (

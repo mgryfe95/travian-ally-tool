@@ -605,7 +605,10 @@ model AllianceCall {
   villageName  String?
   playerId     Int?
   playerName   String?
+  /// Sendezeitpunkt: wann der Call automatisch in den Kanal gepostet wird (leer = nur auf Abruf)
   at           DateTime?
+  /// Termin: wann der Angriff / Angriffstag / Deff-Bedarf stattfindet ({zeit} im Text)
+  eventAt      DateTime?
   channelId    Int
   /// Vorlagentext zum Zeitpunkt des Anlegens (Platzhalter werden beim Senden ersetzt)
   template     String
@@ -617,6 +620,7 @@ model AllianceCall {
   messageId    Int?
 
   @@index([status, at])
+  @@index([eventAt])
 }
 
 /// Einladung in eine Task-Force; der Eingeladene nimmt an oder lehnt ab. role = Rolle nach Annahme (lead nur vom Gründer vergeben).

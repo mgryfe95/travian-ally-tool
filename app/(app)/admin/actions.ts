@@ -11,7 +11,7 @@ import { ForbiddenError, PERMISSIONS, ROLES, type Permission, type Role } from "
 import { classifyAlliance, deleteUser, setRolePermission, setUserBanned, setUserRole } from "@/lib/services/admin";
 import { approveLink, assignPlayer, createInvite, inviteMessage, rejectLink, revokeInvite, VerificationError } from "@/lib/services/verification";
 import { ChatError, chatCtx, createChannel, deleteTag, deleteTagType, moveChannel, saveTag, saveTagType, updateChannel } from "@/lib/services/chat";
-import { berlinToDate, cancelCall, createCall, deleteCall, deleteTemplate, saveTemplate, sendCall } from "@/lib/services/schedule";
+import { berlinToDate, cancelCall, createCall, deleteCall, deleteTemplate, saveTemplate, sendCall, updateCall } from "@/lib/services/schedule";
 import { requireUser } from "@/lib/session";
 import { loadMemberRows } from "./tabs/data";
 
@@ -150,7 +150,7 @@ export async function deleteTagTypeAction(f: FormData) {
 }
 
 // ───────── Allianz-Schedule ─────────
-async function runSchedule(fn: () => Promise<void>): Promise<never> {
+async function runSchedule(fn: () => Promise<void>, ok?: string): Promise<never> {
   let error: string | undefined;
   try {
     await fn();
@@ -158,24 +158,35 @@ async function runSchedule(fn: () => Promise<void>): Promise<never> {
     if (e instanceof AppError || e instanceof ForbiddenError || e instanceof ChatError) error = localizeError(e, await getLocale());
     else throw e;
   }
-  redirect(`/schedule${error ? `?error=${encodeURIComponent(error)}` : ""}`);
+  redirect(`/schedule${error ? `?error=${encodeURIComponent(error)}` : ok ? `?ok=${ok}` : ""}`);
+}
+function timeField(f: FormData, name: string): Date | null {
+  const raw = str(f, name).trim();
+  if (!raw) return null;
+  const d = berlinToDate(raw);
+  if (!d) throw new AppError("admin.err.invalidTime");
+  return d;
 }
 export async function createCallAction(f: FormData) {
+  const now = f.get("sendNow") === "1";
   return runSchedule(async () => {
-    const atRaw = str(f, "at").trim();
-    const at = atRaw ? berlinToDate(atRaw) : null;
-    if (atRaw && !at) throw new AppError("admin.err.invalidTime");
     await createCall(db, await requireUser(), {
-      kind: str(f, "kind"), title: str(f, "title"), coord: str(f, "coord"), at, note: str(f, "note"),
-      channelId: f.get("channelId") ? int(f, "channelId") : undefined, templateId: f.get("templateId") ? int(f, "templateId") : undefined, sendNow: f.get("sendNow") === "1",
+      kind: str(f, "kind"), title: str(f, "title"), coord: str(f, "coord"), at: timeField(f, "at"), eventAt: timeField(f, "eventAt"), note: str(f, "note"),
+      channelId: f.get("channelId") ? int(f, "channelId") : undefined, templateId: f.get("templateId") ? int(f, "templateId") : undefined, sendNow: now,
     });
-  });
+  }, now ? "sent" : "created");
+}
+export async function updateCallAction(f: FormData) {
+  return runSchedule(async () =>
+    void (await updateCall(db, await requireUser(), int(f, "callId"), {
+      title: str(f, "title"), coord: str(f, "coord"), note: str(f, "note"), eventAt: timeField(f, "eventAt"), at: f.has("at") ? timeField(f, "at") : undefined, mail: f.get("mail") === "on",
+    })), "updated");
 }
 export async function sendCallAction(f: FormData) {
-  return runSchedule(async () => void (await sendCall(db, await requireUser(), int(f, "callId"))));
+  return runSchedule(async () => void (await sendCall(db, await requireUser(), int(f, "callId"))), "sent");
 }
 export async function cancelCallAction(f: FormData) {
-  return runSchedule(async () => cancelCall(db, await requireUser(), int(f, "callId")));
+  return runSchedule(async () => cancelCall(db, await requireUser(), int(f, "callId"), { mail: f.get("mail") === "on" }), "cancelled");
 }
 export async function deleteCallAction(f: FormData) {
   return runSchedule(async () => deleteCall(db, await requireUser(), int(f, "callId")));

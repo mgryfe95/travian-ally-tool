@@ -124,3 +124,8 @@ Was & Warum: Einheitennamen je Volk (Plätze 1–6 für alle 7 Völker) aus dem 
 - Echtes Humans-Logo (aus dem Gemini-Entwurf freigestellt): `public/logo.png` (Anmeldeseiten), `public/logo-small.png` (Seitenleiste, Handy-Kopfzeile), `app/icon.png` (Browser-Tab). Platzhalter-SVG entfällt.
 
 - **Keine Systemadmin-Rolle mehr**: Rollen sind GUEST < MEMBER < MODERATOR < ADMIN. Admins sind gleichberechtigt (immer alle Rechte, ändern jede Rolle und die Rechte-Matrix für Moderator/Mitglied/Gast), kein Schloss im UI. `SYSTEMADMIN_EMAILS` bleibt als Notzugang: diese Konten sind immer Admin und nicht sperr-/löschbar; das eigene Konto kann niemand sperren/löschen.
+
+## 2026-10-16 · travian-ally-tool/schedule/termin-vs-senden
+Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`
+Was & Warum: Calls trennen jetzt klar **Termin** (`eventAt`, Angriff/Ereignis, steht als `{zeit}` im Text) und **Sendezeit** (`at`, wann die Nachricht gepostet wird; leer = auf Abruf). Fehler, wenn Sendezeit nach dem Termin liegt. Migration `call_event_at` (Backfill eventAt = at). Standardvorlage „Sonstiges“ plus Fallback auf Standardvorlagen (vorher Fehler „Keine Vorlage“ bei Art Sonstiges, der kaum sichtbar war). Fehler und Erfolg auf der Seite deutlich sichtbar. „Anstehend“ zeigt auch bereits gesendete Calls mit künftigem Termin. Calls bearbeitbar (Ziel, Termin, Sendezeit, Titel, Notiz); Änderung/Absage eines gesendeten Calls meldet sich automatisch im Kanal, optional zusätzlich als Rundmail (nur mit SMTP). Inaktive-Filter: auch „ab 1/2 Tagen“ (Testzwecke, berücksichtigt dann auch noch nicht als inaktiv eingestufte Spieler).
+

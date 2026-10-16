@@ -69,3 +69,6 @@ Punkte, die Projekt, Aufbau oder andere Bereiche betreffen, aber nicht direkt zu
 
 ## 2026-10-16 · Backlog
 - S3 (Hetzner Object Storage) für Screenshots später anschließen: Bucket + Zugangsdaten in `.env` (siehe docs/DEPLOY.md); Code ist vorbereitet, derzeit lokale Ablage.
+
+- 2026-10-16: Offen (Wunsch): Call-Typen frei anlegbar (z. B. Ressourcen), Ziel-Kanal je neuer Vorlage, optional Direktnachricht je Vorlage; Erwähnungen (@), Antworten eine Ebene tief, Seite „Meine Erwähnungen“ mit Sprung zur Nachricht.
+
