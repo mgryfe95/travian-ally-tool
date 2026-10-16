@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { LogoMark } from "@/components/Logo";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
@@ -45,7 +46,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     <div className="shell">
       <MobileNav items={items} name={user.name} role={ROLE_LABEL[user.role] ? t(ROLE_LABEL[user.role]!) : user.role} />
       <nav className="side" aria-label={t("nav.main")}>
-        <div className="logo"><LogoMark size={64} />Humans</div>
+        <Link className="logo" href="/" aria-label="Humans"><LogoMark size={150} /></Link>
         <div className="srv">{[serverLabel(env().TRAVIAN_SERVER_URL), tag].filter(Boolean).join(" · ")}</div>
         <SideNav items={items} />
         <div className="me">

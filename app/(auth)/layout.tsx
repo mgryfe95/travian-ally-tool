@@ -10,7 +10,7 @@ export default async function AuthLayout({ children }: { children: ReactNode }) 
   return (
     <div className="authwrap">
       <div className="authhero">
-        <LogoEmblem size={190} />
+        <LogoEmblem size={320} />
         <div className="tag">Community · Humanity · Support</div>
         <div className="sub" style={{ color: "var(--side-muted)" }}>{[serverLabel(env().TRAVIAN_SERVER_URL), tag].filter(Boolean).join(" · ")}</div>
       </div>

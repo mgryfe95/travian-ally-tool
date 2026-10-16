@@ -24,7 +24,7 @@ export function MobileNav({ items, name, role }: { items: NavItem[]; name: strin
       <button type="button" className="iconbtn" aria-label={t("nav.menu")} aria-expanded={menu} aria-controls="mobile-menu" onClick={() => { setMenu((v) => !v); setProfile(false); }}>
         <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
       </button>
-      <Link href="/" className="logo" style={{ padding: 0 }}><LogoMark size={40} />Humans</Link>
+      <Link href="/" className="logo" style={{ padding: 0 }} aria-label="Humans"><LogoMark size={52} /></Link>
       <button type="button" className="avatarbtn" aria-label={t("nav.account")} aria-expanded={profile} aria-controls="profile-menu" onClick={() => { setProfile((v) => !v); setMenu(false); }}>
         {name[0]?.toUpperCase() ?? "?"}
       </button>
