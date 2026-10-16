@@ -18,6 +18,7 @@ export async function AlliancesTab({ q }: { q?: string }) {
       <div style={{ margin: 12 }}>
         <h2>{t("admin.alliances.title")}</h2>
         <div className="sub">{t("admin.alliances.hint", { own: "\u0000own", allied: "\u0000allied" }).split(/\u0000(own|allied)/).map((part, i) => part === "own" ? <b key={i}>{t("admin.relation.OWN")}</b> : part === "allied" ? <b key={i}>{t("admin.relation.ALLIED")}</b> : part)}</div>
+        <div className="sub" style={{ marginTop: 4 }}>{t("admin.alliances.closeAllyNote", { type: t("admin.relation.CLOSE_ALLY") })}</div>
         <form style={{ marginTop: 10 }}><input type="hidden" name="tab" value="alliances" /><input name="q" defaultValue={q} placeholder={t("admin.alliances.searchPlaceholder")} className="field" style={{ maxWidth: 280 }} /></form>
       </div>
       <div className="scroll">

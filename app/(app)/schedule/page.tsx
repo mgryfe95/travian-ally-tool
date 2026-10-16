@@ -1,3 +1,4 @@
+import { CoordInput } from "@/components/CoordInput";
 import { CoordLink } from "@/components/CoordLink";
 import { db } from "@/lib/db";
 import { fmtDate } from "@/lib/format";
@@ -45,8 +46,8 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
           <form action={createCallAction} className="row" style={{ flexWrap: "wrap", gap: 10, alignItems: "flex-end", marginTop: 8 }}>
             <div><label className="lbl" htmlFor="kind">{t("schedule.new.kind")}</label>
               <select id="kind" name="kind" className="field" style={{ width: "auto" }}>{CALL_KINDS.map((k) => <option key={k} value={k}>{kindLabel(k)}</option>)}</select></div>
-            <div><label className="lbl" htmlFor="coord">{t("schedule.new.coords")}</label>
-              <input id="coord" name="coord" className="field" placeholder="-3|-82" style={{ width: 120 }} /></div>
+            <div><label className="lbl" htmlFor="coord-x">{t("schedule.new.coords")}</label>
+              <CoordInput name="coord" idPrefix="coord" /></div>
             <div><label className="lbl" htmlFor="at">{t("schedule.new.time")}</label>
               <input id="at" name="at" type="datetime-local" className="field" style={{ width: "auto" }} /></div>
             <div><label className="lbl" htmlFor="chn">{t("schedule.new.channel")}</label>

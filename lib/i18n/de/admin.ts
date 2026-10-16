@@ -155,5 +155,6 @@ const de: Record<keyof typeof en, string> = {
   "admin.invite.openIgm": "Ingame-Nachricht öffnen",
   "admin.invite.copied": "Einladungstext in die Zwischenablage kopiert – füge ihn in die Nachricht ein.",
   "admin.invite.copyManual": "Automatisches Kopieren nicht möglich – nutze unten „IGM-Text kopieren“.",
+  "admin.alliances.closeAllyNote": "Hinweis: Spieler von Allianzen des Typs „{type}“ können sich genauso wie Mitglieder als Gast registrieren und müssen sich verifizieren (Dorf umbenennen oder Einladung) – bis dahin bleibt ihr Konto gesperrt.",
 };
 export default de;

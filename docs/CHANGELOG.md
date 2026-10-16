@@ -114,3 +114,5 @@ Was & Warum: Einheitennamen je Volk (Plätze 1–6 für alle 7 Völker) aus dem 
 - Fix: Konto mit verifiziertem Link, aber Rolle Gast (z. B. von einem Moderator zurückgestuft) landete in einer Weiterleitungsschleife `/` ↔ `/claim` (Login „lädt ewig“). `/claim` leitet nur noch Nicht-Gäste nach `/` weiter und zeigt für verknüpfte, gesperrte Konten einen Hinweis; E2E `04-guest-lock`.
 
 - `scripts/deploy.sh` neu: Backup → Code → Build → Start → 14 Prüfungen mit Haken, am Ende „Deployment erfolgreich/fehlgeschlagen“ inkl. Gründen; läuft im Hintergrund (`--status` zeigt das Ergebnis). Anmelde-Endpunkt-Prüfung fängt hängende Logins ab.
+
+- Koordinaten-Selektor (`components/CoordInput.tsx`): X/Y mit −/+ und ±, Einfügen von „(12|-34)“ (auch Unicode-Minus) füllt beide Felder; in Schedule und Inaktiven-Suche. Hinweis in Admin → Allianzen: enge Bündnispartner registrieren sich wie Mitglieder als Gast und müssen sich verifizieren. Schedule-Seite lokal geprüft: geplante Calls erscheinen unter „Anstehend“.

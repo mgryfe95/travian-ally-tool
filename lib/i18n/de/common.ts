@@ -6,5 +6,9 @@ const de: Record<keyof typeof en, string> = {
   "common.role.moderator": "Moderator",
   "common.role.member": "Mitglied",
   "common.role.guest": "Gast",
+  "common.coord.minus": "{axis} minus 1",
+  "common.coord.plus": "{axis} plus 1",
+  "common.coord.sign": "Vorzeichen von {axis} umschalten",
+  "common.coord.hint": "Einfügen von (12|-34) füllt beide Felder.",
 };
 export default de;

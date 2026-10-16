@@ -1,3 +1,4 @@
+import { CoordInput } from "@/components/CoordInput";
 import { CoordLink } from "@/components/CoordLink";
 import Link from "next/link";
 import { db } from "@/lib/db";
@@ -75,8 +76,8 @@ export default async function InactivePage({ searchParams }: { searchParams: Pro
               </Link>
             ))}
             <div className="row" style={{ gap: 6 }}>
-              <label htmlFor="cx" className="lbl" style={{ margin: 0 }}>{own.length ? t("overview.inactive.orCoord") : t("overview.inactive.coord")}</label>
-              <input id="cx" name="origin" className="field mono" placeholder="(x|y)" style={{ width: 120 }} defaultValue={origin?.key.startsWith("village:") ? "" : origin?.label} />
+              <label htmlFor="cx-x" className="lbl" style={{ margin: 0 }}>{own.length ? t("overview.inactive.orCoord") : t("overview.inactive.coord")}</label>
+              <CoordInput name="origin" idPrefix="cx" defaultValue={origin?.key.startsWith("village:") ? "" : origin?.label} />
             </div>
           </div>
           {coordInvalid && <p className="errtext" role="alert" style={{ marginTop: 8 }}>{t("overview.inactive.coordInvalid")}</p>}

@@ -153,5 +153,6 @@ const en = {
   "admin.invite.openIgm": "Open in-game message",
   "admin.invite.copied": "Invitation text copied to the clipboard – paste it into the message.",
   "admin.invite.copyManual": "Could not copy automatically – use “Copy IGM text” below.",
+  "admin.alliances.closeAllyNote": "Note: players of “{type}” alliances can register as guests just like members and must verify themselves (village rename or invitation) – until then their account stays locked.",
 } as const;
 export default en;
