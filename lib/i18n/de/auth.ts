@@ -47,7 +47,7 @@ const de: Record<keyof typeof en, string> = {
   "auth.displayName": "Anzeigename (optional)",
   "auth.claim.intro": "Dein Konto ist gesperrt, bis dein Spieler verifiziert ist. Benenne eines deiner Dörfer in den Code unten um und weise dann die Verlinkung nach.",
   "auth.claim.prove": "Verlinkung nachweisen",
-  "auth.claim.mapState": "Letzter Kartenstand: {time}",
+  "auth.claim.mapState": "Letzter Kartenstand: {time} · Travian aktualisiert ihn etwa einmal täglich – nächste Aktualisierung voraussichtlich gegen {next}",
   "auth.claim.res.unchanged": "Die Kartendaten haben sich seit dem letzten Import nicht geändert – Travian veröffentlicht sie etwa einmal täglich. Deine Umbenennung ist nach der nächsten Veröffentlichung sichtbar; versuche es dann erneut.",
   "auth.claim.res.not_found": "Die Kartendaten wurden aktualisiert, aber der Code steht in keinem Dorfnamen deines Spielers. Prüfe die Schreibweise und ob du das richtige Dorf umbenannt hast.",
   "auth.claim.res.throttled": "Die Kartendaten wurden gerade erst geprüft. Bitte versuche es in ein paar Minuten erneut.",

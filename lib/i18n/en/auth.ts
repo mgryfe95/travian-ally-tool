@@ -45,7 +45,7 @@ const en = {
   "auth.displayName": "Display name (optional)",
   "auth.claim.intro": "Your account is locked until your player is verified. Rename one of your villages to the code below, then prove the link.",
   "auth.claim.prove": "Prove link",
-  "auth.claim.mapState": "Latest map data: {time}",
+  "auth.claim.mapState": "Latest map data: {time} · Travian updates it about once a day – next update expected around {next}",
   "auth.claim.res.unchanged": "The map data has not changed since the last import – Travian publishes it about once a day. Your rename will be visible after the next release; try again then.",
   "auth.claim.res.not_found": "The map data was refreshed, but the code was not found in any village name of your player. Check the spelling and that you renamed the right village.",
   "auth.claim.res.throttled": "The map data was just checked. Please try again in a few minutes.",

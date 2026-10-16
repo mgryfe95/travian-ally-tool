@@ -53,7 +53,7 @@ export default async function ClaimPage({ searchParams }: { searchParams: Promis
               <span className="pill p-wait">{t("auth.claim.waiting")}</span>
             </div>
             {r && ["unchanged", "not_found", "throttled", "error", "no_claim"].includes(r) && <p className="sub" role="status">{t(`auth.claim.res.${r}` as MessageKey)}</p>}
-            {lastMap && <p className="sub" style={{ fontSize: 12, margin: 0 }}>{t("auth.claim.mapState", { time: fmtDate(lastMap.fetchedAt, locale) })}</p>}
+            {lastMap && <p className="sub" style={{ fontSize: 12, margin: 0 }}>{t("auth.claim.mapState", { time: fmtDate(lastMap.fetchedAt, locale), next: fmtDate(new Date(lastMap.fetchedAt.getTime() + 86_400_000), locale) })}</p>}
           </>
         )}
         <div className="sub" style={{ fontSize: 13 }}>{t("auth.claim.manual")}</div>
