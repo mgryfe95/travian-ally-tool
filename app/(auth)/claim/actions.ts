@@ -31,7 +31,7 @@ export async function startClaimAction(f: FormData) {
 async function fetchAndImport(): Promise<"imported" | "unchanged"> {
   const text = await fetchMapSql(env().TRAVIAN_SERVER_URL);
   try {
-    return (await importMapSql(db, text, { inactiveDays: await getInactiveDays(db) })).status;
+    return (await importMapSql(db, text, { inactiveDays: await getInactiveDays(db), timeZone: env().GAME_TIMEZONE })).status;
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") return "unchanged";
     throw e;

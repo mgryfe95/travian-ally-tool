@@ -149,3 +149,7 @@ Was & Warum: Eigene **Call-Typen** (z. B. „Ressourcen“; Tabelle `CallKindDef
 Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`
 Was & Warum: Auswahl beim Tippen von `@` als Liste über dem Eingabefeld (alle Namen, Pfeiltasten/Enter/Tab/Esc, Klick). Selbst-Erwähnungen sind erlaubt und erscheinen unter „Meine Erwähnungen“ (vorher wurde der Autor ausgeschlossen, daher fehlte die Test-Erwähnung und der eigene Name in der Auswahl).
 
+## 2026-10-16 · travian-ally-tool/import/taeglich-0-10
+Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`
+Was & Warum: map.sql wird nur noch **einmal täglich um 0:10** (`MAP_RELEASE_TIME`, Zeitzone `GAME_TIMEZONE`, Nachversuche +5/+15 Min.) geholt; der stündliche Takt ist aus (`IMPORT_CRON` leer, optional). **Fehler behoben:** Tagesstände wurden unter dem UTC-Tag gespeichert, ein Import nach Mitternacht Berliner Zeit landete beim Vortag (zwei Importe → ein Tagesstand, daher keine Inaktiven). Jetzt zählt der Tag der Spielserver-Uhr; Migration `fix_daily_stat_date` korrigiert den bestehenden einzelnen Tag einmalig.
+

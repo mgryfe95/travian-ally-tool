@@ -1,6 +1,6 @@
 /**
  * Travian veröffentlicht map.sql täglich zwischen 23:55 und 0:05 (Serverzeit). Der Worker holt die Datei kurz danach
- * (`MAP_RELEASE_TIME`, Standard 00:05) und versucht es zweimal nach; wer sich verifiziert, benennt ein Dorf bis zum Stichtag um.
+ * (`MAP_RELEASE_TIME`, Standard 00:10) und versucht es zweimal nach; wer sich verifiziert, benennt ein Dorf bis zum Stichtag um.
  */
 export const parseReleaseTime = (s: string): { h: number; m: number } => {
   const x = /^(\d{1,2}):(\d{2})$/.exec(s.trim());

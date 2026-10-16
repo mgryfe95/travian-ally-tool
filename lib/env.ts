@@ -11,7 +11,8 @@ const schema = z.object({
   TRAVIAN_SERVER_URL: z.string().url(),
   /** Eine oder mehrere Allianz-IDs, kommagetrennt (z. B. `36,7`). Alle gelten implizit als „Eigene Allianz“; weitere pflegt der Admin im UI. */
   TRAVIAN_ALLIANCE_ID: z.string().default(""),
-  IMPORT_CRON: z.string().default("15 * * * *"),
+  /** Zusätzlicher Abruf-Takt (cron); leer = aus. Standard: nur täglich zur `MAP_RELEASE_TIME`. */
+  IMPORT_CRON: z.string().default(""),
   INACTIVE_DAYS: z.coerce.number().int().positive().default(3),
   /** Code, der zum Registrieren eines SYSTEMADMIN_EMAILS-Kontos nötig ist (Default: AUTH_SECRET). Verhindert, dass Fremde die Admin-Adresse vorab belegen. */
   SYSTEMADMIN_SETUP_CODE: z.preprocess(emptyToUndefined, z.string().min(8).optional()),
@@ -25,7 +26,7 @@ const schema = z.object({
   SMTP_PASS: z.preprocess(emptyToUndefined, z.string().optional()),
   SMTP_FROM: z.string().default("Ally Tool <noreply@localhost>"),
   /** Travian veröffentlicht map.sql täglich zwischen 23:55 und 0:05 Serverzeit; der Worker holt sie kurz danach (+5 und +15 Min. als Nachversuch). */
-  MAP_RELEASE_TIME: z.string().regex(/^\d{1,2}:\d{2}$/).default("00:05"),
+  MAP_RELEASE_TIME: z.string().regex(/^\d{1,2}:\d{2}$/).default("00:10"),
   /** Zeitzone der Spielserver-Uhr (für Release-Zeit und Hinweise). */
   GAME_TIMEZONE: z.string().default("Europe/Berlin"),
   /** Schreibfenster der Ingame-Nachrichten ({server}, {id}, {name}); Standard siehe lib/igm.ts. */

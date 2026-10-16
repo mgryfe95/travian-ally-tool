@@ -18,6 +18,8 @@ const chunks = <T>(arr: T[], n = CHUNK): T[][] => {
 
 export const sha256 = (text: string) => createHash("sha256").update(text).digest("hex");
 const isoDate = (d: Date) => d.toISOString().slice(0, 10);
+/** Kalendertag in der Zeitzone der Spielserver-Uhr (Import um 0:10 gehört zum neuen Tag, nicht zum UTC-Vortag). */
+export const dayInTz = (d: Date, tz: string) => new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
 
 /** Lädt `${serverUrl}/map.sql`. */
 export async function fetchMapSql(serverUrl: string, fetchImpl: typeof fetch = fetch): Promise<string> {
@@ -57,7 +59,7 @@ function aggregate(rows: MapRow[]) {
 export async function importMapSql(
   db: PrismaClient,
   text: string,
-  opts: { inactiveDays: number; now?: Date },
+  opts: { inactiveDays: number; now?: Date; timeZone?: string },
 ): Promise<ImportResult> {
   const hash = sha256(text);
   if (await db.snapshot.findUnique({ where: { hash }, select: { id: true } })) return { status: "unchanged" };
@@ -65,7 +67,7 @@ export async function importMapSql(
   const rows = parseMapSql(text);
   if (rows.length === 0) throw new AppError("err.import.empty");
   const now = opts.now ?? new Date();
-  const today = isoDate(now);
+  const today = opts.timeZone ? dayInTz(now, opts.timeZone) : isoDate(now);
   const { players, alliances } = aggregate(rows);
 
   return db.$transaction(

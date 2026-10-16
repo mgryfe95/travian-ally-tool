@@ -10,7 +10,8 @@ describe("parseEnv", () => {
     expect(e.SYSTEMADMIN_EMAILS).toEqual(["a@x.de", "b@x.de"]);
     expect(e.TRAVIAN_ALLIANCE_IDS).toEqual([]);
     expect(e.INACTIVE_DAYS).toBe(3);
-    expect(e.IMPORT_CRON).toBe("15 * * * *");
+    expect(e.IMPORT_CRON).toBe("");
+    expect(e.MAP_RELEASE_TIME).toBe("00:10");
   });
   it("parst mehrere Allianz-IDs (kommagetrennt, ungültige/doppelte verworfen)", () => {
     expect(parseEnv({ ...base, TRAVIAN_ALLIANCE_ID: "36, 7;12 abc 36 -4" }).TRAVIAN_ALLIANCE_IDS).toEqual([36, 7, 12]);
