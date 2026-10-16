@@ -116,3 +116,5 @@ Was & Warum: Einheitennamen je Volk (Plätze 1–6 für alle 7 Völker) aus dem 
 - `scripts/deploy.sh` neu: Backup → Code → Build → Start → 14 Prüfungen mit Haken, am Ende „Deployment erfolgreich/fehlgeschlagen“ inkl. Gründen; läuft im Hintergrund (`--status` zeigt das Ergebnis). Anmelde-Endpunkt-Prüfung fängt hängende Logins ab.
 
 - Koordinaten-Selektor (`components/CoordInput.tsx`): X/Y mit −/+ und ±, Einfügen von „(12|-34)“ (auch Unicode-Minus) füllt beide Felder; in Schedule und Inaktiven-Suche. Hinweis in Admin → Allianzen: enge Bündnispartner registrieren sich wie Mitglieder als Gast und müssen sich verifizieren. Schedule-Seite lokal geprüft: geplante Calls erscheinen unter „Anstehend“.
+
+- Spieldaten/Truppen zweisprachig: Gebäude haben `nameEn` (Migration `building_name_en` füllt den Bestand aus „EN: …“; Import schreibt es künftig direkt), Gebäude-, Völker- und Einheitenlisten folgen der UI-Sprache, ebenso Truppennamen in Dorf- und Truppenansicht (`lib/unit-labels.ts`, Übersetzung über die Einheitennamen-Tabelle). Neu importieren ist nicht nötig.

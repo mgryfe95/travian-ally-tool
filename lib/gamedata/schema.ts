@@ -17,6 +17,7 @@ export const buildingSchema = z.object({
   key,
   gid: z.number().int().positive().nullable().default(null),
   name: z.string().min(1),
+  nameEn: z.string().min(1).optional(),
   category: z.string().min(1),
   tribeRestriction: z.string().nullable().default(null),
   maxLevel: z.number().int().positive(),

@@ -140,7 +140,7 @@ export function kbToGameData(kb: Kb, world: WorldProfile, source: string) {
           upkeep: l.supply, buildTimeSec: 10 * Math.round((l.buildingTime / speed) / 10), culturePoints: l.culturePoints, effects: { ...(l.effects ?? {}), population: l.population },
         }));
       return {
-        key: slug(name.en), gid: b.gid, name: name.de, category: b.category.toLowerCase(), tribeRestriction: tribeReq && tribeReq.vid.length === 1 ? tribeKey(tribeReq.vid[0]!) : null,
+        key: slug(name.en), gid: b.gid, name: name.de, nameEn: name.en, category: b.category.toLowerCase(), tribeRestriction: tribeReq && tribeReq.vid.length === 1 ? tribeKey(tribeReq.vid[0]!) : null,
         maxLevel: b.maxLevel, prerequisites: b.prerequisites, description: `EN: ${name.en}`, levels,
       };
     });

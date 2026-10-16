@@ -11,6 +11,7 @@ import { ageInDays, type StateArea } from "@/lib/reminders";
 import { getOwnVillage, getStaleDays, getVillageInstructions, ownVillages } from "@/lib/services/villages";
 import { requireUser } from "@/lib/session";
 import { readTroops, troopsToText } from "@/lib/troops";
+import { loadUnitLabels, unitLabel } from "@/lib/unit-labels";
 import { saveTroopsAction, saveVillageInstructionsAction } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -46,6 +47,7 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
   const now = new Date();
   const s = village.state;
   const troops = readTroops(s?.troops);
+  const unitLabels = await loadUnitLabels(db);
   const res = obj<ResState>(s?.resources);
   const fields = arr<Level>(s?.fields);
   const buildings = arr<Level>(s?.buildings);
@@ -127,7 +129,7 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
           <div className="row between" style={{ alignItems: "baseline" }}><h2 id="trp-h">{t("villages.troops.title")}</h2><span className={s?.troopsAt && (ageInDays(s.troopsAt, now) ?? 0) >= staleDays ? "stale" : "sub"} style={{ fontSize: 12 }}>{s?.troopsAt ? t("villages.troops.asOf", { age: ageLabel(ageInDays(s.troopsAt, now)) }) : t("villages.troops.never")}</span></div>
           {troops.length > 0 && (
             <div className="scroll" style={{ marginTop: 8 }}><table><thead><tr><th>{t("villages.troops.unit")}</th><th className="r">{t("villages.troops.inVillage")}</th><th className="r">{t("villages.troops.away")}</th><th className="r">{t("villages.troops.support")}</th></tr></thead>
-              <tbody>{troops.map((tr) => <tr key={tr.unit}><td>{tr.unit}</td><td className="mono r">{fmt(tr.inVillage, locale)}</td><td className="mono r">{fmt(tr.away, locale)}</td><td className="mono r">{fmt(tr.support, locale)}</td></tr>)}</tbody></table></div>
+              <tbody>{troops.map((tr) => <tr key={tr.unit}><td>{unitLabel(unitLabels, tr.unit, locale, t)}</td><td className="mono r">{fmt(tr.inVillage, locale)}</td><td className="mono r">{fmt(tr.away, locale)}</td><td className="mono r">{fmt(tr.support, locale)}</td></tr>)}</tbody></table></div>
           )}
           <form action={saveTroopsAction} style={{ marginTop: 12 }}>
             <input type="hidden" name="villageId" value={id} />

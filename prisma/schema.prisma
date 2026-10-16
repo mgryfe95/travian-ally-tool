@@ -493,6 +493,8 @@ model Building {
   /// Gebäude-ID der Quelle (gid), Voraussetzungen verweisen darauf
   gid              Int?
   name             String
+  /// Englischer Name (name = deutsch); Anzeige je nach UI-Sprache
+  nameEn           String?
   category         String
   tribeRestriction String?
   maxLevel         Int

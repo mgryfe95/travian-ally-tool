@@ -8,5 +8,7 @@ const en = {
   "common.coord.plus": "{axis} plus 1",
   "common.coord.sign": "Toggle sign of {axis}",
   "common.coord.hint": "Pasting (12|-34) fills both fields.",
+  "common.hero": "Hero",
+  "common.unitN": "Unit {n}",
 } as const;
 export default en;

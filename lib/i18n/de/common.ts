@@ -10,5 +10,7 @@ const de: Record<keyof typeof en, string> = {
   "common.coord.plus": "{axis} plus 1",
   "common.coord.sign": "Vorzeichen von {axis} umschalten",
   "common.coord.hint": "Einfügen von (12|-34) füllt beide Felder.",
+  "common.hero": "Held",
+  "common.unitN": "Einheit {n}",
 };
 export default de;
