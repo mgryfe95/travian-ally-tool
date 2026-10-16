@@ -13,3 +13,730 @@ model Setting {
   value     String
   updatedAt DateTime @updatedAt
 }
+
+/// Ein importierter map.sql-Stand. `hash` (SHA-256) verhindert Doppelimporte.
+model Snapshot {
+  id        Int               @id @default(autoincrement())
+  fetchedAt DateTime          @default(now())
+  hash      String            @unique
+  rowCount  Int
+  villages  VillageSnapshot[]
+  events    Event[]
+}
+
+model VillageSnapshot {
+  snapshotId   Int
+  villageId    Int
+  fieldId      Int
+  x            Int
+  y            Int
+  tribe        Int
+  villageName  String
+  playerId     Int
+  playerName   String
+  allianceId   Int
+  allianceName String
+  population   Int
+  /// Alle Spalten ab Index 11 (region, isCapital, isCity, hasHarbor, victoryPoints, ggf. weitere als colN)
+  extra        Json
+  snapshot     Snapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  @@id([snapshotId, villageId])
+  @@index([snapshotId, playerId])
+}
+
+/// Aktuelle Sicht (wird bei jedem Import neu aufgebaut). allianceId 0 = ohne Allianz.
+model Alliance {
+  id           Int    @id
+  name         String
+  memberCount  Int
+  villageCount Int
+  population   Int
+}
+
+model Player {
+  id           Int      @id
+  name         String
+  tribe        Int
+  allianceId   Int
+  population   Int
+  villageCount Int
+  /// active | stagnant | inactive | declining
+  status       String
+  noGrowthDays Int
+  delta1       Int?
+  delta3       Int?
+  delta7       Int?
+  firstSeen    DateTime
+
+  @@index([allianceId])
+  @@index([status])
+}
+
+model Village {
+  id         Int    @id
+  fieldId    Int
+  x          Int
+  y          Int
+  name       String
+  playerId   Int
+  population Int
+  extra      Json
+
+  @@index([playerId])
+}
+
+model PlayerDailyStat {
+  playerId     Int
+  date         DateTime @db.Date
+  population   Int
+  villageCount Int
+  allianceId   Int
+
+  @@id([playerId, date])
+}
+
+model Event {
+  id            Int      @id @default(autoincrement())
+  snapshotId    Int
+  /// village_new | village_lost | village_conquered | alliance_change | player_gone
+  type          String
+  at            DateTime @default(now())
+  playerId      Int?
+  otherPlayerId Int?
+  villageId     Int?
+  data          Json?
+  snapshot      Snapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  @@index([at])
+  @@index([playerId])
+}
+
+/// Beziehung einer Allianz zu uns. OWN und ALLIED bilden zusammen die „eigene Gruppe“ (intern wie eine Allianz behandelt).
+enum AllianceRelation {
+  OWN
+  ALLIED
+  CLOSE_ALLY
+  NAP
+  NEUTRAL
+  ENEMY
+}
+
+/// Separat von `Alliance`, weil die aktuelle Sicht bei jedem Import neu aufgebaut wird. Kein FK, absichtlich.
+model AllianceClassification {
+  allianceId Int              @id
+  relation   AllianceRelation
+  note       String?
+  updatedBy  String?
+  updatedAt  DateTime         @updatedAt
+}
+
+// ───────────── M3: Accounts, Rollen, Verifizierung (Better Auth Kerntabellen + eigene) ─────────────
+
+model User {
+  id             String       @id
+  name           String
+  email          String       @unique
+  emailVerified  Boolean      @default(false)
+  image          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  /// GUEST | MEMBER | MODERATOR | ADMIN. SYSTEMADMIN steht nie hier, sondern kommt aus SYSTEMADMIN_EMAILS.
+  role           String       @default("GUEST")
+  banned         Boolean      @default(false)
+  /// Zuletzt gewählter Ursprung der Inaktiven-Suche: `village:<id>` oder `x|y`.
+  lastOrigin     String?
+  /// KI-Instruktionen auf Account-Ebene (gelten für alle Dörfer)
+  aiInstructions String       @default("")
+  /// UI-Sprache (en | de); leer = Cookie/Browser.
+  locale         String?
+  sessions       Session[]
+  accounts       Account[]
+  links          PlayerLink[]
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+/// Editierbare Rechte-Matrix für GUEST..ADMIN. SYSTEMADMIN hat implizit alles und keine Zeilen.
+model RolePermission {
+  role       String
+  permission String
+
+  @@id([role, permission])
+}
+
+model PlayerLink {
+  id              Int       @id @default(autoincrement())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  travianPlayerId Int
+  /// pending | verified | rejected
+  status          String    @default("pending")
+  /// invite | village_rename | admin
+  method          String
+  /// Code ALLY-XXXX für den Dorf-Umbenennungs-Beweis
+  claimCode       String?
+  verifiedBy      String?
+  verifiedAt      DateTime?
+  createdAt       DateTime  @default(now())
+
+  /// Mehrere User pro Spieler sind erlaubt (Duals), aber pro Paar nur ein Link.
+  @@unique([userId, travianPlayerId])
+  @@index([travianPlayerId])
+}
+
+model Invite {
+  id              Int       @id @default(autoincrement())
+  /// SHA-256 des Tokens; der Klartext wird nur einmal angezeigt.
+  tokenHash       String    @unique
+  travianPlayerId Int
+  createdBy       String
+  createdAt       DateTime  @default(now())
+  expiresAt       DateTime
+  usedAt          DateTime?
+  usedBy          String?
+  revokedAt       DateTime?
+
+  @@index([travianPlayerId])
+}
+
+model AuditLog {
+  id      Int      @id @default(autoincrement())
+  actorId String
+  action  String
+  target  String
+  before  Json?
+  after   Json?
+  at      DateTime @default(now())
+
+  @@index([at])
+}
+
+// ───────────── M4: Chat ─────────────
+
+enum ChannelTree {
+  ALLY
+  TASKFORCE
+}
+
+model Channel {
+  id           Int         @id @default(autoincrement())
+  tree         ChannelTree
+  name         String
+  slug         String      @unique
+  sortOrder    Int         @default(0)
+  taskforceId  Int?        @unique
+  /// Mindestrolle zum Lesen/Schreiben (GUEST..ADMIN). In Task-Force-Kanälen zählt zusätzlich die Mitgliedschaft.
+  minReadRole  String      @default("MEMBER")
+  minWriteRole String      @default("MEMBER")
+  archivedAt   DateTime?
+  messages     Message[]
+  tagTypes     ChannelTagType[]
+  taskforce    Taskforce?  @relation(fields: [taskforceId], references: [id], onDelete: Cascade)
+}
+
+model Message {
+  id          Int          @id @default(autoincrement())
+  channelId   Int
+  channel     Channel      @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  authorId    String
+  /// Markdown-Quelltext (wird beim Rendern in React-Knoten übersetzt, nie als HTML ausgegeben)
+  body        String
+  createdAt   DateTime     @default(now())
+  editedAt    DateTime?
+  deletedAt   DateTime?
+  tags        MessageTag[]
+  attachments Attachment[]
+  /// Antwort auf eine Nachricht (nur eine Ebene tief: Ziel ist immer eine Hauptnachricht)
+  replyToId   Int?
+  replyTo     Message?     @relation("Replies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies     Message[]    @relation("Replies")
+  mentions    Mention[]
+
+  @@index([channelId, id])
+  @@index([authorId])
+  @@index([replyToId])
+}
+
+/// @-Erwähnung eines Nutzers in einer Nachricht (für „Meine Erwähnungen“)
+model Mention {
+  id        Int     @id @default(autoincrement())
+  messageId Int
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+
+  @@unique([messageId, userId])
+  @@index([userId, messageId])
+}
+
+/// Tag-Typ = Achse (z. B. „Priorität“, „Status“). Ein Typ gilt für bestimmte Kanäle; `multi` erlaubt mehrere Tags dieses Typs je Nachricht.
+model TagType {
+  id            Int              @id @default(autoincrement())
+  name          String           @unique
+  /// false = genau ein Tag dieses Typs je Nachricht (Einzelauswahl), true = mehrere
+  multi         Boolean          @default(false)
+  /// true = Nachricht braucht ein Tag dieses Typs
+  required      Boolean          @default(false)
+  /// auch in Task-Force-Kanälen anbieten
+  forTaskforces Boolean          @default(true)
+  sortOrder     Int              @default(0)
+  tags          Tag[]
+  channels      ChannelTagType[]
+}
+
+model ChannelTagType {
+  channelId Int
+  tagTypeId Int
+  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  tagType   TagType @relation(fields: [tagTypeId], references: [id], onDelete: Cascade)
+
+  @@id([channelId, tagTypeId])
+}
+
+model Tag {
+  id        Int          @id @default(autoincrement())
+  tagTypeId Int
+  tagType   TagType      @relation(fields: [tagTypeId], references: [id], onDelete: Restrict)
+  name      String
+  /// Farbpaar-Schlüssel (red|amber|blue|green|purple|gray)
+  color     String       @default("gray")
+  createdBy String?
+  messages  MessageTag[]
+
+  @@unique([tagTypeId, name])
+}
+
+model MessageTag {
+  messageId Int
+  tagId     Int
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, tagId])
+  @@index([tagId])
+}
+
+model Taskforce {
+  id          Int               @id @default(autoincrement())
+  name        String
+  description String            @default("")
+  createdBy   String
+  createdAt   DateTime          @default(now())
+  archivedAt  DateTime?
+  members     TaskforceMember[]
+  invites     TaskforceInvite[]
+  channel     Channel?
+}
+
+model TaskforceMember {
+  taskforceId Int
+  userId      String
+  /// founder | lead | member | reader
+  role        String    @default("member")
+  taskforce   Taskforce @relation(fields: [taskforceId], references: [id], onDelete: Cascade)
+
+  @@id([taskforceId, userId])
+  @@index([userId])
+}
+
+model Attachment {
+  id         Int      @id @default(autoincrement())
+  messageId  Int?
+  message    Message? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  uploaderId String
+  /// image | pdf | text
+  kind       String
+  mime       String
+  name       String
+  sizeBytes  Int
+  width      Int?
+  height     Int?
+  storageKey String
+  thumbKey   String?
+  previewKey String?
+  /// Erste ~20 Zeilen bei Text/CSV/Log
+  snippet    String?
+  /// Vom Uploader gelöscht: Dateien sind weg, die Zeile bleibt als Platzhalter im Chat.
+  removedAt  DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([messageId])
+  @@index([createdAt])
+}
+
+/// Ungelesen-Zähler: letzte gesehene Nachricht je Nutzer und Kanal
+model ChannelRead {
+  userId        String
+  channelId     Int
+  lastReadMsgId Int      @default(0)
+  updatedAt     DateTime @updatedAt
+
+  @@id([userId, channelId])
+}
+
+// ───────────── M5 / Phase 2: Dörfer, Ist-Zustand, Screenshots, Spieldaten (Schema + Gerüst) ─────────────
+
+/// KI-Instruktionen je Dorf und Nutzer. Das Dorf selbst kommt aus map.sql (`Village`), daher kein FK.
+model VillageProfile {
+  villageId      Int
+  userId         String
+  aiInstructions String   @default("")
+  updatedAt      DateTime @updatedAt
+
+  @@id([villageId, userId])
+}
+
+/// Aktueller Ist-Zustand je Dorf, gespeist aus Screenshots. Jeder Bereich hat einen eigenen Zeitstempel.
+model VillageState {
+  villageId          Int       @id
+  userId             String
+  capturedAt         DateTime?
+  /// {stock, capacity, production} je Rohstoff
+  resources          Json?
+  /// 18 Ressourcenfelder mit Stufe
+  fields             Json?
+  /// Slot → {building, level}
+  buildings          Json?
+  /// {inVillage, away, support} je Einheit
+  troops             Json?
+  /// Bau- und Ausbildungsschleifen
+  queues             Json?
+  resourcesAt        DateTime?
+  buildingsAt        DateTime?
+  troopsAt           DateTime?
+  sourceScreenshotId Int?
+  updatedAt          DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Screenshot {
+  id             Int      @id @default(autoincrement())
+  userId         String
+  villageId      Int?
+  /// Art laut lib/ai/reading.ts (READING_KINDS)
+  detectedKind   String   @default("UNKNOWN")
+  /// DESKTOP | MOBILE | UNKNOWN
+  detectedDevice String   @default("UNKNOWN")
+  confidence     Float?
+  storageKey     String
+  thumbKey       String?
+  /// gespeicherte Größe (komprimiert) in Bytes
+  sizeBytes      Int      @default(0)
+  /// Bilddatei gelöscht (nach Auswertung nicht mehr nötig); Zeile + Auswertung bleiben
+  removedAt      DateTime?
+  /// uploaded | parsed | needs_review | failed
+  status         String   @default("uploaded")
+  parsed         Json?
+  createdAt      DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+/// Versionierte Spieldaten. Jede Zeile verweist auf ihre Version, damit Patches nachvollziehbar bleiben.
+model GameDataVersion {
+  id          Int        @id @default(autoincrement())
+  /// URL + Abrufdatum der freigegebenen Quelle
+  source      String
+  importedAt  DateTime   @default(now())
+  serverSpeed Int        @default(1)
+  /// Welt (Host) und Spielversion, für die die Werte gelten – Import nur für die eigene Welt
+  worldHost   String     @default("")
+  gameVersion String     @default("")
+  notes       String     @default("")
+  tribes      Tribe[]
+  buildings   Building[]
+  units       Unit[]
+}
+
+model Tribe {
+  id        Int             @id @default(autoincrement())
+  versionId Int
+  version   GameDataVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  key       String
+  name      String
+  /// Völkerboni, Spezialgebäude, Versteck-/Plünderregeln
+  traits    Json            @default("{}")
+  units     Unit[]
+
+  @@unique([versionId, key])
+}
+
+model Building {
+  id               Int             @id @default(autoincrement())
+  versionId        Int
+  version          GameDataVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  key              String
+  /// Gebäude-ID der Quelle (gid), Voraussetzungen verweisen darauf
+  gid              Int?
+  name             String
+  /// Englischer Name (name = deutsch); Anzeige je nach UI-Sprache
+  nameEn           String?
+  category         String
+  tribeRestriction String?
+  maxLevel         Int
+  prerequisites    Json            @default("[]")
+  description      String          @default("")
+  levels           BuildingLevel[]
+
+  @@unique([versionId, key])
+}
+
+/// Basiswerte bei Server-Speed 1; Zeiten werden beim Anzeigen mit der Server-Geschwindigkeit umgerechnet.
+model BuildingLevel {
+  buildingId    Int
+  building      Building @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  level         Int
+  costWood      Int
+  costClay      Int
+  costIron      Int
+  costCrop      Int
+  upkeep        Int
+  buildTimeSec  Int
+  culturePoints Int
+  /// Vorteile je Stufe: Produktion/h, Lagerkapazität, Versteck, Fallen, Bau-/Ausbildungsbonus …
+  effects       Json     @default("{}")
+  /// Dieselben Vorteile relational (eine Zeile je Gebäude/Stufe/Vorteil): Grundlage für Anzeige, Vergleich über Gebäude und KI.
+  effectRows    BuildingLevelEffect[]
+
+  @@id([buildingId, level])
+}
+
+/// Ein Vorteil einer Gebäudestufe (z. B. production1 = 13). Art/Einheit/Richtung je `effect` stehen in lib/gamedata/effects.ts.
+model BuildingLevelEffect {
+  buildingId Int
+  level      Int
+  effect     String
+  value      Float
+  buildingLevel BuildingLevel @relation(fields: [buildingId, level], references: [buildingId, level], onDelete: Cascade)
+
+  @@id([buildingId, level, effect])
+  @@index([effect])
+}
+
+model Unit {
+  id           Int             @id @default(autoincrement())
+  versionId    Int
+  version      GameDataVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  tribeId      Int
+  tribe        Tribe           @relation(fields: [tribeId], references: [id], onDelete: Cascade)
+  key          String
+  name         String
+  attack       Int
+  defInf       Int
+  defCav       Int
+  speed        Int
+  carry        Int
+  costWood     Int
+  costClay     Int
+  costIron     Int
+  costCrop     Int
+  upkeep       Int
+  trainTimeSec Int
+  building     String
+  researchReq  Json            @default("{}")
+
+  @@unique([versionId, tribeId, key])
+}
+
+/// Lernmodus: bestätigte/korrigierte Screenshots dienen als Beispiele (Bild + richtige Lesung) im Prompt der Bilderkennung.
+model VisionExample {
+  id         Int      @id @default(autoincrement())
+  kind       String
+  storageKey String
+  gold       Json
+  createdBy  String
+  createdAt  DateTime @default(now())
+
+  @@index([kind, createdAt])
+}
+
+/// Wissen für die Bilderkennung: Emojis, Kürzel, Einheiten-Spitznamen → Bedeutung.
+model VisionAlias {
+  id        Int      @id @default(autoincrement())
+  term      String   @unique
+  meaning   String
+  createdAt DateTime @default(now())
+}
+
+/// Vorlage für Calls (Angriff, Deff-Unterstützung, Angriffstag, …). Platzhalter: {art} {titel} {spieler} {dorf} {koordinaten} {zeit} {link} {notiz}
+model CallTemplate {
+  id        Int    @id @default(autoincrement())
+  /// ATTACK | DEFF | ATTACK_DAY | OTHER
+  kind      String
+  name      String @unique
+  body      String
+  /// Standard-Kanal (Allianz-Kanal); leer = erster Allianz-Kanal
+  channelId Int?
+  sortOrder Int    @default(0)
+  /// zusätzlich eine Direktnachricht an die Betroffenen schicken (Spieler am Ziel, sonst alle Leser des Kanals)
+  sendDm    Boolean @default(false)
+}
+
+/// Eigener Call-Typ (neben den eingebauten ATTACK/DEFF/ATTACK_DAY/OTHER), z. B. „Ressourcen“. Schlüssel in `kind`: `custom:<id>`.
+model CallKindDef {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  needsCoords Boolean @default(false)
+  sortOrder   Int     @default(0)
+}
+
+/// Ein Call im Allianz-Schedule: scheduled (wird zur Zeit automatisch gepostet), draft (nur auf Knopfdruck), sent, cancelled.
+model AllianceCall {
+  id           Int       @id @default(autoincrement())
+  kind         String
+  title        String    @default("")
+  x            Int?
+  y            Int?
+  villageId    Int?
+  villageName  String?
+  playerId     Int?
+  playerName   String?
+  /// Sendezeitpunkt: wann der Call automatisch in den Kanal gepostet wird (leer = nur auf Abruf)
+  at           DateTime?
+  /// Termin: wann der Angriff / Angriffstag / Deff-Bedarf stattfindet ({zeit} im Text)
+  eventAt      DateTime?
+  channelId    Int
+  /// Vorlagentext zum Zeitpunkt des Anlegens (Platzhalter werden beim Senden ersetzt)
+  template     String
+  /// Direktnachricht beim Senden mitschicken (von der Vorlage übernommen)
+  sendDm       Boolean   @default(false)
+  note         String    @default("")
+  status       String    @default("scheduled")
+  createdBy    String
+  createdAt    DateTime  @default(now())
+  sentAt       DateTime?
+  messageId    Int?
+
+  @@index([status, at])
+  @@index([eventAt])
+}
+
+/// Einladung in eine Task-Force; der Eingeladene nimmt an oder lehnt ab. role = Rolle nach Annahme (lead nur vom Gründer vergeben).
+model TaskforceInvite {
+  id          Int       @id @default(autoincrement())
+  taskforceId Int
+  taskforce   Taskforce @relation(fields: [taskforceId], references: [id], onDelete: Cascade)
+  userId      String
+  invitedBy   String
+  role        String    @default("member")
+  /// pending | accepted | declined | revoked
+  status      String    @default("pending")
+  createdAt   DateTime  @default(now())
+  answeredAt  DateTime?
+
+  @@index([userId, status])
+  @@index([taskforceId, status])
+}
+
+/// Messenger (getrennt von den Kanälen): 1:1-Direktnachrichten …
+model DmThread {
+  id        Int         @id @default(autoincrement())
+  /// "<kleinere userId>:<größere userId>" – genau ein Thread je Paar
+  pairKey   String      @unique
+  userA     String
+  userB     String
+  createdAt DateTime    @default(now())
+  messages  DmMessage[]
+
+  @@index([userA])
+  @@index([userB])
+}
+
+model DmMessage {
+  id        Int      @id @default(autoincrement())
+  threadId  Int
+  thread    DmThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  authorId  String
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([threadId, id])
+}
+
+/// Zuletzt gelesene Nachricht je Nutzer und Thread
+model DmRead {
+  userId        String
+  threadId      Int
+  lastReadMsgId Int    @default(0)
+
+  @@id([userId, threadId])
+}
+
+/// … und Rundnachrichten (ein Absender, viele Empfänger; Antworten laufen als Direktnachricht an den Absender).
+model Broadcast {
+  id         Int                  @id @default(autoincrement())
+  senderId   String
+  subject    String
+  body       String
+  /// Klartext der Zielgruppe, z. B. „Alle Mitglieder“, „Rolle Moderator“, „Task-Force Süd“, „Auswahl (5)“
+  audience   String
+  createdAt  DateTime             @default(now())
+  recipients BroadcastRecipient[]
+}
+
+model BroadcastRecipient {
+  broadcastId Int
+  broadcast   Broadcast @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+  userId      String
+  readAt      DateTime?
+
+  @@id([broadcastId, userId])
+  @@index([userId, readAt])
+}
+
+/// Einheitennamen je Volk (map.sql-Volk-ID) und Einheitenplatz in Spielreihenfolge. Nur Namen: Kampfwerte/Zeiten nennt die Quelle nur mit Schmiede/Kaserne 20, ihr „Crop“-Wert passt nicht zum Spiel (Unterhalt 1/Einheit) und wird nicht übernommen.
+model UnitName {
+  tribeVid    Int
+  /// Einheitenplatz in der Reihenfolge des Spiels (1 = erste Truppenspalte)
+  slot        Int
+  nameEn      String
+  nameDe      String?
+  gameVersion String
+  source      String
+  updatedAt   DateTime @updatedAt
+
+  @@id([tribeVid, slot])
+}
