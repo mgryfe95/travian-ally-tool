@@ -103,3 +103,8 @@ Was & Warum: Einheitennamen je Volk (Plätze 1–6 für alle 7 Völker) aus dem 
 - Koordinaten `(x|y)` sind überall Direktlinks auf die Travian-Karte (`/karte.php?zoom=1&x=…&y=…`, neuer Tab): in Chat/Calls/Messenger (inkl. Unicode-Minus) sowie in Dorf-, Spieler-, Inaktiven-, Ereignis-, Schedule-, Truppen- und Übersichtsseiten. Angezeigt werden weiter nur die Koordinaten (`lib/coords.ts`, `components/CoordLink.tsx`).
 
 - Vorteile-Tabelle: Änderung je Stufe als „Δ +20 %“ (absolute Differenz) statt „pp“; die KI-Ausgabe nennt weiter explizit „pp“. Koordinaten-Links: E2E angepasst.
+
+## 2026-10-16 · Redesign „Humans“ · Notion-Root 3f912988-7097-813a-be0b-e9ee8831f987
+- Komplettes visuelles Redesign nach dem Klick-Mockup (Redesign-Canvas): Pergament-Fläche, Marine-Seitenleiste, Gold-Aktionen, Serifen-Überschriften, Gold-Banner bei Anmeldung/Registrierung, zweigeteilte Auth-Seiten mit Wappen. Alle Farben als Tokens in `app/globals.css`; Klassennamen unverändert, keine Funktionsänderung.
+- Wappen als Platzhalter-SVG (`components/Logo.tsx`), bis die echte Logo-Datei vorliegt. Schriften: System-/Georgia-Stack (keine externen Fonts, DSGVO).
+- Chat-Persistenz als E2E ergänzt (Nachricht bleibt nach Neuladen).

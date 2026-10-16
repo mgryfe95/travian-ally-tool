@@ -6,7 +6,7 @@ import { messagesFor } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import "./globals.css";
 
-export const metadata = { title: "Ally Tool" };
+export const metadata = { title: "Humans Ally Tool" };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const locale = await getLocale();

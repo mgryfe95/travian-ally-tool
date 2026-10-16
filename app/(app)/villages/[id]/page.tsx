@@ -81,7 +81,7 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
 
       <section id="desc" className="card hi" aria-labelledby="desc-h">
         <div className="row between" style={{ alignItems: "baseline" }}><h2 id="desc-h">{t("villages.instr.title", { name: village.name })}</h2><Link href="/#strategie" style={{ fontSize: 13 }}>{t("villages.instr.editAccount")}</Link></div>
-        <div style={{ margin: "10px 0", padding: "10px 12px", borderRadius: 8, background: "#191612", fontSize: 13, color: "var(--text2)" }}>
+        <div style={{ margin: "10px 0", padding: "10px 12px", borderRadius: 8, background: "var(--soft)", fontSize: 13, color: "var(--text2)" }}>
           <span className="sub">{t("villages.instr.inherited")}</span> {me?.aiInstructions ? me.aiInstructions : <em className="sub">{t("villages.instr.none")}</em>}
         </div>
         <form action={saveVillageInstructionsAction}>

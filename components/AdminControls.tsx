@@ -28,7 +28,7 @@ export function PermToggle({ role, permission, checked, disabled, label }: { rol
       <input type="hidden" name="enabled" value={checked ? "0" : "1"} />
       <input
         type="checkbox" defaultChecked={checked} disabled={disabled} aria-label={label}
-        style={{ width: 18, height: 18, accentColor: "#d9a441" }} onChange={(e) => e.currentTarget.form?.requestSubmit()}
+        style={{ width: 18, height: 18, accentColor: "var(--steel)" }} onChange={(e) => e.currentTarget.form?.requestSubmit()}
       />
     </form>
   );

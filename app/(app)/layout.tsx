@@ -1,3 +1,4 @@
+import { LogoMark } from "@/components/Logo";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import type { MessageKey } from "@/lib/i18n";
@@ -43,7 +44,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
     <div className="shell">
       <nav className="side" aria-label={t("nav.main")}>
-        <div className="logo">Ally Tool</div>
+        <div className="logo"><LogoMark size={40} />Humans</div>
         <div className="srv">{[serverLabel(env().TRAVIAN_SERVER_URL), tag].filter(Boolean).join(" · ")}</div>
         <SideNav items={items} />
         <div className="me">

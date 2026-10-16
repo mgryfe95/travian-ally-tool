@@ -258,7 +258,7 @@ export function ChatClient(props: ChatProps) {
 
       <section className="chat-main" onDragOver={(e) => { if (caps.canUpload) { e.preventDefault(); setDrag(true); } }} onDragLeave={() => setDrag(false)} onDrop={onDrop}
         style={drag ? { outline: "2px dashed var(--accent)", outlineOffset: -6 } : undefined}>
-        <header className="row between" style={{ padding: "16px 24px", borderBottom: "1px solid #2c271f" }}>
+        <header className="row between" style={{ padding: "16px 24px", borderBottom: "1px solid var(--line)" }}>
           <div>
             <div className="chat-mobile-only">
               <label className="lbl" htmlFor="mch" style={{ margin: 0 }}>{t("chat.channel")}</label>
@@ -289,17 +289,17 @@ export function ChatClient(props: ChatProps) {
         </div>
 
         {canWriteHere ? (
-          <form onSubmit={send} style={{ borderTop: "1px solid #2c271f", padding: "14px 24px" }}>
+          <form onSubmit={send} style={{ borderTop: "1px solid var(--line)", padding: "14px 24px" }}>
             {pending.length > 0 && (
               <div className="row" style={{ marginBottom: 10, gap: 10 }} aria-label={t("chat.attachments.label")}>
                 {pending.map((p) => (
                   <div key={p.key} style={{ position: "relative" }}>
-                    <div style={{ width: 64, height: 64, borderRadius: 8, border: `1px solid ${p.error ? "var(--warn)" : "var(--line)"}`, overflow: "hidden", background: "#221e18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "var(--muted)", textAlign: "center" }}>
+                    <div style={{ width: 64, height: 64, borderRadius: 8, border: `1px solid ${p.error ? "var(--warn)" : "var(--line)"}`, overflow: "hidden", background: "var(--soft)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "var(--muted)", textAlign: "center" }}>
                       {/* eslint-disable-next-line @next/next/no-img-element -- lokale Blob-URL */}
                       {p.preview ? <img src={p.preview} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: p.id ? 1 : 0.5 }} /> : <span>{p.kind ?? "…"}</span>}
                     </div>
                     <button type="button" aria-label={t("chat.attachments.remove", { name: p.name })} onClick={() => setPending((l) => l.filter((x) => x.key !== p.key))}
-                      style={{ position: "absolute", top: -8, right: -8, width: 24, height: 24, borderRadius: 12, border: 0, background: "#403829", color: "var(--text)", cursor: "pointer" }}>×</button>
+                      style={{ position: "absolute", top: -8, right: -8, width: 24, height: 24, borderRadius: 12, border: 0, background: "var(--field-line)", color: "var(--text)", cursor: "pointer" }}>×</button>
                     <div className="sub" style={{ fontSize: 10, maxWidth: 64, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.error ?? p.name}</div>
                   </div>
                 ))}
@@ -350,7 +350,7 @@ export function ChatClient(props: ChatProps) {
             {error && <p className="errtext" role="alert" style={{ marginTop: 6 }}>{error}</p>}
           </form>
         ) : (
-          <div className="sub" style={{ borderTop: "1px solid #2c271f", padding: "14px 24px" }}>{isAll ? t("chat.pickChannel") : t("chat.readOnly")}</div>
+          <div className="sub" style={{ borderTop: "1px solid var(--line)", padding: "14px 24px" }}>{isAll ? t("chat.pickChannel") : t("chat.readOnly")}</div>
         )}
       </section>
       {lightbox && <Lightbox images={lightbox.images} start={lightbox.start} onClose={() => setLightbox(undefined)} />}

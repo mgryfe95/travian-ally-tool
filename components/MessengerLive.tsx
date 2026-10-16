@@ -40,7 +40,7 @@ export function DmComposer({ threadId }: { threadId: number }) {
   }
 
   return (
-    <form onSubmit={send} style={{ borderTop: "1px solid #2c271f", paddingTop: 12 }}>
+    <form onSubmit={send} style={{ borderTop: "1px solid var(--line)", paddingTop: 12 }}>
       <label className="sr" htmlFor="dm-body">{t("messenger.dm.label")}</label>
       <textarea id="dm-body" ref={input} className="field" rows={2} maxLength={4000} value={body} onChange={(e) => setBody(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) void send(e as unknown as FormEvent); }} placeholder={t("messenger.dm.placeholder")} style={{ width: "100%" }} />

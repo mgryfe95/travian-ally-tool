@@ -75,7 +75,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
         {reminders.length === 0 ? <p className="sub">{t("overview.due.allCurrent")}</p> : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {reminders.map((r) => (
-              <div key={`${r.villageId}-${r.area}`} className="row between" style={{ padding: "10px 12px", borderRadius: 8, background: "#1b1611" }}>
+              <div key={`${r.villageId}-${r.area}`} className="row between" style={{ padding: "10px 12px", borderRadius: 8, background: "var(--raised)" }}>
                 <div><Rich tpl={t(r.ageDays === null ? "overview.due.never" : "overview.due.last", { what: "{what}", village: "{village}", age: "{age}" })} parts={{ what: <strong>{t(AREA_WHAT[r.area])}</strong>, village: <Link href={`/villages/${r.villageId}`}>{r.villageName}</Link>, age: <strong className="mono">{ageText(t, r.ageDays)}</strong> }} /></div>
                 <Link className="btn ghost sm" href={`/villages/${r.villageId}#up-${r.area}`}>{t(AREA_ACTION[r.area])}</Link>
               </div>

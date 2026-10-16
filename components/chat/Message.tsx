@@ -8,7 +8,7 @@ import { useLocale, useT } from "@/lib/i18n/client";
 import type { MessageView } from "@/lib/services/chat";
 import { USER_ROLE_KEY } from "./roles";
 
-const AV = ["#d9a441", "#8cc4de", "#c99be0", "#9fd39a"];
+const AV = ["#1e3556", "#5e7f3a", "#8a6414", "#6b3f63"];
 const size = (b: number, locale: Locale) => (b > 1_048_576 ? `${(b / 1_048_576).toLocaleString(INTL_TAG[locale], { minimumFractionDigits: 1, maximumFractionDigits: 1 })} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
 
 export function MessageItem(props: {
@@ -52,13 +52,13 @@ export function MessageItem(props: {
             {err && <span className="errtext">{err}</span>}
           </form>
         ) : (
-          m.body && <div style={{ marginTop: 2, color: "#e2dccd", overflowWrap: "anywhere" }}><Md text={m.body} /></div>
+          m.body && <div style={{ marginTop: 2, color: "var(--text)", overflowWrap: "anywhere" }}><Md text={m.body} /></div>
         )}
         {images.length > 0 && (
           <div style={{ display: "grid", gridTemplateColumns: grid ? "repeat(auto-fill, minmax(150px, 1fr))" : "1fr", gap: 6, marginTop: 8, maxWidth: grid ? 520 : 320 }}>
             {images.map((a, idx) => (
               <button key={a.id} type="button" aria-label={t("chat.msg.enlarge", { name: a.name })} onClick={() => props.onOpenImage(images.map((x) => ({ id: x.id, name: x.name })), idx)}
-                style={{ padding: 0, border: "1px solid var(--line)", borderRadius: 10, overflow: "hidden", cursor: "zoom-in", background: "#211d17", textAlign: "left" }}>
+                style={{ padding: 0, border: "1px solid var(--line)", borderRadius: 10, overflow: "hidden", cursor: "zoom-in", background: "var(--soft)", textAlign: "left" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element -- geschützter Endpoint */}
                 <img src={`/api/attachments/${a.id}?v=thumb`} alt={a.name} width={a.width ?? undefined} height={a.height ?? undefined} loading="lazy"
                   style={{ display: "block", width: "100%", height: grid ? 120 : "auto", maxHeight: 240, objectFit: grid ? "cover" : "contain" }} />

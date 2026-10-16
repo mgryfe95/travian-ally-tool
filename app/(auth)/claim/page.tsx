@@ -43,7 +43,7 @@ export default async function ClaimPage({ searchParams }: { searchParams: Promis
         </form>
         {pending?.claimCode && (
           <>
-            <div className="card" style={{ background: "#191612" }}>
+            <div className="card" style={{ background: "var(--soft)" }}>
               <div style={{ fontWeight: 600, marginBottom: 6 }}>{t("auth.claim.howTo")}</div>
               <ol style={{ margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 6, color: "var(--text2)" }}>
                 <li>{t("auth.claim.step1", { deadline, tz: cfg.GAME_TIMEZONE })} <span className="mono" style={{ color: "var(--link-h)", fontSize: 16 }}>{pending.claimCode}</span></li>
