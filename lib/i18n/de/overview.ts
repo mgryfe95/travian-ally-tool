@@ -240,5 +240,7 @@ const de: Record<keyof typeof en, string> = {
   "overview.relation.CLOSE_ALLY": "Enger Bündnispartner",
   "overview.gamedata.compareLink": "Diesen Vorteil über alle Gebäude vergleichen",
   "overview.gamedata.buildingLink": "Zur Gebäude-Tabelle",
+  "overview.fx.culturePoints": "Kulturpunkte",
+  "overview.fxGroup.culture": "Kultur",
 };
 export default de;

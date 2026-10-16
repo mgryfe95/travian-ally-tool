@@ -9,7 +9,7 @@ import { INTL_TAG, type Locale } from "../i18n";
  * - bonus: Anteil als Zuwachs (0,05 → +5 %) · timeFactor: Zeitfaktor (0,9 → −10 % Zeit; kleiner ist besser)
  */
 export type EffectKind = "rate" | "capacity" | "count" | "seconds" | "bonus" | "timeFactor";
-export type EffectGroup = "production" | "storage" | "time" | "military" | "defense" | "economy" | "info";
+export type EffectGroup = "production" | "storage" | "time" | "military" | "defense" | "economy" | "culture" | "info";
 export type EffectDef = { kind: EffectKind; group: EffectGroup; better: "higher" | "lower" };
 
 const H = "higher" as const;
@@ -34,6 +34,7 @@ export const EFFECTS: Record<string, EffectDef> = {
   merchantBoostRoman: { kind: "bonus", group: "economy", better: H }, ships: { kind: "count", group: "economy", better: H },
   smallPartyTime: { kind: "seconds", group: "economy", better: L }, largePartyTime: { kind: "seconds", group: "economy", better: L },
   partyTime: { kind: "seconds", group: "economy", better: L },
+  culturePoints: { kind: "count", group: "culture", better: H },
   population: { kind: "count", group: "info", better: L },
 };
 /** Anzeigereihenfolge der Vorteile (Gruppe, dann Schlüssel wie oben). */

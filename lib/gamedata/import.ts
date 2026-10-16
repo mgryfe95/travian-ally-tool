@@ -30,7 +30,7 @@ export async function importGameData(db: PrismaClient, raw: unknown, world: Worl
           data: { versionId: version.id, key: b.key, gid: b.gid, name: b.name, category: b.category, tribeRestriction: b.tribeRestriction, maxLevel: b.maxLevel, prerequisites: b.prerequisites as Prisma.InputJsonValue, description: b.description },
         });
         await tx.buildingLevel.createMany({ data: b.levels.map((l) => ({ ...l, buildingId: row.id, effects: l.effects as Prisma.InputJsonValue })) });
-        const fx = b.levels.flatMap((l) => Object.entries(l.effects ?? {}).filter(([, v]) => typeof v === "number" && Number.isFinite(v)).map(([effect, value]) => ({ buildingId: row.id, level: l.level, effect, value: value as number })));
+        const fx = b.levels.flatMap((l) => Object.entries({ ...(l.effects ?? {}), culturePoints: l.culturePoints }).filter(([, v]) => typeof v === "number" && Number.isFinite(v)).map(([effect, value]) => ({ buildingId: row.id, level: l.level, effect, value: value as number })));
         if (fx.length) await tx.buildingLevelEffect.createMany({ data: fx });
       }
       for (const u of d.units) {

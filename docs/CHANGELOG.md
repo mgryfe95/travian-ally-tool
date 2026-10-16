@@ -97,3 +97,5 @@ Was & Warum: Einheitennamen je Volk (Plätze 1–6 für alle 7 Völker) aus dem 
 - Registrierung/Verifizierung: Dropdown (alphabetisch) mit Spielern der eigenen Gruppe und enger Bündnispartner ohne verifiziertes Konto; bereits verknüpfte Spieler werden auch serverseitig abgelehnt.
 - „Einladung erzeugen“ öffnet den Tab mit dem Ingame-Nachrichtenfenster des Spielers (`IGM_WRITE_URL`, Standard `{server}/messages/write?to={id}` (Spieler-ID aus map.sql)) und kopiert den Einladungstext automatisch in die Zwischenablage (Betreff/Text lassen sich nicht per URL vorbelegen); bei Sammelerzeugung je Spieler ein „Ingame-Nachricht öffnen“-Link.
 - Mobile Kontoleiste (Sprache, Dateien, Abmelden), da die Sidebar dort ausgeblendet ist.
+
+- Kulturpunkte je Gebäudestufe erscheinen jetzt als Vorteil in der Gebäude-Tabelle und im Vorteile-Vergleich (Migration `culture_points_effect` übernimmt den Bestand).

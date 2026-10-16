@@ -238,5 +238,7 @@ const en = {
   "overview.relation.CLOSE_ALLY": "Close ally",
   "overview.gamedata.compareLink": "Compare this benefit across all buildings",
   "overview.gamedata.buildingLink": "Open the building table",
+  "overview.fx.culturePoints": "Culture points",
+  "overview.fxGroup.culture": "Culture",
 } as const;
 export default en;
