@@ -47,7 +47,7 @@ export function LoginForm({ guestHref = "/register" }: { guestHref?: string }) {
 }
 
 /** `inviteToken` gesetzt: Name kommt vom Spieler, Ziel ist die Übersicht. Sonst Gast-Registrierung → /claim. */
-export function RegisterForm({ inviteToken }: { inviteToken?: string }) {
+export function RegisterForm({ inviteToken, players = [] }: { inviteToken?: string; players?: string[] }) {
   const t = useT();
   const { onSubmit, error, busy } = useSubmit(
     "/api/register",
@@ -57,7 +57,7 @@ export function RegisterForm({ inviteToken }: { inviteToken?: string }) {
   );
   return (
     <form onSubmit={onSubmit} style={col}>
-      {!inviteToken && <div><label className="lbl" htmlFor="rp">{t("auth.register.player")}</label><input id="rp" name="playerName" className="field" autoComplete="off" aria-describedby="rph" /><div id="rph" className="sub" style={{ fontSize: 12, marginTop: 4 }}>{t("auth.register.playerHint")}</div></div>}
+      {!inviteToken && <div><label className="lbl" htmlFor="rp">{t("auth.register.player")}</label><input id="rp" name="playerName" className="field" autoComplete="off" list="reg-players" aria-describedby="rph" /><datalist id="reg-players">{players.map((n) => <option key={n} value={n} />)}</datalist><div id="rph" className="sub" style={{ fontSize: 12, marginTop: 4 }}>{t("auth.register.playerHint")}</div></div>}
       {!inviteToken && <div><label className="lbl" htmlFor="rn">{t("auth.displayName")}</label><input id="rn" name="name" className="field" minLength={2} autoComplete="nickname" /></div>}
       <div><label className="lbl" htmlFor="ie">{t("auth.email")}</label><input id="ie" name="email" className="field" type="email" required autoComplete="email" /></div>
       <div><label className="lbl" htmlFor="ip">{t("auth.password")}</label><input id="ip" name="password" className="field" type="password" required minLength={10} autoComplete="new-password" /></div>

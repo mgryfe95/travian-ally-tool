@@ -216,5 +216,6 @@ const en = {
   "err.register.playerUnknown": "No player with this name was found on the map",
   "err.register.playerAmbiguous": "This player name is not unique",
   "err.register.notEligible": "Registration is only open to members of our alliance and close allies",
+  "err.register.playerTaken": "This player is already linked to an account. If that is you, ask a moderator.",
 } as const;
 export default en;

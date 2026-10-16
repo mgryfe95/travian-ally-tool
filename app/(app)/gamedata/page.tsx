@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { fmt, fmtDate } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
 import type { Locale, MessageKey, T } from "@/lib/i18n";
-import { EFFECTS, EFFECT_IDS, effectLabelKey, effectValue, formatDelta, formatEffect, presentEffects } from "@/lib/gamedata/effects";
+import { EFFECTS, EFFECT_IDS, effectLabelKey, effectValue, formatDelta, formatEffect, presentEffects, rowsToEffects } from "@/lib/gamedata/effects";
 import { requirePermission } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -31,10 +31,12 @@ export default async function GameDataPage({ searchParams }: { searchParams: Pro
         <section className="card">
           <p className="sub">{t("overview.gamedata.empty")}</p>
         </section>
-      ) : tab === "buildings" ? <Buildings versionId={version.id} speed={version.serverSpeed} selected={Number(sp.b)} t={t} locale={locale} /> : tab === "effects" ? <EffectsCompare versionId={version.id} fx={sp.fx} t={t} locale={locale} /> : tab === "units" ? <Units versionId={version.id} tribeId={Number(sp.tribe)} t={t} /> : <Tribes versionId={version.id} t={t} />}
+      ) : tab === "buildings" ? <Buildings versionId={version.id} speed={version.serverSpeed} selected={Number(sp.b)} fx={sp.fx} t={t} locale={locale} /> : tab === "effects" ? <EffectsCompare versionId={version.id} fx={sp.fx} selected={Number(sp.b)} t={t} locale={locale} /> : tab === "units" ? <Units versionId={version.id} tribeId={Number(sp.tribe)} t={t} /> : <Tribes versionId={version.id} t={t} />}
     </>
   );
 }
+
+const HL = { background: "rgba(214, 170, 90, 0.12)" } as const;
 
 /** Quelle kurz: nur Host der URL (Prüfsumme/Abrufdatum stehen im Datenstand-Datum). */
 function shortSource(src: string) {
@@ -42,27 +44,28 @@ function shortSource(src: string) {
   return m ? m[1]! : src.split(" (")[0]!;
 }
 
-function Cell({ id, prev, cur, locale }: { id: string; prev: number | null; cur: number | null; locale: Locale }) {
+function Cell({ id, prev, cur, locale, hl }: { id: string; prev: number | null; cur: number | null; locale: Locale; hl?: boolean }) {
   const d = formatDelta(id, prev, cur, locale);
-  return <td className="mono r">{formatEffect(id, cur, locale)}{d && <div className="sub" style={{ fontSize: 11 }}>{d}</div>}</td>;
+  return <td className="mono r" style={hl ? HL : undefined}>{formatEffect(id, cur, locale)}{d && <div className="sub" style={{ fontSize: 11 }}>{d}</div>}</td>;
 }
 
-async function Buildings({ versionId, speed, selected, t, locale }: { versionId: number; speed: number; selected: number; t: T; locale: Locale }) {
+async function Buildings({ versionId, speed, selected, fx, t, locale }: { versionId: number; speed: number; selected: number; fx?: string; t: T; locale: Locale }) {
   const list = await db.building.findMany({ where: { versionId }, orderBy: [{ category: "asc" }, { name: "asc" }] });
   const cur = list.find((b) => b.id === selected) ?? list[0];
-  const levels = cur ? await db.buildingLevel.findMany({ where: { buildingId: cur.id }, orderBy: { level: "asc" } }) : [];
+  const rows = cur ? await db.buildingLevel.findMany({ where: { buildingId: cur.id }, orderBy: { level: "asc" }, include: { effectRows: true } }) : [];
+  const levels = rows.map((l) => ({ ...l, effects: rowsToEffects(l.effectRows) }));
   const ids = presentEffects(levels);
   return (
     <div className="row" style={{ alignItems: "flex-start", gap: 20 }}>
       <section className="card" style={{ flex: "1 1 220px", maxWidth: 260, padding: 10 }}>
-        {list.map((b) => <Link key={b.id} href={`/gamedata?tab=buildings&b=${b.id}`} className={`listbtn ${b.id === cur?.id ? "on" : ""}`}><span>{b.name}</span><span className="sub" style={{ fontSize: 11 }}>{b.tribeRestriction ?? t("overview.gamedata.allTribes")}</span></Link>)}
+        {list.map((b) => <Link key={b.id} href={`/gamedata?tab=buildings&b=${b.id}${fx ? `&fx=${fx}` : ""}`} className={`listbtn ${b.id === cur?.id ? "on" : ""}`}><span>{b.name}</span><span className="sub" style={{ fontSize: 11 }}>{b.tribeRestriction ?? t("overview.gamedata.allTribes")}</span></Link>)}
       </section>
       {cur && (
         <section className="card flush" style={{ flex: "999 1 480px", minWidth: 0 }}>
           <div style={{ margin: 12 }}><h2 style={{ fontSize: 18 }}>{cur.name}</h2><div className="sub" style={{ fontSize: 12 }}>{t("overview.gamedata.legend")}</div></div>
           <div className="scroll"><table style={{ minWidth: 720 }}>
-            <thead><tr><th>{t("overview.gamedata.colLevel")}</th><th className="r">{t("overview.gamedata.colWood")}</th><th className="r">{t("overview.gamedata.colClay")}</th><th className="r">{t("overview.gamedata.colIron")}</th><th className="r">{t("overview.gamedata.colCrop")}</th><th className="r">{t("overview.gamedata.colUpkeep")}</th><th className="r">{t("overview.gamedata.colBuildTime")}</th>{ids.map((id) => <th key={id} className="r">{t(effectLabelKey(id) as MessageKey)}</th>)}</tr></thead>
-            <tbody>{levels.map((l, i) => <tr key={l.level}><td className="mono">{l.level}</td><td className="mono r">{fmt(l.costWood, locale)}</td><td className="mono r">{fmt(l.costClay, locale)}</td><td className="mono r">{fmt(l.costIron, locale)}</td><td className="mono r">{fmt(l.costCrop, locale)}</td><td className="mono r">{l.upkeep}</td><td className="mono r">{fmtTime(Math.round(l.buildTimeSec / speed))}</td>{ids.map((id) => <Cell key={id} id={id} prev={i > 0 ? effectValue(levels[i - 1]!.effects, id) : null} cur={effectValue(l.effects, id)} locale={locale} />)}</tr>)}</tbody>
+            <thead><tr><th>{t("overview.gamedata.colLevel")}</th><th className="r">{t("overview.gamedata.colWood")}</th><th className="r">{t("overview.gamedata.colClay")}</th><th className="r">{t("overview.gamedata.colIron")}</th><th className="r">{t("overview.gamedata.colCrop")}</th><th className="r">{t("overview.gamedata.colUpkeep")}</th><th className="r">{t("overview.gamedata.colBuildTime")}</th>{ids.map((id) => <th key={id} className="r" style={id === fx ? HL : undefined}><Link href={`/gamedata?tab=effects&fx=${id}&b=${cur.id}`} title={t("overview.gamedata.compareLink")}>{t(effectLabelKey(id) as MessageKey)} ↗</Link></th>)}</tr></thead>
+            <tbody>{levels.map((l, i) => <tr key={l.level}><td className="mono">{l.level}</td><td className="mono r">{fmt(l.costWood, locale)}</td><td className="mono r">{fmt(l.costClay, locale)}</td><td className="mono r">{fmt(l.costIron, locale)}</td><td className="mono r">{fmt(l.costCrop, locale)}</td><td className="mono r">{l.upkeep}</td><td className="mono r">{fmtTime(Math.round(l.buildTimeSec / speed))}</td>{ids.map((id) => <Cell key={id} id={id} prev={i > 0 ? effectValue(levels[i - 1]!.effects, id) : null} cur={effectValue(l.effects, id)} locale={locale} hl={id === fx} />)}</tr>)}</tbody>
           </table></div>
         </section>
       )}
@@ -77,14 +80,16 @@ function fmtTime(sec: number) {
 }
 
 /** Ein Vorteil über alle Gebäude, die ihn liefern: gleiche Einheit, Stufe für Stufe nebeneinander. */
-async function EffectsCompare({ versionId, fx, t, locale }: { versionId: number; fx?: string; t: T; locale: Locale }) {
-  const buildings = await db.building.findMany({ where: { versionId }, include: { levels: { orderBy: { level: "asc" } } }, orderBy: { gid: "asc" } });
-  const providers = (id: string) => buildings.filter((b) => b.levels.some((l) => effectValue(l.effects, id) !== null));
-  const available = EFFECT_IDS.filter((id) => providers(id).length > 0);
+async function EffectsCompare({ versionId, fx, selected, t, locale }: { versionId: number; fx?: string; selected: number; t: T; locale: Locale }) {
+  const inVersion = { buildingLevel: { building: { versionId } } };
+  const present = new Set((await db.buildingLevelEffect.groupBy({ by: ["effect"], where: inVersion })).map((r) => r.effect));
+  const available = [...EFFECT_IDS.filter((i) => present.has(i)), ...[...present].filter((i) => !(i in EFFECTS)).sort()];
   const id = fx && available.includes(fx) ? fx : available[0];
-  const cols = id ? providers(id) : [];
-  const maxLevel = Math.max(0, ...cols.map((b) => b.levels.length));
-  const groups = [...new Set(available.map((i) => EFFECTS[i]!.group))];
+  const rows = id ? await db.buildingLevelEffect.findMany({ where: { ...inVersion, effect: id }, include: { buildingLevel: { include: { building: true } } }, orderBy: [{ buildingId: "asc" }, { level: "asc" }] }) : [];
+  const cols = [...new Map(rows.map((r) => [r.buildingId, r.buildingLevel.building])).values()];
+  const byKey = new Map(rows.map((r) => [`${r.buildingId}:${r.level}`, r.value]));
+  const maxLevel = Math.max(0, ...rows.map((r) => r.level));
+  const groups = [...new Set(available.map((i) => EFFECTS[i]?.group ?? "info"))];
   return (
     <div className="row" style={{ alignItems: "flex-start", gap: 20 }}>
       <section className="card" style={{ flex: "1 1 240px", maxWidth: 280, padding: 10 }}>
@@ -92,7 +97,7 @@ async function EffectsCompare({ versionId, fx, t, locale }: { versionId: number;
         {groups.map((g) => (
           <div key={g}>
             <div className="sub" style={{ fontSize: 11, margin: "8px 4px 2px", textTransform: "uppercase" }}>{t(`overview.fxGroup.${g}` as MessageKey)}</div>
-            {available.filter((i) => EFFECTS[i]!.group === g).map((i) => <Link key={i} href={`/gamedata?tab=effects&fx=${i}`} className={`listbtn ${i === id ? "on" : ""}`}><span>{t(effectLabelKey(i) as MessageKey)}</span></Link>)}
+            {available.filter((i) => (EFFECTS[i]?.group ?? "info") === g).map((i) => <Link key={i} href={`/gamedata?tab=effects&fx=${i}`} className={`listbtn ${i === id ? "on" : ""}`}><span>{t(effectLabelKey(i) as MessageKey)}</span></Link>)}
           </div>
         ))}
       </section>
@@ -100,12 +105,11 @@ async function EffectsCompare({ versionId, fx, t, locale }: { versionId: number;
         <section className="card flush" style={{ flex: "999 1 480px", minWidth: 0 }}>
           <div style={{ margin: 12 }}><h2 style={{ fontSize: 18 }}>{t(effectLabelKey(id) as MessageKey)}</h2><div className="sub" style={{ fontSize: 12 }}>{t("overview.gamedata.legend")}</div></div>
           <div className="scroll"><table style={{ minWidth: 480 }}>
-            <thead><tr><th>{t("overview.gamedata.colLevel")}</th>{cols.map((b) => <th key={b.id} className="r">{b.name}</th>)}</tr></thead>
+            <thead><tr><th>{t("overview.gamedata.colLevel")}</th>{cols.map((b) => <th key={b.id} className="r" style={b.id === selected ? HL : undefined}><Link href={`/gamedata?tab=buildings&b=${b.id}&fx=${id}`} title={t("overview.gamedata.buildingLink")}>{b.name} ↗</Link></th>)}</tr></thead>
             <tbody>{Array.from({ length: maxLevel }, (_, i) => i + 1).map((lv) => (
               <tr key={lv}><td className="mono">{lv}</td>{cols.map((b) => {
-                const cur = b.levels.find((l) => l.level === lv);
-                const prev = b.levels.find((l) => l.level === lv - 1);
-                return <Cell key={b.id} id={id} prev={prev ? effectValue(prev.effects, id) : null} cur={cur ? effectValue(cur.effects, id) : null} locale={locale} />;
+                const cur = byKey.get(`${b.id}:${lv}`) ?? null;
+                return <Cell key={b.id} id={id} prev={byKey.get(`${b.id}:${lv - 1}`) ?? null} cur={cur} locale={locale} hl={b.id === selected} />;
               })}</tr>
             ))}</tbody>
           </table></div>

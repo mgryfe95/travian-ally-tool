@@ -238,5 +238,7 @@ const de: Record<keyof typeof en, string> = {
   "overview.fxGroup.economy": "Handel & Feste",
   "overview.fxGroup.info": "Sonstiges",
   "overview.relation.CLOSE_ALLY": "Enger Bündnispartner",
+  "overview.gamedata.compareLink": "Diesen Vorteil über alle Gebäude vergleichen",
+  "overview.gamedata.buildingLink": "Zur Gebäude-Tabelle",
 };
 export default de;

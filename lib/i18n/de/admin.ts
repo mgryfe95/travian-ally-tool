@@ -152,5 +152,8 @@ const de: Record<keyof typeof en, string> = {
   "admin.invite.create": "Einladung erzeugen",
   "admin.invite.bulk": "Alle Uneingeladenen: Links erzeugen",
   "admin.relation.CLOSE_ALLY": "Enger Bündnispartner",
+  "admin.invite.openIgm": "Ingame-Nachricht öffnen",
+  "admin.invite.copied": "Einladungstext in die Zwischenablage kopiert – füge ihn in die Nachricht ein.",
+  "admin.invite.copyManual": "Automatisches Kopieren nicht möglich – nutze unten „IGM-Text kopieren“.",
 };
 export default de;

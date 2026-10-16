@@ -218,5 +218,6 @@ const de: Record<keyof typeof en, string> = {
   "err.register.playerUnknown": "Kein Spieler mit diesem Namen auf der Karte gefunden",
   "err.register.playerAmbiguous": "Dieser Spielername ist nicht eindeutig",
   "err.register.notEligible": "Die Registrierung ist nur für Mitglieder unserer Allianz und enge Bündnispartner offen",
+  "err.register.playerTaken": "Dieser Spieler ist bereits mit einem Konto verknüpft. Falls das du bist, wende dich an einen Moderator.",
 };
 export default de;

@@ -28,6 +28,9 @@ describe("importGameData", () => {
   it("legt Version, Völker, Gebäude, Stufen und Einheiten an; neuer Import = neue Version", async () => {
     const r = await importGameData(db, valid());
     expect(r).toMatchObject({ tribes: 1, buildings: 1, levels: 3, units: 1 });
+    // Vorteile sind relational mit der Gebäudestufe verknüpft (eine Zeile je Gebäude/Stufe/Vorteil)
+    const fx = await db.buildingLevelEffect.findMany({ where: { buildingLevel: { building: { versionId: r.versionId } } }, orderBy: { level: "asc" } });
+    expect(fx.map((f) => [f.level, f.effect, f.value])).toEqual([[1, "demo", 1], [2, "demo", 2], [3, "demo", 3]]);
     await importGameData(db, valid());
     expect(await db.gameDataVersion.count()).toBe(2);
     expect(await db.unit.count()).toBe(2);

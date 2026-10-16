@@ -236,5 +236,7 @@ const en = {
   "overview.fxGroup.economy": "Trade & celebrations",
   "overview.fxGroup.info": "Other",
   "overview.relation.CLOSE_ALLY": "Close ally",
+  "overview.gamedata.compareLink": "Compare this benefit across all buildings",
+  "overview.gamedata.buildingLink": "Open the building table",
 } as const;
 export default en;

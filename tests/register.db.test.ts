@@ -86,3 +86,18 @@ describe("Registrierung", () => {
     expect(await db.session.count()).toBe(0);
   });
 });
+
+describe("Spielerliste der Registrierung", () => {
+  it("alphabetisch, nur Gruppe/enge Bündnispartner, ohne bereits verknüpfte Spieler; verknüpfte werden auch serverseitig abgelehnt", async () => {
+    const { loadRegistrablePlayers } = await import("@/lib/alliance-group");
+    const mk = (id: number, name: string, allianceId: number) => ({ id, name, tribe: 1, allianceId, population: 1, villageCount: 1, status: "active", noGrowthDays: 0, firstSeen: new Date() });
+    await db.player.createMany({ data: [mk(2, "zebra", 36), mk(3, "Berta", 36), mk(4, "Frei", 88), mk(5, "Fremd", 99)] });
+    await db.allianceClassification.create({ data: { allianceId: 88, relation: "CLOSE_ALLY" } });
+    expect((await loadRegistrablePlayers(db)).map((p) => p.name)).toEqual(["Alpha", "Berta", "Frei", "zebra"]);
+    await registerUser({ email: "t1@x.de", password: PW, playerName: "Berta" });
+    // erst nach Verifizierung verschwindet der Spieler aus der Liste
+    await db.playerLink.updateMany({ where: { travianPlayerId: 3 }, data: { status: "verified" } });
+    expect((await loadRegistrablePlayers(db)).map((p) => p.name)).toEqual(["Alpha", "Frei", "zebra"]);
+    await expect(registerUser({ email: "t2@x.de", password: PW, playerName: "Berta" })).rejects.toMatchObject({ key: "err.register.playerTaken" });
+  });
+});

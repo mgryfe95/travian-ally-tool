@@ -79,6 +79,15 @@ export async function loadGroupPlayers(db: PrismaClient, relations?: Map<number,
   });
 }
 
+/** Spieler, die sich registrieren dürfen: eigene Gruppe + enge Bündnispartner, noch ohne verifiziertes Konto; alphabetisch (ohne Groß-/Kleinschreibung). */
+export async function loadRegistrablePlayers(db: PrismaClient): Promise<{ id: number; name: string }[]> {
+  const ids = [...verifiableIds(await loadRelations(db))];
+  if (ids.length === 0) return [];
+  const taken = (await db.playerLink.findMany({ where: { status: "verified" }, select: { travianPlayerId: true } })).map((l) => l.travianPlayerId);
+  const rows = await db.player.findMany({ where: { allianceId: { in: ids }, id: { notIn: taken } }, select: { id: true, name: true } });
+  return rows.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+}
+
 /** Schreibt die Klassifizierung. Berechtigungsprüfung (alliances.classify) macht der Aufrufer (M3). */
 export async function setRelation(db: PrismaClient, allianceId: number, relation: Relation, opts: { note?: string; updatedBy?: string } = {}) {
   if (!Number.isInteger(allianceId) || allianceId <= 0) throw new AppError("err.alliance.invalidId");

@@ -28,6 +28,8 @@ const schema = z.object({
   MAP_RELEASE_TIME: z.string().regex(/^\d{1,2}:\d{2}$/).default("00:05"),
   /** Zeitzone der Spielserver-Uhr (für Release-Zeit und Hinweise). */
   GAME_TIMEZONE: z.string().default("Europe/Berlin"),
+  /** Schreibfenster der Ingame-Nachrichten ({server}, {id}, {name}); Standard siehe lib/igm.ts. */
+  IGM_WRITE_URL: z.string().default("{server}/messages/write?to={id}"),
   STORAGE_DIR: z.string().default("./storage"),
   /** Speicherplatz je Nutzer für Screenshots + Chat-Dateien in MB (0 = unbegrenzt). */
   USER_QUOTA_MB: z.coerce.number().min(0).default(10),

@@ -60,6 +60,7 @@ export async function registerUser(raw: unknown) {
       if (e instanceof VerificationError) throw new RegisterError("err.register.notEligible");
       throw e;
     }
+    if (await db.playerLink.findFirst({ where: { travianPlayerId: found[0]!.id, status: "verified" }, select: { id: true } })) throw new RegisterError("err.register.playerTaken");
     claimPlayerId = found[0]!.id;
     name ??= found[0]!.name;
   }

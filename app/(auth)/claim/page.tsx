@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { loadGroupPlayers } from "@/lib/alliance-group";
+import { loadRegistrablePlayers } from "@/lib/alliance-group";
 import { nextRelease, renameDeadline } from "@/lib/map-release";
 import { env } from "@/lib/env";
 import { INTL_TAG, type MessageKey } from "@/lib/i18n";
@@ -22,7 +22,7 @@ export default async function ClaimPage({ searchParams }: { searchParams: Promis
   if (links.some((l) => l.status === "verified")) redirect("/");
   const pending = links.find((l) => l.status === "pending");
   const player = pending ? await db.player.findUnique({ where: { id: pending.travianPlayerId } }) : null;
-  const group = await loadGroupPlayers(db);
+  const group = await loadRegistrablePlayers(db);
   const cfg = env();
   const deadline = renameDeadline(cfg.MAP_RELEASE_TIME);
   const release = nextRelease(new Date(), cfg.GAME_TIMEZONE, cfg.MAP_RELEASE_TIME);

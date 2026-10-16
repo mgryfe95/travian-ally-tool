@@ -1,5 +1,6 @@
 "use server";
 
+import { igmWriteUrl } from "@/lib/igm";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
@@ -75,7 +76,9 @@ export async function revokeInviteAction(f: FormData) {
   return run("members", async () => revokeInvite(db, await requireUser(), int(f, "inviteId")));
 }
 
-export type InviteState = { error?: string; message?: string; items?: { player: string; message: string }[] };
+export type InviteState = { error?: string; message?: string; igmUrl?: string; items?: { player: string; message: string; igmUrl: string }[] };
+
+const igm = (player: { id: number; name: string }) => igmWriteUrl(env().TRAVIAN_SERVER_URL, player, env().IGM_WRITE_URL);
 
 const abs = async (token: string, name: string) => inviteMessage({ playerName: name, token, appUrl: env().APP_URL, locale: await getLocale() });
 
@@ -86,7 +89,7 @@ export async function createInviteAction(_prev: InviteState, f: FormData): Promi
     const playerId = int(f, "playerId");
     await db.invite.updateMany({ where: { travianPlayerId: playerId, usedAt: null, revokedAt: null }, data: { revokedAt: new Date() } });
     const { token, player } = await createInvite(db, user, playerId);
-    return { message: await abs(token, player.name) };
+    return { message: await abs(token, player.name), igmUrl: igm(player) };
   } catch (e) {
     if (e instanceof AppError || e instanceof ForbiddenError || e instanceof VerificationError) return { error: localizeError(e, await getLocale()) };
     throw e;
@@ -102,7 +105,7 @@ export async function createBulkInvitesAction(): Promise<InviteState> {
     const items: NonNullable<InviteState["items"]> = [];
     for (const r of rows) {
       const { token, player } = await createInvite(db, user, r.player.id);
-      items.push({ player: player.name, message: await abs(token, player.name) });
+      items.push({ player: player.name, message: await abs(token, player.name), igmUrl: igm(player) });
     }
     return { items };
   } catch (e) {

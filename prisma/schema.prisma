@@ -517,8 +517,22 @@ model BuildingLevel {
   culturePoints Int
   /// Vorteile je Stufe: Produktion/h, Lagerkapazität, Versteck, Fallen, Bau-/Ausbildungsbonus …
   effects       Json     @default("{}")
+  /// Dieselben Vorteile relational (eine Zeile je Gebäude/Stufe/Vorteil): Grundlage für Anzeige, Vergleich über Gebäude und KI.
+  effectRows    BuildingLevelEffect[]
 
   @@id([buildingId, level])
+}
+
+/// Ein Vorteil einer Gebäudestufe (z. B. production1 = 13). Art/Einheit/Richtung je `effect` stehen in lib/gamedata/effects.ts.
+model BuildingLevelEffect {
+  buildingId Int
+  level      Int
+  effect     String
+  value      Float
+  buildingLevel BuildingLevel @relation(fields: [buildingId, level], references: [buildingId, level], onDelete: Cascade)
+
+  @@id([buildingId, level, effect])
+  @@index([effect])
 }
 
 model Unit {

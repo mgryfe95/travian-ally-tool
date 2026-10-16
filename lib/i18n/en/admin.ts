@@ -150,5 +150,8 @@ const en = {
   "admin.invite.create": "Create invite",
   "admin.invite.bulk": "All uninvited: create links",
   "admin.relation.CLOSE_ALLY": "Close ally",
+  "admin.invite.openIgm": "Open in-game message",
+  "admin.invite.copied": "Invitation text copied to the clipboard – paste it into the message.",
+  "admin.invite.copyManual": "Could not copy automatically – use “Copy IGM text” below.",
 } as const;
 export default en;

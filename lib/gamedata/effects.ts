@@ -41,6 +41,9 @@ export const EFFECT_IDS = Object.keys(EFFECTS);
 export const effectLabelKey = (id: string) => `overview.fx.${id}`;
 
 export type Effects = unknown;
+
+/** Relationale Zeilen (`BuildingLevelEffect`) → Objekt `{ effect: value }` für `levelBenefits` & Co. */
+export const rowsToEffects = (rows: { effect: string; value: number }[]): Record<string, number> => Object.fromEntries(rows.map((r) => [r.effect, r.value]));
 export const effectValue = (e: Effects, id: string): number | null => {
   const v = e && typeof e === "object" ? (e as Record<string, unknown>)[id] : undefined;
   return typeof v === "number" && Number.isFinite(v) ? v : null;

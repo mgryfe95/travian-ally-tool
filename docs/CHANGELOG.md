@@ -91,3 +91,9 @@ Was & Warum: Einheitennamen je Volk (Plätze 1–6 für alle 7 Völker) aus dem 
 ## 2026-10-16 · map.sql-Abruf nach der täglichen Veröffentlichung · Notion-Root 3f912988-7097-813a-be0b-e9ee8831f987
 - Worker holt map.sql zusätzlich gezielt um `MAP_RELEASE_TIME` (00:05) +0/+5/+15 Min. in `GAME_TIMEZONE`; Verifizierung per Dorfname greift so direkt nach der Veröffentlichung (23:55–0:05).
 - Verifizierungsseite: „Benenne bis 23:55 (Serverzeit) ein Dorf in CODE um“, nächste Veröffentlichung und Zeit der Prüfung werden angezeigt; Zurückbenennen ab 0:05 möglich (`lib/map-release.ts`).
+
+## 2026-10-16 · Vorteile↔Gebäude verknüpft, Registrierungs-Dropdown, Einladung per IGM-Tab · Notion-Root 3f912988-7097-813a-be0b-e9ee8831f987
+- Vorteile relational: Tabelle `BuildingLevelEffect` (FK auf `BuildingLevel`, Migration füllt Bestand aus dem JSON); Gebäude-Tabelle und Vorteile-Vergleich lesen dieselben Zeilen und verlinken sich gegenseitig (Spaltenkopf ↗ → Vergleich, Gebäudename ↗ → Gebäude; ausgewählte Spalte/Gebäude hervorgehoben).
+- Registrierung/Verifizierung: Dropdown (alphabetisch) mit Spielern der eigenen Gruppe und enger Bündnispartner ohne verifiziertes Konto; bereits verknüpfte Spieler werden auch serverseitig abgelehnt.
+- „Einladung erzeugen“ öffnet den Tab mit dem Ingame-Nachrichtenfenster des Spielers (`IGM_WRITE_URL`, Standard `{server}/messages/write?to={id}` (Spieler-ID aus map.sql)) und kopiert den Einladungstext automatisch in die Zwischenablage (Betreff/Text lassen sich nicht per URL vorbelegen); bei Sammelerzeugung je Spieler ein „Ingame-Nachricht öffnen“-Link.
+- Mobile Kontoleiste (Sprache, Dateien, Abmelden), da die Sidebar dort ausgeblendet ist.
