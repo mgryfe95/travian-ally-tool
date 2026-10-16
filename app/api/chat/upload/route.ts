@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { processUpload, UploadError } from "@/lib/chat/attachments";
 import { uploadLimiter } from "@/lib/chat/limits";
 import { db } from "@/lib/db";
+import { assertQuota } from "@/lib/quota";
 import { env } from "@/lib/env";
 import { handle, tooMany, unauthorized } from "@/lib/http";
 import { ForbiddenError, hasPermission } from "@/lib/permissions";
@@ -32,6 +33,7 @@ export function POST(req: Request) {
     const out = [];
     for (const file of files) {
       const p = await processUpload({ name: file.name, data: Buffer.from(await file.arrayBuffer()) }, limits);
+      await assertQuota(db, user.id, p.orig.length);
       const base = `att/${new Date().getUTCFullYear()}/${randomUUID()}`;
       const keys = { storageKey: `${base}/orig.${p.origExt}`, thumbKey: p.thumb ? `${base}/thumb.webp` : null, previewKey: p.preview ? `${base}/preview.webp` : null };
       await storage().put(keys.storageKey, p.orig);

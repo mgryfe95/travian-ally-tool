@@ -25,6 +25,15 @@ const schema = z.object({
   SMTP_PASS: z.preprocess(emptyToUndefined, z.string().optional()),
   SMTP_FROM: z.string().default("Ally Tool <noreply@localhost>"),
   STORAGE_DIR: z.string().default("./storage"),
+  /** Speicherplatz je Nutzer für Screenshots + Chat-Dateien in MB (0 = unbegrenzt). */
+  USER_QUOTA_MB: z.coerce.number().min(0).default(10),
+  /** Screenshots in einem eigenen S3-Bucket (AWS, MinIO, Hetzner, Backblaze …). Ohne S3_BUCKET_SCREENSHOTS bleibt alles lokal. */
+  S3_BUCKET_SCREENSHOTS: z.preprocess(emptyToUndefined, z.string().optional()),
+  S3_ENDPOINT: z.preprocess(emptyToUndefined, z.string().url().optional()),
+  S3_REGION: z.string().default("us-east-1"),
+  S3_ACCESS_KEY_ID: z.preprocess(emptyToUndefined, z.string().optional()),
+  S3_SECRET_ACCESS_KEY: z.preprocess(emptyToUndefined, z.string().optional()),
+  S3_FORCE_PATH_STYLE: z.preprocess((v) => v === "true" || v === "1", z.boolean()).default(false),
   UPLOAD_MAX_IMAGE_MB: z.coerce.number().positive().default(10),
   UPLOAD_MAX_FILE_MB: z.coerce.number().positive().default(20),
   UPLOAD_MAX_FILES: z.coerce.number().int().positive().default(10),

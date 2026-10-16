@@ -50,3 +50,19 @@ describe("Aufbewahrung und eigene Dateien", () => {
     expect(await storage().exists("att/u3/f.png")).toBe(false);
   });
 });
+
+describe("Speicher-Kontingent und entfernte Anhänge", () => {
+  it("zählt Screenshots + aktive Anhänge; Löschen gibt Platz frei und hinterlässt einen Platzhalter", async () => {
+    const { usedBytes, assertQuota } = await import("@/lib/quota");
+    await shot("q1", "a", daysAgo(1)); // 101 Byte
+    const att = await db.attachment.create({ data: { uploaderId: "q1", kind: "image", mime: "image/png", name: "x.png", sizeBytes: 900, storageKey: "att/q1/orig.png" } });
+    expect(await usedBytes(db, "q1")).toBe(1001);
+    await expect(assertQuota(db, "q1", 100, 1100)).rejects.toMatchObject({ status: 413, key: "err.quota.exceeded" });
+    await expect(assertQuota(db, "q1", 99, 1100)).resolves.toBeUndefined();
+    await expect(assertQuota(db, "q1", 10_000_000, 0)).resolves.toBeUndefined(); // 0 = unbegrenzt
+    expect(await deleteOwnAttachment(db, "q1", att.id)).toBe(true);
+    expect(await usedBytes(db, "q1")).toBe(101);
+    expect((await db.attachment.findUnique({ where: { id: att.id } }))?.removedAt).not.toBeNull();
+    expect((await listMyFiles(db, "q1")).files.every((f) => f.type === "screenshot")).toBe(true);
+  });
+});

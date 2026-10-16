@@ -212,5 +212,6 @@ const de: Record<keyof typeof en, string> = {
   "err.mapsql.colString": "Spalte {name} muss eine Zeichenkette sein, gefunden: {got}",
   "err.mapsql.expectedParen": "„(“ erwartet bei Position {i}",
   "err.mapsql.expectedCommaOrParen": "„,“ oder „)“ erwartet bei Position {i}",
+  "err.quota.exceeded": "Speicherlimit erreicht ({used} von {limit} MB belegt). Lösche Bilder oder Dateien unter „Meine Bilder & Dateien“, um Platz zu schaffen.",
 };
 export default de;

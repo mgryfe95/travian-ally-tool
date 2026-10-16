@@ -6,7 +6,7 @@ import { readingSchema, type Reading } from "./reading";
 import { agreementOf, assess, type Assessment, type Issue } from "./validate";
 import { env } from "../env";
 import { ownVillages } from "../services/villages";
-import { storage } from "../storage";
+import { screenshotStorage } from "../storage";
 import { translate, type Locale, type MessageKey, type Params } from "../i18n";
 import { AppError } from "../i18n/errors";
 
@@ -38,7 +38,7 @@ export async function loadExamples(db: PrismaClient): Promise<Example[]> {
     const gold = readingSchema.safeParse(r.gold);
     if (!gold.success) continue;
     try {
-      out.push({ image: await storage().get(r.storageKey), gold: gold.data });
+      out.push({ image: await screenshotStorage().get(r.storageKey), gold: gold.data });
       seen.add(r.kind);
     } catch {
       /* Bild nicht mehr vorhanden → Beispiel überspringen */
@@ -62,7 +62,7 @@ export class VisionPipeline {
   async process(screenshotId: number): Promise<PipelineResult> {
     const shot = await this.db.screenshot.findUnique({ where: { id: screenshotId } });
     if (!shot) return withReason("failed", "err.vision.screenshotNotFound");
-    const image = await storage().get(shot.storageKey);
+    const image = await screenshotStorage().get(shot.storageKey);
     const e = env();
     try {
       const [examples, aliases, known] = await Promise.all([loadExamples(this.db), this.db.visionAlias.findMany({ orderBy: { term: "asc" } }), knownVillages(this.db, shot.userId)]);

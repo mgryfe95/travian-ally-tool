@@ -91,5 +91,6 @@ const de: Record<keyof typeof en, string> = {
   "chat.lightbox.close": "Schließen",
   "chat.api.invalidRequest": "Ungültige Anfrage",
   "chat.api.channelMissing": "channel fehlt",
+  "chat.msg.removed": "Datei vom Uploader entfernt: {name}",
 };
 export default de;

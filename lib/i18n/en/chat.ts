@@ -89,5 +89,6 @@ const en = {
   "chat.lightbox.close": "Close",
   "chat.api.invalidRequest": "Invalid request",
   "chat.api.channelMissing": "Missing channel parameter",
+  "chat.msg.removed": "File removed by its uploader: {name}",
 } as const;
 export default en;

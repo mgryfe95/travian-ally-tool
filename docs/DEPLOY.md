@@ -165,3 +165,6 @@ docker compose cp app:/app/storage/gamedata-raw ./gamedata-raw && tar czf gameda
 | Uploads brechen ab | `client_max_body_size` / `LimitRequestBody` |
 | Keine Inaktiven | brauchen ≥ `INACTIVE_DAYS`+1 Tagesstände (ca. 4 Tage nach dem ersten Import) |
 | Import-Fehler | `docker compose logs worker`, `curl -I $TRAVIAN_SERVER_URL/map.sql` |
+
+## Screenshots in S3 (optional)
+Privaten Bucket anlegen (kein öffentlicher Zugriff; Zugriffsschlüssel nur mit Lesen/Schreiben/Löschen auf diesen Bucket) und in der `.env` eintragen: `S3_BUCKET_SCREENSHOTS`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, bei Nicht-AWS zusätzlich `S3_ENDPOINT` (MinIO: `S3_FORCE_PATH_STYLE=true`). Danach `docker compose up -d`. Neue Screenshots landen im Bucket, ältere lokale bleiben les- und löschbar. Die Auslieferung läuft weiter über die App (Rechteprüfung), der Bucket bleibt privat.

@@ -74,3 +74,10 @@ Was & Warum: Einheitennamen je Volk (Plätze 1–6 für alle 7 Völker) aus dem 
 - Fehler: alle Fehlerklassen erben von `AppError(key, params)`; `message` ist Englisch, Anzeige per `localizeError`. Mails, Einladungstext, Call-Texte nutzen die Sprache des Empfängers/Auslösers.
 - `fmt/delta` brauchen jetzt die Locale; `fmtDate` (Europe/Berlin). E2E laufen mit `de-DE`.
 - Noch nicht übersetzt: KI-Prompts, Seed-Vorlagen/-Kanäle, Audit-Rohwerte, gelöschter Nutzer in Listen (immer „deleted“), Better-Auth-Eigentexte.
+
+## 2026-10-16 · Spieldaten-Vorteile, S3, Kontingent · Notion-Root 3f912988-7097-813a-be0b-e9ee8831f987
+- Spieldaten: Gebäude-Tabelle zeigt je Stufe die Vorteile (Produktion, Boni, Lager/Versteck, Zeitfaktoren, Fallen …) mit einheitlicher Darstellung und Δ zur Vorstufe; neuer Tab „Vorteile“ vergleicht einen Vorteil über alle Gebäude. Zentrale Beschreibung in `lib/gamedata/effects.ts` (Art/Einheit/Richtung je Vorteil), dieselben Funktionen liefern der KI normalisierte Werte (`levelBenefits`, `benefitsMarkdown`).
+- Truppen-Tab zeigt die importierten Einheitennamen (Plätze 1–10, DE/EN); Völker-Tab ohne Roh-JSON; Quelle im Kopf nur als Host.
+- Screenshots in eigenem S3-kompatiblen Bucket (`S3_BUCKET_SCREENSHOTS`, …; alte lokale Dateien bleiben lesbar); Chat-Dateien bleiben lokal.
+- Speicherplatz 10 MB je Nutzer (`USER_QUOTA_MB`) für Screenshots + Chat-Dateien; Upload über Limit → 413; Anzeige auf „Meine Bilder & Dateien“.
+- Gelöschte Chat-Dateien hinterlassen einen Platzhalter („Datei vom Uploader entfernt“), zählen nicht mehr zum Kontingent (Migration `attachment_removed`).

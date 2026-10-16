@@ -380,6 +380,8 @@ model Attachment {
   previewKey String?
   /// Erste ~20 Zeilen bei Text/CSV/Log
   snippet    String?
+  /// Vom Uploader gelöscht: Dateien sind weg, die Zeile bleibt als Platzhalter im Chat.
+  removedAt  DateTime?
   createdAt  DateTime @default(now())
 
   @@index([messageId])

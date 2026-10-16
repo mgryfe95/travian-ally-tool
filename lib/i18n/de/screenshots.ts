@@ -74,5 +74,9 @@ const de: Record<keyof typeof en, string> = {
   "screenshots.err.notFound": "Nicht gefunden",
   "screenshots.err.badRequest": "Ungültige Anfrage",
   "screenshots.err.noAccess": "Kein Zugriff",
+  "screenshots.err.removed": "Diese Datei wurde entfernt.",
+  "screenshots.files.quota": "Belegter Speicher: {used} von {limit} MB",
+  "screenshots.files.quotaUnlimited": "Belegter Speicher: {used} MB",
+  "screenshots.files.quotaLabel": "Speicherbelegung",
 };
 export default de;

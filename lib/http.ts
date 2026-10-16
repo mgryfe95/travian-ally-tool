@@ -1,3 +1,4 @@
+import { QuotaError } from "./quota";
 import { NextResponse } from "next/server";
 import { UploadError } from "./chat/attachments";
 import type { MessageKey } from "./i18n";
@@ -18,7 +19,7 @@ export async function handle(fn: () => Promise<Response>): Promise<Response> {
   } catch (e) {
     const locale = await getLocale();
     if (e instanceof ForbiddenError) return NextResponse.json({ error: localizeError(e, locale) }, { status: 403 });
-    if (e instanceof ChatError || e instanceof UploadError) return NextResponse.json({ error: localizeError(e, locale) }, { status: e.status });
+    if (e instanceof ChatError || e instanceof UploadError || e instanceof QuotaError) return NextResponse.json({ error: localizeError(e, locale) }, { status: e.status });
     console.error(e);
     return NextResponse.json({ error: localizeError(new AppError("err.internal"), locale) }, { status: 500 });
   }

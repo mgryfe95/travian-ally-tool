@@ -22,7 +22,9 @@ export function MessageItem(props: {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(m.body);
   const [err, setErr] = useState<string>();
-  const images = m.attachments.filter((a) => a.kind === "image");
+  const live = m.attachments.filter((a) => !a.removed);
+  const gone = m.attachments.filter((a) => a.removed);
+  const images = live.filter((a) => a.kind === "image");
   const time = fmtDate(new Date(m.createdAt), locale, { hour: "2-digit", minute: "2-digit" });
   const grid = images.length > 1;
 
@@ -65,7 +67,7 @@ export function MessageItem(props: {
             ))}
           </div>
         )}
-        {m.attachments.filter((a) => a.kind === "pdf").map((a) => (
+        {live.filter((a) => a.kind === "pdf").map((a) => (
           <div key={a.id} className="attach-card">
             {a.hasThumb
               // eslint-disable-next-line @next/next/no-img-element -- geschützter Endpoint
@@ -75,7 +77,8 @@ export function MessageItem(props: {
             <a className="btn ghost sm" href={`/api/attachments/${a.id}`} target="_blank" rel="noopener noreferrer">{t("chat.msg.open")}</a>
           </div>
         ))}
-        {m.attachments.filter((a) => a.kind === "text").map((a) => (
+        {gone.map((a) => <div key={a.id} className="attach-card sub" style={{ fontStyle: "italic" }}>{t("chat.msg.removed", { name: a.name })}</div>)}
+        {live.filter((a) => a.kind === "text").map((a) => (
           <details key={a.id} className="attach-card" style={{ display: "block" }}>
             <summary style={{ cursor: "pointer" }}>{a.name} <span className="sub" style={{ fontSize: 12 }}>· {size(a.sizeBytes, locale)}</span></summary>
             <pre className="mono" style={{ margin: "8px 0 0", whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: 12, color: "var(--text2)" }}>{a.snippet}</pre>

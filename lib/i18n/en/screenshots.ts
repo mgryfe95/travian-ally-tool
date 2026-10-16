@@ -72,5 +72,9 @@ const en = {
   "screenshots.err.notFound": "Not found",
   "screenshots.err.badRequest": "Invalid request",
   "screenshots.err.noAccess": "No access",
+  "screenshots.err.removed": "This file has been removed.",
+  "screenshots.files.quota": "Storage used: {used} of {limit} MB",
+  "screenshots.files.quotaUnlimited": "Storage used: {used} MB",
+  "screenshots.files.quotaLabel": "Storage usage",
 } as const;
 export default en;

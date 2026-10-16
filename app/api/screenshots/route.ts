@@ -5,12 +5,13 @@ import { processUpload } from "@/lib/chat/attachments";
 import { compressScreenshot } from "@/lib/screenshots";
 import { uploadLimiter } from "@/lib/chat/limits";
 import { db } from "@/lib/db";
+import { assertQuota } from "@/lib/quota";
 import { env } from "@/lib/env";
 import { getLocale, getT } from "@/lib/i18n/server";
 import { handle, tooMany, unauthorized } from "@/lib/http";
 import { getOwnVillage, ownVillages } from "@/lib/services/villages";
 import { getCurrentUser } from "@/lib/session";
-import { storage } from "@/lib/storage";
+import { screenshotStorage } from "@/lib/storage";
 
 export const runtime = "nodejs";
 
@@ -35,8 +36,9 @@ export function POST(req: Request) {
     // Nur die komprimierte WebP-Fassung (ohne Metadaten) + Vorschau werden gespeichert, das Original nicht.
     const c = await compressScreenshot(p.orig);
     const base = `shots/${user.id}/${randomUUID()}`;
-    await storage().put(`${base}.webp`, c.full);
-    await storage().put(`${base}.thumb.webp`, c.thumb);
+    await assertQuota(db, user.id, c.full.length + c.thumb.length);
+    await screenshotStorage().put(`${base}.webp`, c.full);
+    await screenshotStorage().put(`${base}.thumb.webp`, c.thumb);
     const shot = await db.screenshot.create({ data: { userId: user.id, villageId: villageId ?? null, storageKey: `${base}.webp`, thumbKey: `${base}.thumb.webp`, sizeBytes: c.full.length + c.thumb.length } });
     const result = await new VisionPipeline(db).process(shot.id);
     return NextResponse.json({ id: shot.id, status: result.status, message: reasonText(result, await getLocale()) }, { status: 201 });

@@ -94,3 +94,7 @@ Deutsche Namen und Plätze 7–10 pflegt man händisch: `--template namen.json` 
 - Quelle: `lib/i18n/en/<ns>.ts`; `lib/i18n/de/<ns>.ts` ist mit `Record<keyof typeof en, string>` typgleich. Neuer Text = Schlüssel `<ns>.<bereich>.<name>` in beiden Dateien. Platzhalter `{name}`; Plural über getrennte Schlüssel.
 - Server: `const {{ t, locale }} = await getT()`; Client: `useT()`/`useLocale()` (Provider im Root-Layout). Fehler: `throw new XError("err.…", params)`, Anzeige `localizeError(e, locale)`.
 - Neue Sprache: Ordner `lib/i18n/<code>/` kopieren, in `LOCALES`/`INTL_TAG`/`LOCALE_NAMES` (lib/i18n/index.ts) eintragen.
+
+## Vorteile je Stufe und Speicher
+- `BuildingLevel.effects` (JSON) enthält die Quell-Schlüssel (z. B. `production1`, `productionBoost1`, `storageWarehouse`, `trainingTimeStable`, `traps`). `lib/gamedata/effects.ts` ordnet jedem Schlüssel Art (rate/capacity/count/seconds/bonus/timeFactor), Gruppe und Richtung zu; Anzeige und KI-Kontext nutzen dieselben Formatierer. Neuer Schlüssel in der Quelle: dort eintragen + `overview.fx.<id>` in en/de (unbekannte Schlüssel erscheinen sonst als Zahl).
+- Speicher: `storage()` (lokal) für Chat-Dateien, `screenshotStorage()` für Screenshots (S3 + lokaler Fallback beim Lesen/Löschen). Kontingent in `lib/quota.ts` (zählt `sizeBytes` ohne Thumbnails von Chat-Dateien).

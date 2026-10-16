@@ -57,3 +57,6 @@ Link „Meine Bilder & Dateien“ links unten unter Deinem Namen. Dort siehst Du
 
 ## Sprache
 Unten in der Seitenleiste (und auf der Anmeldeseite) lässt sich zwischen Englisch und Deutsch wechseln. Die Wahl wird am Konto gespeichert; ohne Wahl gilt die Browsersprache, sonst Englisch.
+
+## Speicherplatz
+Jeder Nutzer hat 10 MB für Screenshots und Chat-Dateien. Unter „Meine Bilder & Dateien“ siehst du die Belegung und kannst Dateien löschen; im Chat bleibt dann der Hinweis „Datei vom Uploader entfernt“. Screenshots siehst du nur selbst (Admins ausgenommen).

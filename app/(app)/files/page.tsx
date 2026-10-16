@@ -4,6 +4,7 @@ import { env } from "@/lib/env";
 import { fmtDate } from "@/lib/format";
 import type { MessageKey } from "@/lib/i18n";
 import { getT } from "@/lib/i18n/server";
+import { quotaBytes } from "@/lib/quota";
 import { listMyFiles } from "@/lib/screenshots";
 import { requireUser } from "@/lib/session";
 import { deleteFileAction } from "./actions";
@@ -22,6 +23,8 @@ export default async function FilesPage() {
   const user = await requireUser();
   const { files, totalBytes } = await listMyFiles(db, user.id);
   const days = env().SCREENSHOT_RETENTION_DAYS;
+  const limit = quotaBytes();
+  const mb = (n: number) => (n / 1_048_576).toFixed(1);
   return (
     <>
       <header>
@@ -30,6 +33,10 @@ export default async function FilesPage() {
         <p className="sub" style={{ marginTop: 4 }}>
           {t("screenshots.files.summary", { n: files.length, size: size(totalBytes), retention: days > 0 ? t("screenshots.files.retentionDays", { n: days }) : "—" })}
         </p>
+        <div style={{ marginTop: 8, maxWidth: 360 }} aria-label={t("screenshots.files.quotaLabel")}>
+          <div className="sub" style={{ fontSize: 12 }}>{limit > 0 ? t("screenshots.files.quota", { used: mb(totalBytes), limit: mb(limit) }) : t("screenshots.files.quotaUnlimited", { used: mb(totalBytes) })}</div>
+          {limit > 0 && <div role="progressbar" aria-valuemin={0} aria-valuemax={limit} aria-valuenow={Math.min(totalBytes, limit)} style={{ height: 6, borderRadius: 3, background: "var(--line)", marginTop: 4 }}><div style={{ height: 6, borderRadius: 3, width: `${Math.min(100, (totalBytes / limit) * 100)}%`, background: totalBytes / limit > 0.9 ? "var(--warn)" : "var(--link-h)" }} /></div>}
+        </div>
       </header>
       {files.length === 0 ? <section className="card"><p className="sub">{t("screenshots.files.empty")}</p></section> : (
         <section className="card flush">

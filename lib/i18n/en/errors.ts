@@ -210,5 +210,6 @@ const en = {
   "err.mapsql.colString": "Column {name} must be a string, got {got}",
   "err.mapsql.expectedParen": "Expected “(” at offset {i}",
   "err.mapsql.expectedCommaOrParen": "Expected “,” or “)” at offset {i}",
+  "err.quota.exceeded": "Storage limit reached ({used} of {limit} MB used). Delete images or files under “My images & files” to free space.",
 } as const;
 export default en;

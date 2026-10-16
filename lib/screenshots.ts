@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import sharp from "sharp";
-import { storage } from "./storage";
+import { screenshotStorage, storage } from "./storage";
 
 const FULL_MAX = 2600; // Handy-Screenshots (~1080×2400) bleiben in voller Auflösung, damit Ziffern lesbar bleiben
 const THUMB = 400;
@@ -18,7 +18,7 @@ export async function deleteScreenshotFiles(db: PrismaClient, ids: number[]): Pr
   const rows = await db.screenshot.findMany({ where: { id: { in: ids } } });
   for (const r of rows) {
     await db.visionExample.deleteMany({ where: { storageKey: r.storageKey } });
-    for (const key of [r.storageKey, r.thumbKey]) if (key) await storage().delete(key);
+    for (const key of [r.storageKey, r.thumbKey]) if (key) await screenshotStorage().delete(key);
   }
   await db.screenshot.deleteMany({ where: { id: { in: rows.map((r) => r.id) } } });
   return rows.length;
@@ -40,7 +40,7 @@ export type MyFile = { type: "screenshot" | "attachment"; id: number; name: stri
 export async function listMyFiles(db: PrismaClient, userId: string): Promise<{ files: MyFile[]; totalBytes: number }> {
   const [shots, atts] = await Promise.all([
     db.screenshot.findMany({ where: { userId }, orderBy: { createdAt: "desc" } }),
-    db.attachment.findMany({ where: { uploaderId: userId }, orderBy: { createdAt: "desc" }, include: { message: { select: { channel: { select: { name: true } }, deletedAt: true } } } }),
+    db.attachment.findMany({ where: { uploaderId: userId, removedAt: null }, orderBy: { createdAt: "desc" }, include: { message: { select: { channel: { select: { name: true } }, deletedAt: true } } } }),
   ]);
   const files: MyFile[] = [
     ...shots.map((s) => ({ type: "screenshot" as const, id: s.id, name: `Screenshot ${s.id}`, kind: s.detectedKind, sizeBytes: s.sizeBytes, createdAt: s.createdAt, thumbUrl: s.thumbKey ? `/api/screenshots/${s.id}/file?v=thumb` : null, url: `/api/screenshots/${s.id}/file`, note: s.status })),
@@ -49,11 +49,13 @@ export async function listMyFiles(db: PrismaClient, userId: string): Promise<{ f
   return { files, totalBytes: files.reduce((s, f) => s + f.sizeBytes, 0) };
 }
 
-/** Eigenen Anhang löschen (Dateien + Zeile); die Nachricht bleibt ohne den Anhang. */
+/** Eigenen Anhang löschen (Dateien weg, Platzhalter bleibt in der Nachricht). */
 export async function deleteOwnAttachment(db: PrismaClient, userId: string, id: number): Promise<boolean> {
   const a = await db.attachment.findFirst({ where: { id, uploaderId: userId } });
   if (!a) return false;
+  if (a.removedAt) return true;
   for (const key of [a.storageKey, a.thumbKey, a.previewKey]) if (key) await storage().delete(key);
-  await db.attachment.delete({ where: { id } });
+  // Zeile bleibt als Platzhalter, damit der Chat „Datei entfernt“ statt einer leeren Stelle zeigt; Speicherplatz zählt sie nicht mehr.
+  await db.attachment.update({ where: { id }, data: { removedAt: new Date() } });
   return true;
 }

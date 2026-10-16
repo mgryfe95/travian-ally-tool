@@ -101,7 +101,7 @@ export type MessageView = {
   createdAt: string;
   editedAt: string | null;
   tags: { id: number; name: string; color: string }[];
-  attachments: { id: number; kind: string; mime: string; name: string; sizeBytes: number; width: number | null; height: number | null; hasThumb: boolean; snippet: string | null }[];
+  attachments: { id: number; kind: string; mime: string; name: string; sizeBytes: number; width: number | null; height: number | null; hasThumb: boolean; snippet: string | null; removed: boolean }[];
 };
 
 type MessageRow = Prisma.MessageGetPayload<{ include: { tags: { include: { tag: true } }; attachments: true; channel: { select: { name: true } } } }>;
@@ -116,7 +116,7 @@ async function toViews(db: PrismaClient, rows: MessageRow[]): Promise<MessageVie
       author: { id: m.authorId, name: u?.name ?? translate(DEFAULT_LOCALE, "err.deletedUser"), role: u ? effectiveRole(u, env().SYSTEMADMIN_EMAILS) : "GUEST" },
       body: m.body, createdAt: m.createdAt.toISOString(), editedAt: m.editedAt?.toISOString() ?? null,
       tags: m.tags.map((t) => ({ id: t.tag.id, name: t.tag.name, color: t.tag.color })),
-      attachments: m.attachments.map((a) => ({ id: a.id, kind: a.kind, mime: a.mime, name: a.name, sizeBytes: a.sizeBytes, width: a.width, height: a.height, hasThumb: !!a.thumbKey, snippet: a.snippet })),
+      attachments: m.attachments.map((a) => ({ id: a.id, kind: a.kind, mime: a.mime, name: a.name, sizeBytes: a.sizeBytes, width: a.width, height: a.height, hasThumb: !!a.thumbKey && !a.removedAt, snippet: a.snippet, removed: a.removedAt !== null })),
     };
   });
 }
