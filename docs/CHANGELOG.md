@@ -141,3 +141,7 @@ Was & Warum: (1) Kontingent je Nutzer 10 → 50 MB (`USER_QUOTA_MB`). (2) **S3 i
 Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`
 Was & Warum: @-Erwähnungen (`@Name`, Leerzeichen → `_`, Autovervollständigung im Eingabefeld, Hervorhebung im Text; nur aktive Nicht-Gäste mit Leserecht im Kanal, Neuberechnung beim Bearbeiten) und Antworten eine Ebene tief (Antwort auf Antwort hängt an der Hauptnachricht; Zitatzeile springt zum Original). Neue Seite **Meine Erwähnungen** (`/mentions`, im Profilmenü): Kanal, Zeit, Autor, Text; Klick öffnet `/chat?c=<Kanal>&m=<Nachricht>` und scrollt zur (Unter-)Nachricht (`listMessagesAround`). Migration `replies_mentions` (`Message.replyToId`, Tabelle `Mention`).
 
+## 2026-10-16 · travian-ally-tool/schedule/call-typen-vorlagen
+Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`
+Was & Warum: Eigene **Call-Typen** (z. B. „Ressourcen“; Tabelle `CallKindDef`, Schlüssel `custom:<id>`, optional „Koordinaten nötig“, Löschen nur ohne zugehörige Calls). Beim Anlegen einer **Vorlage** ist jetzt der Ziel-Kanal wählbar. Je Vorlage optional **Direktnachricht** beim Senden (`sendDm`): an die verifizierten Nutzer des Zielspielers, sonst an alle aktiven Nicht-Gäste mit Leserecht im Kanal; Absender = Ersteller. Migration `call_kinds_dm`.
+

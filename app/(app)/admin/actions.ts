@@ -11,7 +11,7 @@ import { ForbiddenError, PERMISSIONS, ROLES, type Permission, type Role } from "
 import { classifyAlliance, deleteUser, setRolePermission, setUserBanned, setUserRole } from "@/lib/services/admin";
 import { approveLink, assignPlayer, createInvite, inviteMessage, rejectLink, revokeInvite, VerificationError } from "@/lib/services/verification";
 import { ChatError, chatCtx, createChannel, deleteTag, deleteTagType, moveChannel, saveTag, saveTagType, updateChannel } from "@/lib/services/chat";
-import { berlinToDate, cancelCall, createCall, deleteCall, deleteTemplate, saveTemplate, sendCall, updateCall } from "@/lib/services/schedule";
+import { berlinToDate, cancelCall, createCall, deleteCall, deleteTemplate, saveTemplate, sendCall, updateCall, saveKind, deleteKind } from "@/lib/services/schedule";
 import { requireUser } from "@/lib/session";
 import { loadMemberRows } from "./tabs/data";
 
@@ -193,8 +193,14 @@ export async function deleteCallAction(f: FormData) {
 }
 export async function saveTemplateAction(f: FormData) {
   return runSchedule(async () => void (await saveTemplate(db, await requireUser(), {
-    id: f.get("templateId") ? int(f, "templateId") : undefined, kind: str(f, "kind"), name: str(f, "name"), body: str(f, "body"), channelId: f.get("channelId") ? int(f, "channelId") : null,
+    id: f.get("templateId") ? int(f, "templateId") : undefined, kind: str(f, "kind"), name: str(f, "name"), body: str(f, "body"), channelId: f.get("channelId") ? int(f, "channelId") : null, sendDm: f.get("sendDm") === "on",
   })));
+}
+export async function saveKindAction(f: FormData) {
+  return runSchedule(async () => void (await saveKind(db, await requireUser(), { name: str(f, "name"), needsCoords: f.get("needsCoords") === "on" })), "kindSaved");
+}
+export async function deleteKindAction(f: FormData) {
+  return runSchedule(async () => deleteKind(db, await requireUser(), int(f, "kindId")));
 }
 export async function deleteTemplateAction(f: FormData) {
   return runSchedule(async () => deleteTemplate(db, await requireUser(), int(f, "templateId")));

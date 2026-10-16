@@ -4,7 +4,7 @@ import { ForbiddenError, type Role } from "@/lib/permissions";
 import { seedPermissions } from "@/lib/services/admin";
 import { ChatError, seedChat } from "@/lib/services/chat";
 import {
-  berlinToDate, cancelCall, createCall, updateCall, deleteCall, dispatchDueCalls, parseCoord, renderCall, saveTemplate, seedSchedule, sendCall,
+  berlinToDate, cancelCall, createCall, deleteKind, listKinds, saveKind, updateCall, deleteCall, dispatchDueCalls, parseCoord, renderCall, saveTemplate, seedSchedule, sendCall,
 } from "@/lib/services/schedule";
 
 const db = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL! } } });
@@ -14,7 +14,7 @@ const f = async (p: Promise<unknown>) => p.then(() => null, (e: unknown) => e);
 const t0 = new Date("2026-10-15T12:00:00Z");
 
 beforeEach(async () => {
-  await db.$executeRaw`TRUNCATE "User","RolePermission","AuditLog","Channel","Message","Tag","TagType","Taskforce","Attachment","ChannelRead","CallTemplate","AllianceCall","Player","Village" RESTART IDENTITY CASCADE`;
+  await db.$executeRaw`TRUNCATE "User","RolePermission","AuditLog","Channel","Message","Tag","TagType","Taskforce","Attachment","ChannelRead","CallTemplate","AllianceCall","CallKindDef","DmThread","Player","Village" RESTART IDENTITY CASCADE`;
   await seedPermissions(db);
   await seedChat(db);
   await seedSchedule(db);
@@ -119,5 +119,28 @@ describe("Calls", () => {
     const c = await createCall(db, admin, { kind: "ATTACK_DAY", title: "T", eventAt: t0 });
     await sendCall(db, admin, c.id, t0);
     expect(await f(updateCall(db, admin, c.id, { note: "n", mail: true }))).toBeTruthy();
+  });
+  it("Eigener Call-Typ (Ressourcen): Vorlage mit Kanal und Direktnachricht, Löschen nur wenn ungenutzt", async () => {
+    const kind = await saveKind(db, admin, { name: "Ressourcen" });
+    expect(await f(saveKind(db, admin, { name: "Ressourcen" }))).toBeInstanceOf(ChatError);
+    expect(await f(saveKind(db, mod, { name: "Nope" }))).toBeInstanceOf(ForbiddenError);
+    const key = `custom:${kind.id}`;
+    expect((await listKinds(db)).map((k) => k.key)).toContain(key);
+    const ch = await db.channel.findFirstOrThrow({ where: { name: "Ressources" } });
+    await saveTemplate(db, admin, { kind: key, name: "Ress-Call", body: "📦 **{art}** {titel} {zeit}", channelId: ch.id, sendDm: true });
+    const c = await createCall(db, admin, { kind: key, title: "Eisen nötig", eventAt: t0 });
+    expect(c.channelId).toBe(ch.id);
+    expect(c.sendDm).toBe(true);
+    await sendCall(db, admin, c.id, t0);
+    const m = await db.message.findFirstOrThrow({ where: { channelId: ch.id } });
+    expect(m.body).toContain("Ressourcen");
+    // DM an alle Leser des Kanals außer dem Absender (hier der Moderator)
+    const dms = await db.dmMessage.findMany();
+    expect(dms.map((d) => d.body)).toEqual([m.body]);
+    expect(await f(createCall(db, admin, { kind: "custom:999" }))).toBeInstanceOf(ChatError);
+    expect(await f(deleteKind(db, admin, kind.id))).toBeInstanceOf(ChatError); // Call existiert
+    await db.allianceCall.deleteMany();
+    await deleteKind(db, admin, kind.id);
+    expect(await db.callKindDef.count()).toBe(0);
   });
 });

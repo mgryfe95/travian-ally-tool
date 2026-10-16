@@ -3,7 +3,11 @@ import { env } from "../env";
 import { ForbiddenError, hasPermission, type Permission } from "../permissions";
 import { publish } from "../realtime";
 import { audit, loadMatrix, userLocale, type Actor } from "./context";
-import { ChatError } from "./chat";
+import { ChatError, chatCtx } from "./chat";
+import { canReadChannel } from "../chat/access";
+import { pairKey } from "./messenger";
+import { publishUser } from "../realtime";
+import { effectiveRole } from "../permissions";
 import { mailEnabled, sendMail } from "../mail";
 import { AppError } from "../i18n/errors";
 import { DEFAULT_LOCALE, INTL_TAG, translate, type Locale, type MessageKey } from "../i18n";
@@ -11,6 +15,46 @@ import { DEFAULT_LOCALE, INTL_TAG, translate, type Locale, type MessageKey } fro
 export const CALL_KINDS = ["ATTACK", "DEFF", "ATTACK_DAY", "OTHER"] as const;
 export type CallKind = (typeof CALL_KINDS)[number];
 export const KIND_KEY: Record<CallKind, MessageKey> = { ATTACK: "err.call.kind.ATTACK", DEFF: "err.call.kind.DEFF", ATTACK_DAY: "err.call.kind.ATTACK_DAY", OTHER: "err.call.kind.OTHER" };
+
+/** Art-Schlüssel eigener Typen: `custom:<id>`. */
+export const isCustomKind = (k: string) => /^custom:\d+$/.test(k);
+
+export type KindInfo = { key: string; label?: string; custom: boolean; needsCoords: boolean };
+
+/** Alle Call-Arten: eingebaute (Label über i18n) und eigene. */
+export async function listKinds(db: PrismaClient): Promise<KindInfo[]> {
+  const custom = await db.callKindDef.findMany({ orderBy: [{ sortOrder: "asc" }, { id: "asc" }] });
+  return [
+    ...CALL_KINDS.map((k) => ({ key: k as string, custom: false, needsCoords: k === "ATTACK" || k === "DEFF" })),
+    ...custom.map((c) => ({ key: `custom:${c.id}`, label: c.name, custom: true, needsCoords: c.needsCoords })),
+  ];
+}
+
+async function requireKind(db: PrismaClient, kind: string): Promise<KindInfo> {
+  const info = (await listKinds(db)).find((k) => k.key === kind);
+  if (!info) throw new ChatError("err.call.invalidKind");
+  return info;
+}
+
+export async function saveKind(db: PrismaClient, actor: Actor, input: { name: string; needsCoords?: boolean }) {
+  await requirePerm(db, actor, "schedule.manage");
+  const name = input.name.trim();
+  if (name.length < 2 || name.length > 40) throw new ChatError("err.chat.nameLength", { min: 2, max: 40 });
+  try {
+    return await db.callKindDef.create({ data: { name, needsCoords: !!input.needsCoords } });
+  } catch {
+    throw new ChatError("err.call.kindExists");
+  }
+}
+
+/** Löscht einen eigenen Typ samt Vorlagen; nur wenn kein Call ihn mehr nutzt. */
+export async function deleteKind(db: PrismaClient, actor: Actor, id: number) {
+  await requirePerm(db, actor, "schedule.manage");
+  const key = `custom:${id}`;
+  if ((await db.allianceCall.count({ where: { kind: key } })) > 0) throw new ChatError("err.call.kindInUse");
+  await db.callTemplate.deleteMany({ where: { kind: key } });
+  await db.callKindDef.deleteMany({ where: { id } });
+}
 
 export const PLACEHOLDERS = ["{art}", "{titel}", "{spieler}", "{dorf}", "{koordinaten}", "{zeit}", "{link}", "{notiz}"] as const;
 
@@ -58,15 +102,20 @@ export function berlinToDate(local: string): Date | null {
   return new Date(t);
 }
 
+/** Namen eigener Typen für die Textersetzung (`{art}`). */
+async function kindNames(db: PrismaClient): Promise<Map<string, string>> {
+  return new Map((await db.callKindDef.findMany()).map((k) => [`custom:${k.id}`, k.name]));
+}
+
 const fmtTime = (d: Date | null, locale: Locale) =>
   d ? translate(locale, "err.call.time", { time: new Intl.DateTimeFormat(INTL_TAG[locale], { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" }).format(d) }) : "";
 
-type CallLike = { kind: string; title: string; x: number | null; y: number | null; playerId: number | null; playerName: string | null; villageName: string | null; at: Date | null; eventAt?: Date | null; template: string; note: string };
+type CallLike = { kind: string; title: string; x: number | null; y: number | null; playerId: number | null; playerName: string | null; villageName: string | null; at: Date | null; eventAt?: Date | null; template: string; note: string; kindName?: string };
 
 /** Setzt Platzhalter ein; leere Zeilen (nicht belegte Platzhalter) werden entfernt. Link führt zur Spielerseite im Tool. */
 export function renderCall(c: CallLike, appUrl = env().APP_URL, locale: Locale = DEFAULT_LOCALE): string {
   const vars: Record<string, string> = {
-    art: c.kind in KIND_KEY ? translate(locale, KIND_KEY[c.kind as CallKind]) : c.kind, titel: c.title, spieler: c.playerName ?? "", dorf: c.villageName ?? "",
+    art: c.kindName ?? (c.kind in KIND_KEY ? translate(locale, KIND_KEY[c.kind as CallKind]) : c.kind), titel: c.title, spieler: c.playerName ?? "", dorf: c.villageName ?? "",
     koordinaten: c.x !== null && c.y !== null ? `(${c.x}|${c.y})` : "", zeit: fmtTime(c.eventAt ?? null, locale), link: c.playerId ? `${appUrl.replace(/\/+$/, "")}/players/${c.playerId}` : "", notiz: c.note,
   };
   // Englische Aliase für dieselben Platzhalter ({type}, {title}, {player}, {village}, {coords}, {time}, {note})
@@ -97,18 +146,19 @@ export type CallInput = { kind: string; title?: string; coord?: string; at?: Dat
 
 export async function createCall(db: PrismaClient, actor: Actor, input: CallInput, now = new Date()) {
   await requirePerm(db, actor, "schedule.manage");
-  if (!(CALL_KINDS as readonly string[]).includes(input.kind)) throw new ChatError("err.call.invalidKind");
-  const kind = input.kind as CallKind;
+  const kindInfo = await requireKind(db, input.kind);
+  const kind = input.kind;
   let xy: [number, number] | null = null;
   if (input.coord?.trim()) {
     xy = parseCoord(input.coord);
     if (!xy) throw new ChatError("err.call.coordFormat");
   }
-  if ((kind === "ATTACK" || kind === "DEFF") && !xy) throw new ChatError("err.call.coordsRequired");
+  if (kindInfo.needsCoords && !xy) throw new ChatError("err.call.coordsRequired");
   const target = xy ? await resolveTarget(db, xy[0], xy[1]) : null;
   if (xy && !target) throw new ChatError("err.call.noVillage", { x: xy[0], y: xy[1] });
   const stored = input.templateId ? await db.callTemplate.findUnique({ where: { id: input.templateId } }) : await db.callTemplate.findFirst({ where: { kind }, orderBy: { sortOrder: "asc" } });
-  const tpl = stored ?? (input.templateId ? null : { ...DEFAULT_TEMPLATES.find((t) => t.kind === kind)!, channelId: null });
+  const fallback = DEFAULT_TEMPLATES.find((t) => t.kind === kind) ?? DEFAULT_TEMPLATES.find((t) => t.kind === "OTHER")!;
+  const tpl = stored ?? (input.templateId ? null : { ...fallback, channelId: null, sendDm: false });
   if (!tpl) throw new ChatError("err.call.noTemplate");
   const channelId = input.channelId ?? tpl.channelId ?? (await db.channel.findFirst({ where: { tree: "ALLY", archivedAt: null }, orderBy: { sortOrder: "asc" } }))?.id;
   const ch = channelId ? await db.channel.findUnique({ where: { id: channelId } }) : null;
@@ -120,7 +170,7 @@ export async function createCall(db: PrismaClient, actor: Actor, input: CallInpu
   const call = await db.allianceCall.create({
     data: {
       kind, title: (input.title ?? "").trim().slice(0, 80), x: xy?.[0] ?? null, y: xy?.[1] ?? null, villageId: target?.villageId, villageName: target?.villageName, playerId: target?.playerId,
-      playerName: target?.playerName, at, eventAt, channelId: ch.id, template: tpl.body, note, status: at ? "scheduled" : "draft", createdBy: actor.id,
+      playerName: target?.playerName, at, eventAt, channelId: ch.id, template: tpl.body, sendDm: tpl.sendDm, note, status: at ? "scheduled" : "draft", createdBy: actor.id,
     },
   });
   await audit(db, actor.id, "call.create", `call:${call.id}`, undefined, { kind, at, eventAt, coord: xy });
@@ -134,17 +184,38 @@ async function dispatch(db: PrismaClient, id: number, now: Date, actorId?: strin
   if (claimed.count === 0) return null;
   const call = await db.allianceCall.findUniqueOrThrow({ where: { id } });
   try {
-    const body = renderCall(call, undefined, await userLocale(db, actorId ?? call.createdBy));
+    const names = await kindNames(db);
+    const body = renderCall({ ...call, kindName: names.get(call.kind) }, undefined, await userLocale(db, actorId ?? call.createdBy));
     const m = await db.message.create({ data: { channelId: call.channelId, authorId: call.createdBy, body }, include: { tags: { include: { tag: true } }, attachments: true, channel: { select: { name: true } } } });
     const author = await db.user.findUnique({ where: { id: call.createdBy }, select: { name: true, role: true } });
     publish(call.channelId, "message:new", {
       id: m.id, channelId: m.channelId, channelName: m.channel.name, author: { id: call.createdBy, name: author?.name ?? translate(DEFAULT_LOCALE, "err.deletedUser"), role: author?.role ?? "MEMBER" },
       body: m.body, createdAt: m.createdAt.toISOString(), editedAt: null, tags: [], attachments: [],
     });
-    return await db.allianceCall.update({ where: { id }, data: { status: "sent", sentAt: now, messageId: m.id } });
+    const done = await db.allianceCall.update({ where: { id }, data: { status: "sent", sentAt: now, messageId: m.id } });
+    if (call.sendDm) await sendCallDms(db, call, body).catch((e) => console.error("[schedule] Direktnachrichten fehlgeschlagen", e));
+    return done;
   } catch (e) {
     await db.allianceCall.update({ where: { id }, data: { status: call.at ? "scheduled" : "draft" } });
     throw e;
+  }
+}
+
+/** Direktnachricht an die Betroffenen: verifizierte Nutzer des Zielspielers, sonst alle aktiven Nicht-Gäste mit Leserecht im Kanal. Absender = Ersteller. */
+async function sendCallDms(db: PrismaClient, call: { channelId: number; createdBy: string; playerId: number | null }, body: string) {
+  const channel = await db.channel.findUniqueOrThrow({ where: { id: call.channelId } });
+  let ids: string[] = [];
+  if (call.playerId) ids = (await db.playerLink.findMany({ where: { travianPlayerId: call.playerId, status: "verified" }, select: { userId: true } })).map((l) => l.userId);
+  const users = await db.user.findMany({ where: { banned: false, role: { not: "GUEST" }, ...(ids.length ? { id: { in: ids } } : {}) }, select: { id: true, role: true, email: true } });
+  const sender = call.createdBy;
+  for (const u of users.slice(0, 300)) {
+    if (u.id === sender) continue;
+    if (!ids.length && !canReadChannel(channel, await chatCtx(db, { id: u.id, role: effectiveRole(u, env().SYSTEMADMIN_EMAILS) }))) continue;
+    const key = pairKey(sender, u.id);
+    const [a, b] = sender < u.id ? [sender, u.id] : [u.id, sender];
+    const thread = await db.dmThread.upsert({ where: { pairKey: key }, create: { pairKey: key, userA: a, userB: b }, update: {} });
+    await db.dmMessage.create({ data: { threadId: thread.id, authorId: sender, body } });
+    publishUser(u.id, "messenger:new", { threadId: thread.id });
   }
 }
 
@@ -173,7 +244,9 @@ export async function dispatchDueCalls(db: PrismaClient, now = new Date()): Prom
 /** Postet eine Folgemeldung (Änderung/Absage) in den Kanal des Calls; optional zusätzlich als Rundmail an alle Nicht-Gäste. */
 async function notifyChange(db: PrismaClient, actor: Actor, call: CallLike & { channelId: number }, key: "err.call.msg.updated" | "err.call.msg.cancelled", mail: boolean) {
   const locale = await userLocale(db, actor.id);
-  const text = translate(locale, key, { text: renderCall(call, undefined, locale) });
+  const names = await kindNames(db);
+  const withName = { ...call, kindName: names.get(call.kind) };
+  const text = translate(locale, key, { text: renderCall(withName, undefined, locale) });
   const m = await db.message.create({ data: { channelId: call.channelId, authorId: actor.id, body: text }, include: { channel: { select: { name: true } } } });
   const author = await db.user.findUnique({ where: { id: actor.id }, select: { name: true, role: true } });
   publish(call.channelId, "message:new", {
@@ -185,7 +258,7 @@ async function notifyChange(db: PrismaClient, actor: Actor, call: CallLike & { c
   for (const u of users) {
     const l = u.locale && (u.locale === "de" || u.locale === "en") ? u.locale : DEFAULT_LOCALE;
     try {
-      await sendMail({ to: u.email, subject: translate(l, key === "err.call.msg.cancelled" ? "err.call.mail.cancelled" : "err.call.mail.updated"), text: translate(l, key, { text: renderCall(call, undefined, l) }) });
+      await sendMail({ to: u.email, subject: translate(l, key === "err.call.msg.cancelled" ? "err.call.mail.cancelled" : "err.call.mail.updated"), text: translate(l, key, { text: renderCall(withName, undefined, l) }) });
     } catch (e) {
       console.error("[schedule] Rundmail fehlgeschlagen", e);
     }
@@ -226,7 +299,7 @@ export async function updateCall(db: PrismaClient, actor: Actor, id: number, inp
     xy = input.coord.trim() ? parseCoord(input.coord) : null;
     if (input.coord.trim() && !xy) throw new ChatError("err.call.coordFormat");
   }
-  if ((cur.kind === "ATTACK" || cur.kind === "DEFF") && !xy) throw new ChatError("err.call.coordsRequired");
+  if ((await requireKind(db, cur.kind).catch(() => null))?.needsCoords && !xy) throw new ChatError("err.call.coordsRequired");
   const target = xy ? await resolveTarget(db, xy[0], xy[1]) : null;
   if (xy && !target) throw new ChatError("err.call.noVillage", { x: xy[0], y: xy[1] });
   const eventAt = input.eventAt !== undefined ? input.eventAt : cur.eventAt;
@@ -245,16 +318,16 @@ export async function updateCall(db: PrismaClient, actor: Actor, id: number, inp
   return upd;
 }
 
-export async function saveTemplate(db: PrismaClient, actor: Actor, input: { id?: number; kind: string; name: string; body: string; channelId?: number | null }) {
+export async function saveTemplate(db: PrismaClient, actor: Actor, input: { id?: number; kind: string; name: string; body: string; channelId?: number | null; sendDm?: boolean }) {
   await requirePerm(db, actor, "schedule.manage");
   const name = input.name.trim();
   const body = input.body.trim();
-  if (!(CALL_KINDS as readonly string[]).includes(input.kind)) throw new ChatError("err.call.invalidKind");
+  await requireKind(db, input.kind);
   if (name.length < 2 || name.length > 40) throw new ChatError("err.chat.nameLength", { min: 2, max: 40 });
   if (body.length < 3 || body.length > 2000) throw new ChatError("err.call.textLength", { min: 3, max: 2000 });
   if (input.channelId && !(await db.channel.findFirst({ where: { id: input.channelId, tree: "ALLY" } }))) throw new ChatError("err.chat.channelInvalid");
   try {
-    const data = { kind: input.kind, name, body, channelId: input.channelId ?? null };
+    const data = { kind: input.kind, name, body, channelId: input.channelId ?? null, sendDm: !!input.sendDm };
     return input.id ? await db.callTemplate.update({ where: { id: input.id }, data }) : await db.callTemplate.create({ data });
   } catch {
     throw new ChatError("err.call.templateExists");

@@ -63,3 +63,15 @@ Jeder Nutzer hat 50 MB für Screenshots und Chat-Dateien. Unter „Meine Bilder 
 
 ## Registrierung & Verifizierung
 Registrieren können sich nur Spieler unserer Allianz(en) und enger Bündnispartner (Admin → Allianzen → Typ „Enger Bündnispartner“). Nach dem Login sehen unverifizierte Konten nur die Verifizierungsseite: Dorf in den angezeigten Code umbenennen, dann „Verlinkung nachweisen“. Neue Kartendaten gibt es etwa einmal täglich; der Knopf prüft sofort, was schon da ist. Moderatoren können manuell bestätigen (Admin → Konten/Mitglieder).
+
+## Schedule: Termin, Sendezeit, Typen, Vorlagen
+- **Termin** = wann der Angriff/Ereignis stattfindet (steht als `{zeit}` im Text). **Nachricht senden am** = wann der Call in den Kanal gepostet wird; leer = nur auf Knopfdruck (einmal möglich).
+- **Bearbeiten/Absagen:** Ändert oder sagt man einen schon gesendeten Call ab, meldet das Tool das automatisch im Kanal; optional zusätzlich als Rundmail (nur mit SMTP).
+- **Call-Typen:** eigene Typen (z. B. Ressourcen) unter „Call-Typen“ anlegen, dann Vorlagen dafür erstellen (Ziel-Kanal wählbar, optional zusätzlich als Direktnachricht).
+
+## Chat: Erwähnungen und Antworten
+- `@Name` erwähnt jemanden (Leerzeichen im Namen als `_`; beim Tippen von `@` erscheint eine Auswahl). Erwähnte sehen die Nachricht unter **Meine Erwähnungen** (Profilmenü) und springen mit einem Klick direkt zur Nachricht.
+- **Antworten** (Knopf an der Nachricht) gehen eine Ebene tief; die Zitatzeile springt zum Original.
+- Tags werden nach Tag-Typ gruppiert angezeigt.
+- Screenshots: Kontingent 50 MB; das Bild wird nach der Auswertung gelöscht (nur Lern-Beispiele bleiben, max. 30 je Art).
+

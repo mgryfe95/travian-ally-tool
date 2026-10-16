@@ -6,9 +6,9 @@ import type { MessageKey } from "@/lib/i18n";
 import { getT } from "@/lib/i18n/server";
 import { hasPermission } from "@/lib/permissions";
 import { loadMatrix } from "@/lib/services/context";
-import { CALL_KINDS, PLACEHOLDERS, dateToBerlinLocal, renderCall } from "@/lib/services/schedule";
+import { CALL_KINDS, PLACEHOLDERS, dateToBerlinLocal, listKinds, renderCall } from "@/lib/services/schedule";
 import { requirePermission } from "@/lib/session";
-import { cancelCallAction, createCallAction, deleteCallAction, deleteTemplateAction, saveTemplateAction, sendCallAction, updateCallAction } from "../admin/actions";
+import { cancelCallAction, createCallAction, deleteCallAction, deleteKindAction, deleteTemplateAction, saveKindAction, saveTemplateAction, sendCallAction, updateCallAction } from "../admin/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +18,9 @@ const KIND: Record<(typeof CALL_KINDS)[number], MessageKey> = { ATTACK: "schedul
 export default async function SchedulePage({ searchParams }: { searchParams: Promise<{ error?: string; ok?: string }> }) {
   const { t, locale } = await getT();
   const when = (d: Date | null) => (d ? fmtDate(d, locale, { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "–");
-  const kindLabel = (k: string) => (k in KIND ? t(KIND[k as keyof typeof KIND]) : k);
+  const kinds = await listKinds(db);
+  const kindLabel = (k: string) => (k in KIND ? t(KIND[k as keyof typeof KIND]) : (kinds.find((x) => x.key === k)?.label ?? k));
+  const kindOptions = kinds.map((k) => <option key={k.key} value={k.key}>{kindLabel(k.key)}</option>);
   const statusLabel = (s: string) => (STATUS[s] ? t(STATUS[s]) : s);
   const user = await requirePermission("schedule.view");
   const { error, ok } = await searchParams;
@@ -50,7 +52,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
           <h2 id="new">{t("schedule.new.title")}</h2>
           <form action={createCallAction} className="row" style={{ flexWrap: "wrap", gap: 10, alignItems: "flex-end", marginTop: 8 }}>
             <div><label className="lbl" htmlFor="kind">{t("schedule.new.kind")}</label>
-              <select id="kind" name="kind" className="field" style={{ width: "auto" }}>{CALL_KINDS.map((k) => <option key={k} value={k}>{kindLabel(k)}</option>)}</select></div>
+              <select id="kind" name="kind" className="field" style={{ width: "auto" }}>{kindOptions}</select></div>
             <div><label className="lbl" htmlFor="coord-x">{t("schedule.new.coords")}</label>
               <CoordInput name="coord" idPrefix="coord" /></div>
             <div><label className="lbl" htmlFor="eventAt">{t("schedule.new.eventAt")}</label>
@@ -80,7 +82,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
                 <td>{when(c.eventAt)}</td><td>{c.status === "sent" ? <span className="sub">{when(c.sentAt)}</span> : when(c.at)}</td><td>{kindLabel(c.kind)}</td>
                 <td>{c.playerName ? <>{c.playerName} <span className="mono sub"><CoordLink x={c.x!} y={c.y!} className="mono sub" /></span></> : c.title || "–"}</td>
                 <td>{chName.get(c.channelId) ?? "?"}</td><td><span className={`pill ${c.status === "sent" ? "p-ok" : "p-wait"}`}>{statusLabel(c.status)}</span></td>
-                <td className="sub" style={{ maxWidth: 280, whiteSpace: "pre-wrap", fontSize: 12 }}>{renderCall(c)}</td>
+                <td className="sub" style={{ maxWidth: 280, whiteSpace: "pre-wrap", fontSize: 12 }}>{renderCall({ ...c, kindName: kinds.find((k) => k.key === c.kind)?.label })}</td>
                 <td className="r">{manage && (
                   <details>
                     <summary className="btn ghost sm" style={{ display: "inline-flex" }}>{t("schedule.edit")}</summary>
@@ -118,6 +120,25 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
       )}
 
       {manage && (
+        <section className="card" aria-labelledby="kinds">
+          <h2 id="kinds">{t("schedule.kinds.title")}</h2>
+          <p className="sub" style={{ fontSize: 12, margin: "4px 0 10px" }}>{t("schedule.kinds.intro")}</p>
+          {kinds.filter((k) => k.custom).map((k) => (
+            <form key={k.key} action={deleteKindAction} className="row" style={{ gap: 8, padding: "4px 0" }}>
+              <input type="hidden" name="kindId" value={k.key.split(":")[1]} />
+              <span>{k.label}{k.needsCoords ? ` · ${t("schedule.kinds.needsCoords")}` : ""}</span>
+              <button className="btn ghost sm">{t("schedule.delete")}</button>
+            </form>
+          ))}
+          <form action={saveKindAction} className="row" style={{ gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+            <input name="name" required minLength={2} maxLength={40} className="field" placeholder={t("schedule.kinds.newName")} aria-label={t("schedule.kinds.newName")} style={{ minHeight: 36, flex: "1 1 160px" }} />
+            <label className="sub" style={{ fontSize: 13 }}><input type="checkbox" name="needsCoords" /> {t("schedule.kinds.needsCoords")}</label>
+            <button className="btn ghost sm">{t("schedule.kinds.create")}</button>
+          </form>
+        </section>
+      )}
+
+      {manage && (
         <section className="card" aria-labelledby="tpl">
           <h2 id="tpl">{t("schedule.tpl.title")}</h2>
           <p className="sub" style={{ fontSize: 12, margin: "4px 0 10px" }}>{t("schedule.tpl.placeholders", { placeholders: PLACEHOLDERS.join(" ") })}</p>
@@ -126,9 +147,10 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
               <input type="hidden" name="templateId" value={tpl.id} />
               <div className="row" style={{ flexWrap: "wrap", gap: 8 }}>
                 <input name="name" defaultValue={tpl.name} className="field" aria-label={t("schedule.tpl.name")} style={{ minHeight: 36, flex: "1 1 160px" }} />
-                <select name="kind" defaultValue={tpl.kind} className="field" style={{ width: "auto", minHeight: 36 }} aria-label={t("schedule.tpl.kind")}>{CALL_KINDS.map((k) => <option key={k} value={k}>{kindLabel(k)}</option>)}</select>
+                <select name="kind" defaultValue={tpl.kind} className="field" style={{ width: "auto", minHeight: 36 }} aria-label={t("schedule.tpl.kind")}>{kindOptions}</select>
                 <select name="channelId" defaultValue={tpl.channelId ?? ""} className="field" style={{ width: "auto", minHeight: 36 }} aria-label={t("schedule.tpl.defaultChannel")}><option value="">{t("schedule.tpl.firstChannel")}</option>{channels.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
               </div>
+              <label className="sub" style={{ fontSize: 13, display: "block", marginTop: 8 }}><input type="checkbox" name="sendDm" defaultChecked={tpl.sendDm} /> {t("schedule.tpl.sendDm")}</label>
               <textarea name="body" defaultValue={tpl.body} rows={4} className="field" aria-label={t("schedule.tpl.body")} style={{ width: "100%", marginTop: 8, fontFamily: "inherit" }} />
               <div className="row" style={{ marginTop: 6 }}><button className="btn ghost sm">{t("schedule.tpl.save")}</button><button formAction={deleteTemplateAction} className="btn ghost sm">{t("schedule.delete")}</button></div>
             </form>
@@ -136,8 +158,10 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
           <form action={saveTemplateAction} style={{ borderTop: "1px solid var(--line2)", padding: "10px 0 0" }}>
             <div className="row" style={{ flexWrap: "wrap", gap: 8 }}>
               <input name="name" required minLength={2} className="field" placeholder={t("schedule.tpl.newName")} aria-label={t("schedule.tpl.newName")} style={{ minHeight: 36, flex: "1 1 160px" }} />
-              <select name="kind" className="field" style={{ width: "auto", minHeight: 36 }} aria-label={t("schedule.tpl.newKind")}>{CALL_KINDS.map((k) => <option key={k} value={k}>{kindLabel(k)}</option>)}</select>
+              <select name="kind" className="field" style={{ width: "auto", minHeight: 36 }} aria-label={t("schedule.tpl.newKind")}>{kindOptions}</select>
+              <select name="channelId" className="field" style={{ width: "auto", minHeight: 36 }} aria-label={t("schedule.tpl.defaultChannel")}><option value="">{t("schedule.tpl.firstChannel")}</option>{channels.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
             </div>
+            <label className="sub" style={{ fontSize: 13, display: "block", marginTop: 8 }}><input type="checkbox" name="sendDm" /> {t("schedule.tpl.sendDm")}</label>
             <textarea name="body" required rows={3} className="field" aria-label={t("schedule.tpl.newBody")} placeholder={t("schedule.tpl.newBodyPh")} style={{ width: "100%", marginTop: 8, fontFamily: "inherit" }} />
             <button className="btn ghost sm" style={{ marginTop: 6 }}>{t("schedule.tpl.create")}</button>
           </form>

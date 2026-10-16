@@ -611,6 +611,16 @@ model CallTemplate {
   /// Standard-Kanal (Allianz-Kanal); leer = erster Allianz-Kanal
   channelId Int?
   sortOrder Int    @default(0)
+  /// zusätzlich eine Direktnachricht an die Betroffenen schicken (Spieler am Ziel, sonst alle Leser des Kanals)
+  sendDm    Boolean @default(false)
+}
+
+/// Eigener Call-Typ (neben den eingebauten ATTACK/DEFF/ATTACK_DAY/OTHER), z. B. „Ressourcen“. Schlüssel in `kind`: `custom:<id>`.
+model CallKindDef {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  needsCoords Boolean @default(false)
+  sortOrder   Int     @default(0)
 }
 
 /// Ein Call im Allianz-Schedule: scheduled (wird zur Zeit automatisch gepostet), draft (nur auf Knopfdruck), sent, cancelled.
@@ -631,6 +641,8 @@ model AllianceCall {
   channelId    Int
   /// Vorlagentext zum Zeitpunkt des Anlegens (Platzhalter werden beim Senden ersetzt)
   template     String
+  /// Direktnachricht beim Senden mitschicken (von der Vorlage übernommen)
+  sendDm       Boolean   @default(false)
   note         String    @default("")
   status       String    @default("scheduled")
   createdBy    String
