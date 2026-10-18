@@ -49,6 +49,7 @@ export default async function ScreenshotsPage() {
           {t("screenshots.intro", { need })}{" "}
           {t("screenshots.introShare")}
         </p>
+        <p className="sub" style={{ fontSize: 12, marginTop: 4 }}>{t("privacy.short.shots")} <a href="/privacy">{t("privacy.more")}</a></p>
       </header>
       <section className="card"><UploadBox id="shot-any" label={t("screenshots.uploadLabel")} hint={t("screenshots.uploadHint")} /></section>
       {confirmed.length > 0 && <p className="sub">{t("screenshots.confirmedPerKind", { list: confirmed.map((c) => `${kindLabel(c.kind)} ${c._count}/${need}`).join(" · ") })}</p>}

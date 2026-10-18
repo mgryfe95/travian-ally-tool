@@ -91,6 +91,8 @@ PORT=$(grep -E '^APP_PORT=' .env 2>/dev/null | head -1 | cut -d= -f2 | cut -d" "
 BASE="http://127.0.0.1:$PORT"
 APP_URL=$(grep -E '^APP_URL=' .env 2>/dev/null | head -1 | cut -d= -f2- | tr -d '"')
 step "Prüfungen"
+restarts() { CID=$(docker compose ps -q "$1" 2>/dev/null); [ -n "$CID" ] && docker inspect -f '{{.RestartCount}}' "$CID" 2>/dev/null || echo 0; }
+declare -A RC0; for svc in app worker; do RC0[$svc]=$(restarts "$svc"); done; RC_T0=$(date +%s)
 
 S3T=$(docker compose exec -T app node -e '
 const {S3Client,HeadBucketCommand}=require("@aws-sdk/client-s3");
@@ -136,5 +138,12 @@ ok "Spieldaten: ${GD:-nicht lesbar}"
 
 ERRS=$(docker compose logs --since "$START_TS" app worker 2>&1 | grep -iE "error|unhandled|ECONNREFUSED|P1001|P2021|P2022" | grep -viE "npm notice|0 errors|prisma:warn" | head -5)
 [ -z "$ERRS" ] && ok "Keine Fehler in den Logs seit dem Start" || { warn "Fehlerzeilen in den Logs seit dem Start:"; detail "$ERRS" 5; }
+
+# Neustart-Schleifen erkennen: Container, die nach dem Start (wieder) abstürzen, starten Docker neu und zählen hoch
+WAIT=$(( 25 - ($(date +%s) - RC_T0) )); [ "$WAIT" -gt 0 ] && sleep "$WAIT"
+for svc in app worker; do
+  RC1=$(restarts "$svc")
+  [ "${RC1:-0}" -gt "${RC0[$svc]:-0}" ] 2>/dev/null && bad "Container $svc startet wiederholt neu (Neustarts: ${RC0[$svc]} → $RC1) – Logs prüfen" || ok "Container $svc läuft stabil (keine Neustarts seit dem Start)"
+done
 
 finish

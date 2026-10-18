@@ -127,6 +127,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
       <header>
         <div className="sub">{t("messenger.eyebrow")}</div>
         <h1>{t("messenger.title")}</h1>
+        <p className="sub" style={{ fontSize: 12, marginTop: 4 }}>{t("privacy.short.msg")} <a href="/privacy">{t("privacy.more")}</a></p>
         <div className="row" role="tablist" style={{ gap: 8, marginTop: 10 }}>
           <Link role="tab" aria-selected={tab === "dm"} className={`filterchip ${tab === "dm" ? "on" : ""}`} href="/messages">{t("messenger.tab.direct")}</Link>
           <Link role="tab" aria-selected={tab === "bc"} className={`filterchip ${tab === "bc" ? "on" : ""}`} href="/messages?t=bc">{t("messenger.tab.broadcasts")}</Link>

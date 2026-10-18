@@ -5,7 +5,7 @@ import { tfRoleLabel } from "@/components/chat/roles";
 import { getT } from "@/lib/i18n/server";
 import { chatCtx } from "@/lib/services/chat";
 import { requirePermission } from "@/lib/session";
-import { archiveTaskforceAction, inviteMemberAction, leaveTaskforceAction, removeMemberAction, revokeInviteAction, setRoleAction } from "../../actions";
+import { archiveTaskforceAction, inviteMemberAction, leaveTaskforceAction, removeMemberAction, revokeInviteAction, setRoleAction, transferFounderAction } from "../../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +51,7 @@ export default async function TaskforcePage({ params, searchParams }: { params: 
                       </form>
                     ) : <span className={`pill ${m.role === "founder" || m.role === "lead" ? "p-ok" : "p-none"}`}>{tfRoleLabel(t, m.role)}</span>}
                   </td>
-                  <td className="r">{canRemove && <form action={removeMemberAction}><input type="hidden" name="taskforceId" value={tf.id} /><input type="hidden" name="userId" value={m.userId} /><button className="btn ghost sm">{t("chat.tf.remove")}</button></form>}</td>
+                  <td className="r">{isFounder && m.role !== "founder" && <form action={transferFounderAction} style={{ display: "inline-block", marginRight: 6 }}><input type="hidden" name="taskforceId" value={tf.id} /><input type="hidden" name="userId" value={m.userId} /><button className="btn ghost sm">{t("chat.tf.makeFounder")}</button></form>}{canRemove && <form action={removeMemberAction} style={{ display: "inline-block" }}><input type="hidden" name="taskforceId" value={tf.id} /><input type="hidden" name="userId" value={m.userId} /><button className="btn ghost sm">{t("chat.tf.remove")}</button></form>}</td>
                 </tr>
               );
             })}
@@ -89,9 +89,10 @@ export default async function TaskforcePage({ params, searchParams }: { params: 
           )}
         </>
       )}
-      {me && me.role !== "founder" && (
+      {me && (
         <form action={leaveTaskforceAction} style={{ marginTop: 16 }}>
           <input type="hidden" name="taskforceId" value={tf.id} />
+          {me.role === "founder" && <p className="sub" style={{ fontSize: 12, marginBottom: 6 }}>{t("chat.tf.founderLeaveHint")}</p>}
           <button className="btn ghost">{t("chat.tf.leave")}</button>
         </form>
       )}

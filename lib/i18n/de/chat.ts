@@ -22,6 +22,8 @@ const de: Record<keyof typeof en, string> = {
   "chat.tfNew.invite": "Einladen",
   "chat.tfNew.noMembers": "Noch keine weiteren Mitglieder.",
   "chat.tfNew.create": "Anlegen",
+  "chat.tf.makeFounder": "Zum Gründer machen",
+  "chat.tf.founderLeaveHint": "Wenn du als Gründer gehst, übernimmt automatisch der dienstälteste Lead (sonst Mitglied, sonst Leser). Ohne weitere Mitglieder wird die Task-Force archiviert.",
   "chat.tf.back": "← Zum Kanal",
   "chat.tf.members": "Mitglieder ({n})",
   "chat.tf.roleOf": "Rolle von {name}",

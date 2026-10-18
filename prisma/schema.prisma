@@ -375,6 +375,8 @@ model TaskforceMember {
   userId      String
   /// founder | lead | member | reader
   role        String    @default("member")
+  /// Beitritt (Reihenfolge der Nachfolge, wenn der Gründer geht)
+  joinedAt    DateTime  @default(now())
   taskforce   Taskforce @relation(fields: [taskforceId], references: [id], onDelete: Cascade)
 
   @@id([taskforceId, userId])

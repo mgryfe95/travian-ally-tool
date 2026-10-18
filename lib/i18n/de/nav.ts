@@ -40,5 +40,17 @@ const de: Record<keyof typeof en, string> = {
   "shot.close": "Schließen",
   "shot.hint": "Marke berühren: Werte direkt ändern, Klick hält sie fest.",
   "shot.placing": "Jetzt auf die Stelle im Bild klicken, an der die Stufe steht.",
+  "privacy.title": "Datenschutz-Hinweise",
+  "privacy.eyebrow": "Profil",
+  "privacy.shots.h": "Screenshots und Bilderkennung",
+  "privacy.shots.p": "Hochgeladene Screenshots werden zur Auslese an die KI-Schnittstelle von Anthropic (Claude) übertragen. Als Kern-Beispiel bestätigte Screenshots werden bei späteren Auslesungen als Vorlage erneut mitgeschickt – auch bei Screenshots anderer Mitglieder. Bilder enthalten Dorfnamen, Koordinaten und Spielstände. Gespeichert werden sie im privaten Speicher der Allianz (S3); gelöscht werden sie nach der Auswertung, Kern-Beispiele erst beim Entfernen, alles andere spätestens nach der eingestellten Aufbewahrungsfrist.",
+  "privacy.msg.h": "Chat und Direktnachrichten",
+  "privacy.msg.p": "Nachrichten und Anhänge liegen auf dem Server der Allianz (Datenbank bzw. Dateispeicher). Sie sind nicht Ende-zu-Ende verschlüsselt: Wer den Server betreibt, kann sie technisch lesen. Gelöschte Anhänge werden auch aus dem Speicher entfernt.",
+  "privacy.account.h": "Konto",
+  "privacy.account.p": "Deine E-Mail-Adresse dient nur der Anmeldung und dem Zurücksetzen des Passworts; in der Oberfläche sieht sie niemand. Die Zuordnung zu deinem Spieler erfolgt über die öffentliche map.sql von Travian.",
+  "privacy.link": "Datenschutz-Hinweise",
+  "privacy.short.shots": "Screenshots werden zur Auslese an die KI (Anthropic) übertragen.",
+  "privacy.short.msg": "Nachrichten sind nicht Ende-zu-Ende verschlüsselt.",
+  "privacy.more": "Mehr dazu",
 };
 export default de;

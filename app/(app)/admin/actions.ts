@@ -80,7 +80,8 @@ export type InviteState = { error?: string; message?: string; igmUrl?: string; i
 
 const igm = (player: { id: number; name: string }) => igmWriteUrl(env().TRAVIAN_SERVER_URL, player, env().IGM_WRITE_URL);
 
-const abs = async (token: string, name: string) => inviteMessage({ playerName: name, token, appUrl: env().APP_URL, locale: await getLocale() });
+// Einladungen gehen ingame an Spieler beliebiger Sprache → immer Englisch (unabhängig von der UI-Sprache des Admins)
+const abs = async (token: string, name: string) => inviteMessage({ playerName: name, token, appUrl: env().APP_URL, locale: "en" });
 
 /** Neuer Link (der alte offene wird widerrufen). Der Klartext-Token erscheint nur hier einmal. */
 export async function createInviteAction(_prev: InviteState, f: FormData): Promise<InviteState> {

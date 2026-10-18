@@ -38,5 +38,17 @@ const en = {
   "shot.close": "Close",
   "shot.hint": "Hover a marker to edit its values directly; click pins it.",
   "shot.placing": "Now click the spot in the image where the level is shown.",
+  "privacy.title": "Privacy notes",
+  "privacy.eyebrow": "Profile",
+  "privacy.shots.h": "Screenshots and image recognition",
+  "privacy.shots.p": "Uploaded screenshots are sent to Anthropic's AI interface (Claude) to be read. Screenshots confirmed as core examples are sent again as templates when later screenshots are read – including other members' screenshots. Images contain village names, coordinates and game states. They are stored in the alliance's private storage (S3) and deleted after evaluation; core examples only when removed, everything else at the latest after the configured retention period.",
+  "privacy.msg.h": "Chat and direct messages",
+  "privacy.msg.p": "Messages and attachments are stored on the alliance server (database and file storage). They are not end-to-end encrypted: whoever runs the server can technically read them. Deleted attachments are also removed from storage.",
+  "privacy.account.h": "Account",
+  "privacy.account.p": "Your e-mail address is only used for signing in and resetting your password; nobody sees it in the interface. Your player is linked via Travian's public map.sql.",
+  "privacy.link": "Privacy notes",
+  "privacy.short.shots": "Screenshots are sent to the AI (Anthropic) to be read.",
+  "privacy.short.msg": "Messages are not end-to-end encrypted.",
+  "privacy.more": "Learn more",
 } as const;
 export default en;

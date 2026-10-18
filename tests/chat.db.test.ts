@@ -5,7 +5,7 @@ import { ForbiddenError, type Role } from "@/lib/permissions";
 import { seedPermissions } from "@/lib/services/admin";
 import {
   addTaskforceMember, archiveTaskforce, inviteToTaskforce, listMyTaskforceInvites, respondTaskforceInvite, revokeTaskforceInvite, setTaskforceRole, ChatError, chatCtx, createChannel, createTaskforce, deleteMessage, deleteTag, deleteTagType, editMessage, listChannels,
-  listMessages, listMessagesAround, listMyMentions, markRead, moveChannel, postMessage, removeTaskforceMember, saveTag, saveTagType, seedChat, updateChannel,
+  listMessages, listMessagesAround, listMyMentions, markRead, moveChannel, postMessage, removeTaskforceMember, transferFounder, saveTag, saveTagType, seedChat, updateChannel,
 } from "@/lib/services/chat";
 import { storage } from "@/lib/storage";
 
@@ -180,7 +180,7 @@ describe("Task-Forces", () => {
     await addTaskforceMember(db, await ctx(mod), tf.id, "m2");
     expect((await listChannels(db, await ctx(member2))).some((c) => c.name === "TF Nord")).toBe(true);
     await removeTaskforceMember(db, await ctx(mod), tf.id, "m2");
-    expect(await f(removeTaskforceMember(db, await ctx(mod), tf.id, "mod"))).toBeInstanceOf(ChatError);
+    expect(await f(removeTaskforceMember(db, await ctx(member), tf.id, "mod"))).toBeTruthy(); // fremd: Gründer nicht entfernbar
     await archiveTaskforce(db, await ctx(mod), tf.id);
     expect((await listChannels(db, await ctx(mod))).some((c) => c.name === "TF Nord")).toBe(false);
   });
@@ -317,3 +317,22 @@ describe("Antworten und Erwähnungen", () => {
     expect(around.messages.at(-1)!.body).toBe("n2");
   });
 });
+
+describe("Task-Force: Gründerwechsel", () => {
+  it("Gründer geht → dienstältester Lead übernimmt; ohne Lead ein Mitglied; ohne Mitglieder wird archiviert; manuell übertragbar", async () => {
+    const tf = await createTaskforce(db, await ctx(mod), { name: "TF Wechsel" });
+    await addTaskforceMember(db, await ctx(mod), tf.id, "m1", "member");
+    await addTaskforceMember(db, await ctx(mod), tf.id, "m2", "lead");
+    await removeTaskforceMember(db, await ctx(mod), tf.id, "mod");
+    const roles = async () => Object.fromEntries((await db.taskforceMember.findMany({ where: { taskforceId: tf.id } })).map((m) => [m.userId, m.role]));
+    expect(await roles()).toEqual({ m1: "member", m2: "founder" });
+    await transferFounder(db, await ctx(member2), tf.id, "m1");
+    expect(await roles()).toEqual({ m1: "founder", m2: "lead" });
+    expect(await f(transferFounder(db, await ctx(member2), tf.id, "m2"))).toBeInstanceOf(ForbiddenError);
+    await removeTaskforceMember(db, await ctx(member), tf.id, "m1");
+    expect(await roles()).toEqual({ m2: "founder" });
+    await removeTaskforceMember(db, await ctx(member2), tf.id, "m2");
+    expect((await db.taskforce.findUniqueOrThrow({ where: { id: tf.id } })).archivedAt).not.toBeNull();
+  });
+});
+

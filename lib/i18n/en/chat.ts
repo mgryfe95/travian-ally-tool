@@ -20,6 +20,8 @@ const en = {
   "chat.tfNew.invite": "Invite",
   "chat.tfNew.noMembers": "No other members yet.",
   "chat.tfNew.create": "Create",
+  "chat.tf.makeFounder": "Make founder",
+  "chat.tf.founderLeaveHint": "If you leave as founder, the longest-standing lead takes over automatically (otherwise a member, otherwise a reader). Without other members the task force is archived.",
   "chat.tf.back": "← Back to channel",
   "chat.tf.members": "Members ({n})",
   "chat.tf.roleOf": "Role of {name}",

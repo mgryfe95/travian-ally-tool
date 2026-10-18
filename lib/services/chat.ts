@@ -422,13 +422,49 @@ export async function setTaskforceRole(db: PrismaClient, ctx: ChatCtx, taskforce
 export async function removeTaskforceMember(db: PrismaClient, ctx: ChatCtx, taskforceId: number, userId: string) {
   const target = await db.taskforceMember.findUnique({ where: { taskforceId_userId: { taskforceId, userId } } });
   if (!target) return;
-  if (target.role === "founder") throw new ChatError("err.chat.founderCannotRemove");
+  if (target.role === "founder") {
+    if (userId !== ctx.userId) throw new ChatError("err.chat.founderCannotRemove");
+    return leaveAsFounder(db, ctx, taskforceId);
+  }
   if (userId !== ctx.userId) {
     const r = await requireManage(db, ctx, taskforceId);
     if (r === "lead" && target.role === "lead" && !isAdminish(ctx)) throw new ForbiddenError("err.chat.leadsCannotRemoveLeads");
   }
   await db.taskforceMember.deleteMany({ where: { taskforceId, userId } });
   await audit(db, ctx.userId, "taskforce.member_remove", `taskforce:${taskforceId}`, { userId });
+}
+
+const SUCCESSION = { lead: 0, member: 1, reader: 2 } as Record<string, number>;
+
+/** Gründer verlässt die Task-Force: Nachfolger wird der dienstälteste Lead, sonst Mitglied, sonst Leser; ohne Mitglieder wird archiviert. */
+async function leaveAsFounder(db: PrismaClient, ctx: ChatCtx, taskforceId: number) {
+  const others = (await db.taskforceMember.findMany({ where: { taskforceId, userId: { not: ctx.userId } }, orderBy: { joinedAt: "asc" } }))
+    .sort((a, b) => (SUCCESSION[a.role] ?? 9) - (SUCCESSION[b.role] ?? 9) || a.joinedAt.getTime() - b.joinedAt.getTime());
+  const next = others[0];
+  if (!next) {
+    const now = new Date();
+    await db.$transaction([db.taskforceMember.deleteMany({ where: { taskforceId, userId: ctx.userId } }), db.taskforce.update({ where: { id: taskforceId }, data: { archivedAt: now } }), db.channel.updateMany({ where: { taskforceId }, data: { archivedAt: now } })]);
+    await audit(db, ctx.userId, "taskforce.archive", `taskforce:${taskforceId}`, undefined, { reason: "founder_left" });
+    return;
+  }
+  await db.$transaction([
+    db.taskforceMember.update({ where: { taskforceId_userId: { taskforceId, userId: next.userId } }, data: { role: "founder" } }),
+    db.taskforceMember.deleteMany({ where: { taskforceId, userId: ctx.userId } }),
+  ]);
+  await audit(db, ctx.userId, "taskforce.founder_transfer", `taskforce:${taskforceId}`, { founder: ctx.userId }, { founder: next.userId, reason: "founder_left" });
+}
+
+/** Gründerrolle übertragen (Gründer oder Admin): bisheriger Gründer wird Lead. */
+export async function transferFounder(db: PrismaClient, ctx: ChatCtx, taskforceId: number, userId: string) {
+  await requireFounder(db, ctx, taskforceId);
+  const target = await db.taskforceMember.findUnique({ where: { taskforceId_userId: { taskforceId, userId } } });
+  if (!target) throw new ChatError("err.chat.notMember");
+  if (target.role === "founder") return;
+  await db.$transaction([
+    db.taskforceMember.updateMany({ where: { taskforceId, role: "founder" }, data: { role: "lead" } }),
+    db.taskforceMember.update({ where: { taskforceId_userId: { taskforceId, userId } }, data: { role: "founder" } }),
+  ]);
+  await audit(db, ctx.userId, "taskforce.founder_transfer", `taskforce:${taskforceId}`, undefined, { founder: userId });
 }
 
 export async function archiveTaskforce(db: PrismaClient, ctx: ChatCtx, taskforceId: number) {

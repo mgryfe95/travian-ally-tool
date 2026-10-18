@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { getT } from "@/lib/i18n/server";
 import { localizeError } from "@/lib/i18n/errors";
 import { ForbiddenError } from "@/lib/permissions";
-import { archiveTaskforce, ChatError, chatCtx, createTaskforce, inviteToTaskforce, removeTaskforceMember, respondTaskforceInvite, revokeTaskforceInvite, setTaskforceRole } from "@/lib/services/chat";
+import { archiveTaskforce, ChatError, chatCtx, createTaskforce, inviteToTaskforce, removeTaskforceMember, respondTaskforceInvite, revokeTaskforceInvite, setTaskforceRole, transferFounder } from "@/lib/services/chat";
 import { requireUser } from "@/lib/session";
 
 async function run(back: string, fn: () => Promise<string | void>): Promise<never> {
@@ -74,4 +74,9 @@ export async function archiveTaskforceAction(f: FormData) {
     await archiveTaskforce(db, await chatCtx(db, await requireUser()), id);
     return "/chat";
   });
+}
+
+export async function transferFounderAction(f: FormData) {
+  const id = Number(str(f, "taskforceId"));
+  return run(`/chat/tf/${id}`, async () => transferFounder(db, await chatCtx(db, await requireUser()), id, str(f, "userId")));
 }
