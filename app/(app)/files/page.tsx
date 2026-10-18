@@ -49,7 +49,7 @@ export default async function FilesPage() {
                 <td>{f.type === "screenshot" ? t("screenshots.files.type.screenshot") : (FILE_KINDS as readonly string[]).includes(f.kind) ? t(`screenshots.files.type.${f.kind as (typeof FILE_KINDS)[number]}`) : f.kind}</td>
                 <td className="mono r">{size(f.sizeBytes)}</td>
                 <td>{when(f.createdAt)}</td>
-                <td className="sub">{f.type === "screenshot" ? (STATUS_KEYS[f.note] ? t(STATUS_KEYS[f.note] as MessageKey) : f.note) : f.channel !== undefined ? t(f.channelDeleted ? "screenshots.files.inChannelDeleted" : "screenshots.files.inChannel", { name: f.channel }) : t("screenshots.files.unsent")}</td>
+                <td className="sub">{f.type === "screenshot" ? (STATUS_KEYS[f.note] ? t(STATUS_KEYS[f.note] as MessageKey) : f.note) : f.channel !== undefined ? t(f.channelDeleted ? "screenshots.files.inChannelDeleted" : "screenshots.files.inChannel", { name: f.channel }) : f.dm ? t("screenshots.files.inDm") : t("screenshots.files.unsent")}</td>
                 <td className="r"><form action={deleteFileAction}><input type="hidden" name="type" value={f.type} /><input type="hidden" name="id" value={f.id} /><button className="btn ghost sm" aria-label={t("screenshots.files.deleteAria", { name: f.name })}>{t("screenshots.files.delete")}</button></form></td>
               </tr>))}</tbody>
           </table></div>

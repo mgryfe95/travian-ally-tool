@@ -39,8 +39,29 @@ export class LocalStorage implements StorageAdapter {
   }
 }
 
+let cachedLocal: StorageAdapter | undefined;
+/** Lokale Ablage (Docker-Volume) – Fallback für Dateien von vor der S3-Umstellung. */
+export const localStorage = (): StorageAdapter => (cachedLocal ??= new LocalStorage(env().STORAGE_DIR));
+
+let cachedS3: S3Storage | null | undefined;
+function s3(): S3Storage | null {
+  if (cachedS3 !== undefined) return cachedS3;
+  const e = env();
+  if (!e.S3_BUCKET_SCREENSHOTS) return (cachedS3 = null);
+  const client = new S3Client({
+    region: e.S3_REGION, endpoint: e.S3_ENDPOINT, forcePathStyle: e.S3_FORCE_PATH_STYLE,
+    credentials: e.S3_ACCESS_KEY_ID && e.S3_SECRET_ACCESS_KEY ? { accessKeyId: e.S3_ACCESS_KEY_ID, secretAccessKey: e.S3_SECRET_ACCESS_KEY } : undefined,
+  });
+  return (cachedS3 = new S3Storage(client, e.S3_BUCKET_SCREENSHOTS));
+}
+
 let cached: StorageAdapter | undefined;
-export const storage = (): StorageAdapter => (cached ??= new LocalStorage(env().STORAGE_DIR));
+/** Chat- und Nachrichten-Anhänge: S3, sobald konfiguriert (alte lokale Dateien bleiben lesbar), sonst lokal. */
+export const storage = (): StorageAdapter => {
+  if (cached) return cached;
+  const bucket = s3();
+  return (cached = bucket ? new FallbackStorage(bucket, localStorage()) : localStorage());
+};
 
 /** Minimaler Teil des S3-Clients (für Tests austauschbar). */
 export type S3Like = { send(command: unknown): Promise<unknown> };
@@ -92,15 +113,5 @@ export class FallbackStorage implements StorageAdapter {
   }
 }
 
-let cachedShots: StorageAdapter | undefined;
-/** Screenshots: eigener S3-Bucket, wenn `S3_BUCKET_SCREENSHOTS` gesetzt ist (alte lokale Dateien bleiben lesbar), sonst lokal. */
-export const screenshotStorage = (): StorageAdapter => {
-  if (cachedShots) return cachedShots;
-  const e = env();
-  if (!e.S3_BUCKET_SCREENSHOTS) return (cachedShots = storage());
-  const client = new S3Client({
-    region: e.S3_REGION, endpoint: e.S3_ENDPOINT, forcePathStyle: e.S3_FORCE_PATH_STYLE,
-    credentials: e.S3_ACCESS_KEY_ID && e.S3_SECRET_ACCESS_KEY ? { accessKeyId: e.S3_ACCESS_KEY_ID, secretAccessKey: e.S3_SECRET_ACCESS_KEY } : undefined,
-  });
-  return (cachedShots = new FallbackStorage(new S3Storage(client, e.S3_BUCKET_SCREENSHOTS), storage()));
-};
+/** Screenshots: derselbe private Bucket wie Anhänge (Schlüssel `shots/…`), sonst lokal. */
+export const screenshotStorage = (): StorageAdapter => storage();

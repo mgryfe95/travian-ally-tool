@@ -52,5 +52,11 @@ const de: Record<keyof typeof en, string> = {
   "privacy.short.shots": "Screenshots werden zur Auslese an die KI (Anthropic) übertragen.",
   "privacy.short.msg": "Nachrichten sind nicht Ende-zu-Ende verschlüsselt.",
   "privacy.more": "Mehr dazu",
+  "fmt.toolbar": "Formatierung",
+  "fmt.bold": "Fett",
+  "fmt.italic": "Kursiv",
+  "fmt.code": "Code",
+  "fmt.link": "Link",
+  "fmt.linkText": "Text",
 };
 export default de;

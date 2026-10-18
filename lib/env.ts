@@ -46,6 +46,8 @@ const schema = z.object({
   UPLOAD_MAX_IMAGE_MB: z.coerce.number().positive().default(10),
   UPLOAD_MAX_FILE_MB: z.coerce.number().positive().default(20),
   UPLOAD_MAX_FILES: z.coerce.number().int().positive().default(10),
+  /** Obergrenze eigener Direktnachrichten je Nutzer; ältere werden täglich gelöscht (0 = unbegrenzt). */
+  DM_MAX_PER_USER: z.coerce.number().int().min(0).default(10000),
   /** Screenshots werden nach so vielen Tagen samt Datei gelöscht (außer als Lern-Beispiel genutzte). 0 = nie. */
   SCREENSHOT_RETENTION_DAYS: z.coerce.number().int().min(0).default(30),
   /** Spielversion der Welt (Spieldaten-Import nur für genau diese Version). */

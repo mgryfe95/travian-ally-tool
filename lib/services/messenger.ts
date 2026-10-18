@@ -4,6 +4,8 @@ import { publishUser } from "../realtime";
 import { audit, loadMatrix, userLocale, type Actor } from "./context";
 import { ChatError } from "./chat";
 import { DEFAULT_LOCALE, translate, type Locale } from "../i18n";
+import { env } from "../env";
+import { storage } from "../storage";
 
 export const MAX_DM = 4000;
 export const MAX_SUBJECT = 100;
@@ -35,15 +37,23 @@ async function ownThread(db: PrismaClient, userId: string, threadId: number) {
   return { thread: t, otherId: t.userA === userId ? t.userB : t.userA };
 }
 
-export async function sendDm(db: PrismaClient, actor: Actor, threadId: number, bodyRaw: string) {
+export async function sendDm(db: PrismaClient, actor: Actor, threadId: number, bodyRaw: string, attachmentIdsRaw: number[] = []) {
   await requirePerm(db, actor, "messenger.use");
   const { otherId } = await ownThread(db, actor.id, threadId);
   const body = bodyRaw.trim();
-  if (!body) throw new ChatError("err.chat.empty");
+  const attachmentIds = [...new Set(attachmentIdsRaw)];
+  if (!body && attachmentIds.length === 0) throw new ChatError("err.chat.empty");
+  if (attachmentIds.length > env().UPLOAD_MAX_FILES) throw new ChatError("err.chat.maxFiles", { max: env().UPLOAD_MAX_FILES });
+  if (attachmentIds.length > 0) {
+    await requirePerm(db, actor, "chat.upload");
+    const own = await db.attachment.count({ where: { id: { in: attachmentIds }, uploaderId: actor.id, messageId: null, dmMessageId: null } });
+    if (own !== attachmentIds.length) throw new ChatError("err.chat.invalidAttachment");
+  }
   if (body.length > MAX_DM) throw new ChatError("err.chat.tooLong", { max: MAX_DM });
   const other = await db.user.findFirst({ where: { id: otherId, ...reachable } });
   if (!other) throw new ChatError("err.messenger.recipientUnreachable");
   const m = await db.dmMessage.create({ data: { threadId, authorId: actor.id, body } });
+  if (attachmentIds.length) await db.attachment.updateMany({ where: { id: { in: attachmentIds } }, data: { dmMessageId: m.id } });
   await db.dmRead.upsert({ where: { userId_threadId: { userId: actor.id, threadId } }, create: { userId: actor.id, threadId, lastReadMsgId: m.id }, update: { lastReadMsgId: m.id } });
   publishUser(otherId, "messenger:new", { threadId });
   publishUser(actor.id, "messenger:new", { threadId });
@@ -80,19 +90,23 @@ export async function listThreads(db: PrismaClient, userId: string): Promise<Thr
     .sort((a, b) => b.last!.at.getTime() - a.last!.at.getTime());
 }
 
-export type DmView = { id: number; authorId: string; body: string; createdAt: Date };
+export type DmAttachment = { id: number; kind: string; name: string; sizeBytes: number; hasThumb: boolean; removed: boolean };
+export type DmView = { id: number; authorId: string; body: string; createdAt: Date; attachments: DmAttachment[] };
 
 /** Nachrichten eines Threads (neueste zuletzt, max. `limit`); markiert den Thread als gelesen. */
 export async function readThread(db: PrismaClient, userId: string, threadId: number, limit = 100): Promise<{ other: { id: string; name: string }; messages: DmView[] }> {
   const { otherId } = await ownThread(db, userId, threadId);
   const [rows, other] = await Promise.all([
-    db.dmMessage.findMany({ where: { threadId }, orderBy: { id: "desc" }, take: limit }),
+    db.dmMessage.findMany({ where: { threadId }, orderBy: { id: "desc" }, take: limit, include: { attachments: { orderBy: { id: "asc" } } } }),
     db.user.findUnique({ where: { id: otherId }, select: { id: true, name: true } }),
   ]);
   const messages = rows.reverse();
   const last = messages[messages.length - 1]?.id ?? 0;
   await db.dmRead.upsert({ where: { userId_threadId: { userId, threadId } }, create: { userId, threadId, lastReadMsgId: last }, update: { lastReadMsgId: last } });
-  return { other: other ?? { id: otherId, name: translate(DEFAULT_LOCALE, "err.deletedUser") }, messages: messages.map((m) => ({ id: m.id, authorId: m.authorId, body: m.body, createdAt: m.createdAt })) };
+  return { other: other ?? { id: otherId, name: translate(DEFAULT_LOCALE, "err.deletedUser") }, messages: messages.map((m) => ({
+    id: m.id, authorId: m.authorId, body: m.body, createdAt: m.createdAt,
+    attachments: m.attachments.map((a) => ({ id: a.id, kind: a.kind, name: a.name, sizeBytes: a.sizeBytes, hasThumb: !!a.thumbKey && !a.removedAt, removed: a.removedAt !== null })),
+  })) };
 }
 
 // ───────── Rundnachrichten ─────────
@@ -163,4 +177,23 @@ export async function unreadCounts(db: PrismaClient, userId: string): Promise<{ 
   const [threads, broadcast] = await Promise.all([listThreads(db, userId), db.broadcastRecipient.count({ where: { userId, readAt: null } })]);
   const dm = threads.reduce((s, t) => s + t.unread, 0);
   return { dm, broadcast, total: dm + broadcast };
+}
+
+/**
+ * Obergrenze je Nutzer (Standard 10.000 eigene Direktnachrichten): Die ältesten darüber werden samt Anhängen gelöscht.
+ * Speicherbedarf grob 0,5 KB je Nachricht in der Datenbank – 10.000 Nachrichten ≈ 5 MB.
+ */
+export async function capDirectMessages(db: PrismaClient, max = env().DM_MAX_PER_USER): Promise<number> {
+  if (max <= 0) return 0;
+  const heavy = await db.dmMessage.groupBy({ by: ["authorId"], _count: true, having: { authorId: { _count: { gt: max } } } });
+  let removed = 0;
+  for (const h of heavy) {
+    const cut = await db.dmMessage.findFirst({ where: { authorId: h.authorId }, orderBy: { id: "desc" }, skip: max, select: { id: true } });
+    if (!cut) continue;
+    const old = { authorId: h.authorId, id: { lte: cut.id } };
+    const atts = await db.attachment.findMany({ where: { dmMessage: old } });
+    for (const a of atts) for (const key of [a.storageKey, a.thumbKey, a.previewKey]) if (key) await storage().delete(key);
+    removed += (await db.dmMessage.deleteMany({ where: old })).count;
+  }
+  return removed;
 }

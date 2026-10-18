@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import { db } from "../lib/db";
 import { env } from "../lib/env";
+import { capDirectMessages } from "../lib/services/messenger";
 import { fetchMapSql, importMapSql, pruneVillageSnapshots } from "../lib/import/importer";
 import { getInactiveDays } from "../lib/settings";
 import { purgeOldScreenshots } from "../lib/screenshots";
@@ -42,6 +43,7 @@ if (cfg.IMPORT_CRON) {
 for (const expr of releaseCrons(cfg.MAP_RELEASE_TIME)) cron.schedule(expr, () => void runImport(), { timezone: cfg.GAME_TIMEZONE });
 // Verwaiste Chat-Uploads (ohne Nachricht, älter als 24 h) stündlich aufräumen.
 cron.schedule("20 3 * * *", () => void purgeOldScreenshots(db, cfg.SCREENSHOT_RETENTION_DAYS).then((n) => n && console.log("[worker] alte Screenshots gelöscht:", n)).catch((e) => console.error("[worker] purge failed", e)));
+cron.schedule("30 3 * * *", () => void capDirectMessages(db).then((n) => n && console.log("[worker] alte Direktnachrichten über dem Limit gelöscht:", n)).catch((e) => console.error("[worker] dm cap failed", e)));
 cron.schedule("40 * * * *", () => void cleanupOrphanAttachments(db).then((n) => n && console.log("[worker] verwaiste Uploads gelöscht:", n)).catch((e) => console.error("[worker] cleanup failed", e)));
 void runImport();
 console.log(`[worker] started, daily at ${cfg.MAP_RELEASE_TIME} ${cfg.GAME_TIMEZONE}${cfg.IMPORT_CRON ? `, extra "${cfg.IMPORT_CRON}"` : ""}`);

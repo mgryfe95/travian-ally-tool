@@ -116,5 +116,6 @@ const de: Record<keyof typeof en, string> = {
   "screenshots.howto.RESOURCE_VIEW": "Rohstofffelder des Dorfes, alle 18 Felder mit Stufe sichtbar. Mobil: Kopfleiste ausklappen, dann wird die Produktion pro Stunde mitgelesen.",
   "screenshots.howto.VILLAGE_VIEW": "Dorfzentrum mit allen Stufenmarken (möglichst ohne Überlagerung). Mobil: Kopfleiste ausklappen, dann wird die Produktion pro Stunde mitgelesen.",
   "screenshots.howto.BATTLE_REPORT": "Kampfbericht vollständig: Angreifer und Verteidiger mit Einheiten und Verlusten.",
+  "screenshots.files.inDm": "Direktnachricht",
 };
 export default de;

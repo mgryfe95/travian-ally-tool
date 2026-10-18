@@ -3,7 +3,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { ForbiddenError, type Role } from "@/lib/permissions";
 import { seedPermissions } from "@/lib/services/admin";
 import { ChatError } from "@/lib/services/chat";
-import { getOrCreateThread, listInbox, listSent, listThreads, markBroadcastRead, pairKey, readThread, sendBroadcast, sendDm, unreadCounts } from "@/lib/services/messenger";
+import { capDirectMessages, getOrCreateThread, listInbox, listSent, listThreads, markBroadcastRead, pairKey, readThread, sendBroadcast, sendDm, unreadCounts } from "@/lib/services/messenger";
 
 const db = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL! } } });
 const who = (id: string, role: Role) => ({ id, role });
@@ -14,7 +14,7 @@ const mod = who("mod", "MODERATOR");
 const f = async (p: Promise<unknown>) => p.then(() => null, (e: unknown) => e);
 
 beforeEach(async () => {
-  await db.$executeRaw`TRUNCATE "User","RolePermission","AuditLog","Taskforce","DmThread","DmRead","Broadcast" RESTART IDENTITY CASCADE`;
+  await db.$executeRaw`TRUNCATE "User","RolePermission","AuditLog","Taskforce","DmThread","DmRead","Broadcast","Attachment" RESTART IDENTITY CASCADE`;
   await seedPermissions(db);
   for (const [id, role] of [["m1", "MEMBER"], ["m2", "MEMBER"], ["m3", "MEMBER"], ["g1", "GUEST"], ["mod", "MODERATOR"], ["adm", "ADMIN"]] as const) await db.user.create({ data: { id, name: id, email: `${id}@x.de`, role } });
 });
@@ -73,3 +73,26 @@ describe("Rundnachrichten", () => {
     expect((await listSent(db, "mod"))[0]).toMatchObject({ subject: "Info", recipients: 4, read: 1, audience: "All members" });
   });
 });
+
+describe("Direktnachrichten: Anhänge und Obergrenze", () => {
+  const att = (uploaderId: string) => db.attachment.create({ data: { uploaderId, kind: "image", mime: "image/webp", name: "a.webp", sizeBytes: 3, storageKey: `t/${uploaderId}-${Math.random()}.webp` } });
+  it("nur eigene, noch nicht verwendete Uploads; nur Anhang ohne Text erlaubt; Leser sehen Anhänge", async () => {
+    const t = await getOrCreateThread(db, m1, "m2");
+    const a = await att("m1");
+    const foreign = await att("m2");
+    expect(await f(sendDm(db, m1, t.id, "x", [foreign.id]))).toBeInstanceOf(ChatError);
+    await sendDm(db, m1, t.id, "", [a.id]);
+    expect(await f(sendDm(db, m1, t.id, "", [a.id]))).toBeInstanceOf(ChatError); // schon verwendet
+    const r = await readThread(db, "m2", t.id);
+    expect(r.messages[0]!.attachments).toEqual([expect.objectContaining({ id: a.id, name: "a.webp", removed: false })]);
+  });
+  it("älteste Nachrichten über der Grenze werden gelöscht", async () => {
+    const t = await getOrCreateThread(db, m1, "m2");
+    for (let i = 0; i < 5; i++) await sendDm(db, m1, t.id, `n${i}`);
+    await sendDm(db, m2, t.id, "antwort");
+    expect(await capDirectMessages(db, 3)).toBe(2);
+    expect((await readThread(db, "m2", t.id)).messages.map((m) => m.body)).toEqual(["n2", "n3", "n4", "antwort"]);
+    expect(await capDirectMessages(db, 0)).toBe(0);
+  });
+});
+

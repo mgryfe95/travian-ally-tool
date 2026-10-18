@@ -7,6 +7,7 @@ import { mentionHandle } from "@/lib/chat/mentions";
 import { useT } from "@/lib/i18n/client";
 import type { ChannelView, MessageView, TagTypeView } from "@/lib/services/chat";
 import { Lightbox, type LightboxImage } from "./Lightbox";
+import { FormatBar } from "@/components/FormatBar";
 import { MessageItem } from "./Message";
 import { getSocket } from "./socket";
 
@@ -57,6 +58,7 @@ export function ChatClient(props: ChatProps) {
   const [lightbox, setLightbox] = useState<{ images: LightboxImage[]; start: number }>();
   const [drag, setDrag] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const msgRef = useRef<HTMLInputElement>(null);
   const live = useRef({ tagFilter, q, current, ally, me });
   live.current = { tagFilter, q, current, ally, me };
 
@@ -369,8 +371,8 @@ export function ChatClient(props: ChatProps) {
                 </>
               )}
               <div style={{ flex: "1 1 260px", position: "relative" }}>
-                <label className="lbl" htmlFor="msg">{t("chat.message")}</label>
-                <input id="msg" className="field" value={body} onChange={(e) => { setBody(e.target.value); setSugIdx(0); }} onPaste={onPaste} maxLength={4000} autoComplete="off" placeholder={t("chat.message.placeholder")}
+                <div className="row between" style={{ alignItems: "flex-end" }}><label className="lbl" htmlFor="msg">{t("chat.message")}</label><FormatBar target={msgRef} value={body} onChange={setBody} /></div>
+                <input id="msg" ref={msgRef} className="field" value={body} onChange={(e) => { setBody(e.target.value); setSugIdx(0); }} onPaste={onPaste} maxLength={4000} autoComplete="off" placeholder={t("chat.message.placeholder")}
                   role="combobox" aria-expanded={suggestions.length > 0} aria-controls="mention-list" aria-autocomplete="list"
                   onKeyDown={(e) => {
                     if (suggestions.length === 0) return;

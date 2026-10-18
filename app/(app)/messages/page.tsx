@@ -47,10 +47,20 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
               <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1, overflow: "auto", maxHeight: "55vh", marginBottom: 12 }} aria-live="polite">
                 {current.messages.length === 0 && <p className="sub">{t("messenger.noMessages")}</p>}
                 {current.messages.map((m) => (
-                  <div key={m.id} className={`dm-bubble ${m.authorId === user.id ? "mine" : ""}`}><Md text={m.body} /><div className="sub" style={{ fontSize: 11, marginTop: 4 }}>{fmt(m.createdAt)}</div></div>
+                  <div key={m.id} className={`dm-bubble ${m.authorId === user.id ? "mine" : ""}`}>{m.body && <Md text={m.body} />}
+                    {m.attachments.length > 0 && (
+                      <div className="row" style={{ gap: 6, marginTop: 6, flexWrap: "wrap", whiteSpace: "normal" }}>
+                        {m.attachments.map((a) => a.removed ? <span key={a.id} className="sub" style={{ fontSize: 12, fontStyle: "italic" }}>{t("chat.msg.removed", { name: a.name })}</span>
+                          : a.kind === "image" && a.hasThumb
+                            // eslint-disable-next-line @next/next/no-img-element -- geschützter Endpoint
+                            ? <a key={a.id} href={`/api/attachments/${a.id}?v=web`} target="_blank" rel="noopener noreferrer"><img src={`/api/attachments/${a.id}?v=thumb`} alt={a.name} style={{ maxWidth: 180, maxHeight: 140, borderRadius: 8, display: "block" }} /></a>
+                            : <a key={a.id} href={`/api/attachments/${a.id}?v=dl`} className="pill p-none" style={{ fontSize: 12 }}>📎 {a.name}</a>)}
+                      </div>
+                    )}
+                    <div className="sub" style={{ fontSize: 11, marginTop: 4 }}>{fmt(m.createdAt)}</div></div>
                 ))}
               </div>
-              <DmComposer threadId={Number(sp.c)} />
+              <DmComposer threadId={Number(sp.c)} canUpload={hasPermission(user.role, "chat.upload", await loadMatrix(db))} />
             </>
           ) : <p className="sub">{t("messenger.pickThread")}</p>}
         </section>

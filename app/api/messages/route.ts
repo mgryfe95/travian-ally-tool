@@ -15,9 +15,9 @@ export function POST(req: Request) {
     const user = await getCurrentUser();
     if (!user) return unauthorized();
     if (!limiter.check(`dm:${user.id}`)) return tooMany();
-    const b = (await req.json().catch(() => null)) as { threadId?: number; body?: string } | null;
+    const b = (await req.json().catch(() => null)) as { threadId?: number; body?: string; attachmentIds?: number[] } | null;
     if (!b || !Number.isInteger(b.threadId) || typeof b.body !== "string") return NextResponse.json({ error: (await getT()).t("messenger.api.invalidRequest") }, { status: 400 });
-    const m = await sendDm(db, user, b.threadId as number, b.body);
+    const m = await sendDm(db, user, b.threadId as number, b.body, Array.isArray(b.attachmentIds) ? b.attachmentIds.filter(Number.isInteger) : []);
     return NextResponse.json({ id: m.id }, { status: 201 });
   });
 }

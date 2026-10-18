@@ -50,5 +50,11 @@ const en = {
   "privacy.short.shots": "Screenshots are sent to the AI (Anthropic) to be read.",
   "privacy.short.msg": "Messages are not end-to-end encrypted.",
   "privacy.more": "Learn more",
+  "fmt.toolbar": "Formatting",
+  "fmt.bold": "Bold",
+  "fmt.italic": "Italic",
+  "fmt.code": "Code",
+  "fmt.link": "Link",
+  "fmt.linkText": "text",
 } as const;
 export default en;

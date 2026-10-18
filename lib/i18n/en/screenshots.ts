@@ -114,5 +114,6 @@ const en = {
   "screenshots.howto.RESOURCE_VIEW": "Resource fields of the village, all 18 fields with levels visible. Mobile: expand the header, then production per hour is read too.",
   "screenshots.howto.VILLAGE_VIEW": "Village centre with all level markers (ideally without overlays). Mobile: expand the header, then production per hour is read too.",
   "screenshots.howto.BATTLE_REPORT": "Complete battle report: attacker and defender with units and losses.",
+  "screenshots.files.inDm": "Direct message",
 } as const;
 export default en;

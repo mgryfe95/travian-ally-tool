@@ -387,6 +387,9 @@ model Attachment {
   id         Int      @id @default(autoincrement())
   messageId  Int?
   message    Message? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  /// Anhang einer Direktnachricht (statt Kanal-Nachricht)
+  dmMessageId Int?
+  dmMessage  DmMessage? @relation(fields: [dmMessageId], references: [id], onDelete: Cascade)
   uploaderId String
   /// image | pdf | text
   kind       String
@@ -405,6 +408,7 @@ model Attachment {
   createdAt  DateTime @default(now())
 
   @@index([messageId])
+  @@index([dmMessageId])
   @@index([createdAt])
 }
 
@@ -698,8 +702,10 @@ model DmMessage {
   authorId  String
   body      String
   createdAt DateTime @default(now())
+  attachments Attachment[]
 
   @@index([threadId, id])
+  @@index([authorId, id])
 }
 
 /// Zuletzt gelesene Nachricht je Nutzer und Thread
