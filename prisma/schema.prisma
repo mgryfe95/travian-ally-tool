@@ -439,8 +439,10 @@ model VillageState {
   fields             Json?
   /// Slot → {building, level}
   buildings          Json?
-  /// {inVillage, away, support} je Einheit
+  /// {inVillage, away, support, foreign} je Einheit
   troops             Json?
+  /// Herkunft/Ziel: {foreign: [{name,x,y,player,units,upkeep}], deployed: [...]} – fremde Truppen hier und eigene Truppen anderswo
+  troopDetail        Json?
   /// Bau- und Ausbildungsschleifen
   queues             Json?
   resourcesAt        DateTime?

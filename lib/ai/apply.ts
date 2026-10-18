@@ -5,13 +5,20 @@ import type { TroopEntry } from "../troops";
 
 export type Applied = { villageId: number; areas: string[] };
 
+export type TroopGroup = { name: string | null; x: number | null; y: number | null; player: string | null; units: { unit: string; count: number }[]; upkeep: number | null };
+export type TroopDetail = { foreign: TroopGroup[]; deployed: TroopGroup[] };
+const OWN_RE = /^(eigene truppen|own troops)$/i;
+const group = (row: ReadingRow, player: string | null): TroopGroup => ({
+  name: row.name, x: row.x, y: row.y, player, units: row.cells.flatMap((c, i) => (c ? [{ unit: unitName(i, row.cells.length), count: c }] : [])), upkeep: Number(row.texts[1] ?? "") || null,
+});
+
 const unitName = (i: number, n: number) => (n === 11 && i === 10 ? "Held" : `Einheit ${i + 1}`);
 const toEntries = (cells: (number | null)[]): TroopEntry[] =>
   cells.flatMap((c, i) => (c ? [{ unit: unitName(i, cells.length), inVillage: c, away: 0, support: 0 }] : []));
 const RES = ["wood", "clay", "iron", "crop"] as const;
 const four = (c: (number | null)[]) => Object.fromEntries(RES.map((k, i) => [k, c[i] ?? null]));
 
-type Patch = { troops?: TroopEntry[]; resources?: Record<string, unknown>; fields?: unknown; buildings?: unknown; queues?: Record<string, unknown> };
+type Patch = { troops?: TroopEntry[]; troopDetail?: TroopDetail; resources?: Record<string, unknown>; fields?: unknown; buildings?: unknown; queues?: Record<string, unknown> };
 
 /** Zerlegt eine Lesung in Änderungen je Dorf (nur Dörfer aus `known`, also des eigenen Kontos). */
 export function planApply(r: Reading, known: KnownVillage[], hintVillageId?: number, preferHint = false): Map<number, Patch> {
@@ -33,10 +40,30 @@ export function planApply(r: Reading, known: KnownVillage[], hintVillageId?: num
 
   switch (r.kind) {
     case "RALLY_POINT": {
-      // nur der eigene Block des geöffneten Dorfes: „Eigene Truppen“ bzw. mobil die einzige Zeile
-      const own = r.rows.find((x) => rowId(x) === current && (x.texts[0] === "Eigene Truppen" || r.device === "MOBILE")) ?? (r.device === "MOBILE" ? r.rows[0] : undefined);
+      // Drei Fälle: eigene Truppen im Dorf („Eigene Truppen“, mobil die eigene Zeile), fremde Truppen hier („Truppen von X“)
+      // und eigene Truppen in anderen Dörfern („deployed:…“).
+      const own = r.rows.find((x) => rowId(x) === current && (OWN_RE.test(x.texts[0] ?? "") || r.device === "MOBILE")) ?? (r.device === "MOBILE" ? r.rows[0] : undefined);
       const p = patch(current);
-      if (own && p) p.troops = toEntries(own.cells);
+      if (!p) break;
+      const foreign = r.device === "MOBILE" ? [] : r.rows.filter((x) => x !== own && !OWN_RE.test(x.texts[0] ?? "") && !(x.texts[0] ?? "").startsWith("deployed"));
+      const deployed = r.rows.filter((x) => (x.texts[0] ?? "").startsWith("deployed"));
+      const entries = new Map<string, TroopEntry>();
+      const add = (cells: (number | null)[], key: "inVillage" | "support") =>
+        cells.forEach((c, i) => {
+          if (!c) return;
+          const u = unitName(i, cells.length);
+          const e = entries.get(u) ?? { unit: u, inVillage: 0, away: 0, support: 0 };
+          e[key] += c;
+          entries.set(u, e);
+        });
+      if (own) add(own.cells, "inVillage");
+      deployed.forEach((x) => add(x.cells, "support"));
+      // Fremde Truppen gehören zu anderen Völkern → nur als Liste je Herkunft (troopDetail), nicht in die eigene Truppenliste
+      if (own || foreign.length || deployed.length) p.troops = [...entries.values()];
+      if (foreign.length || deployed.length) {
+        const playerOf = (t: string | null | undefined) => (t ? /(?:truppen von|troops of)\s+(.+)$/i.exec(t)?.[1]?.trim() ?? null : null);
+        p.troopDetail = { foreign: foreign.map((x) => group(x, playerOf(x.texts[0]))), deployed: deployed.map((x) => group(x, null)) };
+      }
       break;
     }
     case "VILLAGE_TROOPS":
@@ -93,11 +120,13 @@ export async function applyReading(db: PrismaClient, userId: string, screenshotI
   const applied: Applied[] = [];
   for (const [villageId, p] of plan) {
     if (p.troops) p.troops = await nameUnits(db, villageId, p.troops);
+    if (p.troopDetail) p.troopDetail = await nameDetail(db, villageId, p.troopDetail);
     const cur = await db.villageState.findUnique({ where: { villageId } });
     const merge = (a: unknown, b: Record<string, unknown> | undefined) => ({ ...((a as Record<string, unknown> | null) ?? {}), ...(b ?? {}) });
     const data: Prisma.VillageStateUncheckedUpdateInput = { userId, capturedAt: now, sourceScreenshotId: screenshotId };
     const areas: string[] = [];
     if (p.troops) {
+      data.troopDetail = (p.troopDetail ?? { foreign: [], deployed: [] }) as unknown as Prisma.InputJsonValue;
       data.troops = p.troops as unknown as Prisma.InputJsonValue;
       data.troopsAt = now;
       areas.push("troops");
@@ -136,6 +165,26 @@ export function inheritNames(next: unknown, prev: unknown): Bld[] {
   const bySlot = new Map(o.filter((b) => b.slot != null && b.name).map((b) => [b.slot as number, b.name as string]));
   const sameLen = n.length === o.length && n.every((b) => b.slot == null) && o.every((b) => b.slot == null);
   return n.map((b, i) => (b.name ? b : { ...b, name: (b.slot != null ? bySlot.get(b.slot) : undefined) ?? (sameLen ? (o[i]?.name ?? null) : null) }));
+}
+
+/** Namen in Herkunfts-/Ziel-Listen: eigene (deployed) nach dem Volk des Dorfbesitzers, fremde nach dem Volk des Herkunftsdorfes (map.sql). */
+async function nameDetail(db: PrismaClient, villageId: number, d: TroopDetail): Promise<TroopDetail> {
+  const tribeAt = async (x: number | null, y: number | null) => {
+    if (x === null || y === null) return null;
+    const v = await db.village.findFirst({ where: { x, y }, select: { playerId: true } });
+    return v ? ((await db.player.findUnique({ where: { id: v.playerId }, select: { tribe: true } }))?.tribe ?? null) : null;
+  };
+  const own = await db.village.findUnique({ where: { id: villageId }, select: { playerId: true } });
+  const ownTribe = own ? ((await db.player.findUnique({ where: { id: own.playerId }, select: { tribe: true } }))?.tribe ?? null) : null;
+  const rename = async (g: TroopGroup, tribe: number | null): Promise<TroopGroup> => {
+    if (tribe === null) return g;
+    const names = new Map((await db.unitName.findMany({ where: { tribeVid: tribe } })).map((n) => [n.slot, n.nameDe ?? n.nameEn]));
+    return { ...g, units: g.units.map((u) => { const m = /^Einheit (\d+)$/.exec(u.unit); return m && names.has(Number(m[1])) ? { ...u, unit: names.get(Number(m[1]))! } : u; }) };
+  };
+  return {
+    foreign: await Promise.all(d.foreign.map(async (g) => rename(g, await tribeAt(g.x, g.y)))),
+    deployed: await Promise.all(d.deployed.map((g) => rename(g, ownTribe))),
+  };
 }
 
 /** „Einheit N“ → echter Name, sobald Einheitennamen für das Volk des Dorfbesitzers (map.sql) vorliegen; Held und unbekannte Plätze bleiben. */

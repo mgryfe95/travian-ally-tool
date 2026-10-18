@@ -206,3 +206,15 @@ describe("Gewählte Art beim Upload", () => {
     setAiClient(undefined);
   });
 });
+
+describe("Versammlungsplatz: drei Fälle", () => {
+  it("eigene im Dorf, fremde Truppen hier (je Herkunft) und eigene Truppen in anderen Dörfern", () => {
+    const r = gold("rally-point-desktop-de");
+    r.rows.push({ name: "Fremddorf", x: 10, y: 10, current: false, cells: [50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], texts: ["deployed:Truppen in anderen Dörfern", "50"] });
+    const p = planApply(r, known, 9003)!.get(9003)!;
+    expect(p.troops).toEqual([{ unit: "Einheit 1", inVillage: 6, away: 0, support: 50 }]);
+    expect(p.troopDetail?.foreign).toHaveLength(5);
+    expect(p.troopDetail?.foreign[0]).toMatchObject({ player: "Gazza", x: -39, y: -28, upkeep: 400, units: [{ unit: "Einheit 1", count: 200 }, { unit: "Einheit 2", count: 200 }] });
+    expect(p.troopDetail?.deployed[0]).toMatchObject({ name: "Fremddorf", units: [{ unit: "Einheit 1", count: 50 }] });
+  });
+});

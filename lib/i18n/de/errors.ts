@@ -25,6 +25,7 @@ const de: Record<keyof typeof en, string> = {
   "err.village.tooLong": "Zu lang (max. {max} Zeichen)",
   "err.troops.badNumberInVillage": "Zeile {line}: „im Dorf“ muss eine ganze Zahl ≥ 0 sein",
   "err.troops.badNumberAway": "Zeile {line}: „unterwegs“ muss eine ganze Zahl ≥ 0 sein",
+  "err.troops.badNumberForeign": "Zeile {line}: fremde Truppen im Dorf keine gültige Zahl",
   "err.troops.badNumberSupport": "Zeile {line}: „Unterstützung“ muss eine ganze Zahl ≥ 0 sein",
   "err.troops.badName": "Zeile {line}: Einheitenname fehlt oder ist zu lang",
   "err.troops.tooManyColumns": "Zeile {line}: zu viele Spalten (Name; im Dorf; unterwegs; Unterstützung)",

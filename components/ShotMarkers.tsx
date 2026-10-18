@@ -30,11 +30,14 @@ export function ShotMarkers({ imageUrl, markers, hoverKey, pinKey, placingKey, o
         return (
           <div key={m.key} onMouseEnter={() => onHover(m.key)} onMouseLeave={() => onHover(null)}
             style={{ position: "absolute", left: `${x * 100}%`, top: `${y * 100}%`, transform: "translate(-50%, -50%)", zIndex: shown ? 30 : 10, lineHeight: 1.3, pointerEvents: placingKey ? "none" : "auto" }}>
+            {/* Hohler Ring statt gefülltem Punkt, damit die Zahl im Bild sichtbar bleibt; beim Hover wird er fast durchsichtig. Kleine Nummer oben rechts. */}
             <button type="button" aria-label={t("shot.marker", { n: m.label })} aria-pressed={pinKey === m.key} onClick={() => onPin(pinKey === m.key ? null : m.key)}
-              style={{ width: 24, height: 24, borderRadius: 12, border: `2px solid ${shown ? "#fff" : "rgba(255,255,255,.85)"}`, background: m.tone === "bld" ? "#1e3556" : "#c8962e", color: m.tone === "bld" ? "#fff" : "#14253e", fontSize: 11, fontWeight: 700, cursor: "pointer", padding: 0, boxShadow: shown ? "0 0 0 3px rgba(200,150,46,.7)" : "0 1px 3px rgba(0,0,0,.5)" }}>{m.label}</button>
+              style={{ position: "relative", width: 20, height: 20, borderRadius: 10, padding: 0, cursor: "pointer", background: "transparent", border: `2px solid ${m.tone === "bld" ? "#4f8be8" : "#f0b43c"}`, opacity: shown ? 0.35 : 0.9, boxShadow: "0 0 0 1px rgba(0,0,0,.55)", transition: "opacity .15s" }}>
+              <span aria-hidden="true" style={{ position: "absolute", top: -9, right: -11, minWidth: 13, height: 13, padding: "0 2px", borderRadius: 7, fontSize: 9, lineHeight: "13px", fontWeight: 700, background: m.tone === "bld" ? "#1e3556" : "#c8962e", color: m.tone === "bld" ? "#fff" : "#14253e", opacity: shown ? 0.4 : 0.85 }}>{m.label}</span>
+            </button>
             {shown && (
               <div role="dialog" aria-label={t("shot.marker", { n: m.label })}
-                style={{ position: "absolute", top: 30, [x > 0.55 ? "right" : "left"]: -6, minWidth: 230, padding: 10, background: "var(--bg, #fbf6e9)", color: "var(--text, #2b2318)", border: "1px solid var(--line, #d9c9a3)", borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,.35)" }}>
+                style={{ position: "absolute", top: 26, [x > 0.55 ? "right" : "left"]: -6, minWidth: 230, padding: 10, background: "var(--bg, #fbf6e9)", color: "var(--text, #2b2318)", border: "1px solid var(--line, #d9c9a3)", borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,.35)" }}>
                 {renderEditor(m.key)}
               </div>
             )}

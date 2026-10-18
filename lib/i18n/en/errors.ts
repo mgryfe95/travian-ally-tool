@@ -23,6 +23,7 @@ const en = {
   "err.village.tooLong": "Too long (max. {max} characters)",
   "err.troops.badNumberInVillage": "Line {line}: “in village” must be a whole number ≥ 0",
   "err.troops.badNumberAway": "Line {line}: “away” must be a whole number ≥ 0",
+  "err.troops.badNumberForeign": "Line {line}: foreign troops is not a valid number",
   "err.troops.badNumberSupport": "Line {line}: “support” must be a whole number ≥ 0",
   "err.troops.badName": "Line {line}: unit name is missing or too long",
   "err.troops.tooManyColumns": "Line {line}: too many columns (name; in village; away; support)",

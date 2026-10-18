@@ -15,6 +15,8 @@ import { readTroops, troopsToText } from "@/lib/troops";
 import { loadUnitLabels, unitLabel } from "@/lib/unit-labels";
 import { BuildingsEditor } from "@/components/BuildingsEditor";
 import { buildingInfos, loadBuildingNameSets } from "@/lib/gamedata/names";
+import { troopUpkeep } from "@/lib/gamedata/upkeep";
+import type { TroopDetail } from "@/lib/ai/apply";
 import { saveBuildingsAction, saveTroopsAction, saveVillageInstructionsAction } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -62,6 +64,11 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
   const buildings = arr<Level>(s?.buildings);
   const [bInfo, bSets, owner] = await Promise.all([buildingInfos(db, buildings, locale, (n) => fmt(n, locale)), loadBuildingNameSets(db, locale), db.player.findUnique({ where: { id: village.playerId }, select: { tribe: true } })]);
   const bNames = (owner ? bSets.byTribe[owner.tribe] : undefined) ?? bSets.all;
+  const unitRows = owner ? await db.unitName.findMany({ where: { tribeVid: owner.tribe } }) : [];
+  const slotByName = new Map(unitRows.flatMap((u) => [[u.nameEn.toLowerCase(), u.slot] as const, ...(u.nameDe ? [[u.nameDe.toLowerCase(), u.slot] as const] : [])]));
+  const ownUpkeep = troopUpkeep(owner?.tribe, troops.map((tr) => ({ unit: tr.unit, count: tr.inVillage + tr.away + tr.support })), slotByName);
+  const detail = obj<Partial<TroopDetail>>(s?.troopDetail);
+  const groupLine = (g: TroopDetail["foreign"][number]) => `${g.player ? `${g.player} · ` : ""}${g.name ?? "?"}${g.x !== null && g.y !== null ? ` (${g.x}|${g.y})` : ""}: ${g.units.map((u) => `${fmt(u.count, locale)} ${unitLabel(unitLabels, u.unit, locale, t)}`).join(", ")}${g.upkeep ? ` · ${t("villages.troops.upkeepShort", { n: fmt(g.upkeep, locale) })}` : ""}`;
   const queue = arr<QueueItem>(obj<{ construction?: unknown }>(s?.queues).construction);
 
   return (
@@ -141,6 +148,15 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
           {troops.length > 0 && (
             <div className="scroll" style={{ marginTop: 8 }}><table><thead><tr><th>{t("villages.troops.unit")}</th><th className="r">{t("villages.troops.inVillage")}</th><th className="r">{t("villages.troops.away")}</th><th className="r">{t("villages.troops.support")}</th></tr></thead>
               <tbody>{troops.map((tr) => <tr key={tr.unit}><td>{unitLabel(unitLabels, tr.unit, locale, t)}</td><td className="mono r">{fmt(tr.inVillage, locale)}</td><td className="mono r">{fmt(tr.away, locale)}</td><td className="mono r">{fmt(tr.support, locale)}</td></tr>)}</tbody></table></div>
+          )}
+          {troops.length > 0 && <p className="sub" style={{ fontSize: 12, marginTop: 6 }}>{t("villages.troops.upkeep", { n: fmt(ownUpkeep.total, locale) })}{ownUpkeep.unknown ? ` ${t("villages.troops.upkeepUnknown", { n: fmt(ownUpkeep.unknown, locale) })}` : ""}</p>}
+          {(detail.foreign?.length ?? 0) > 0 && (
+            <div style={{ marginTop: 8 }}><b style={{ fontSize: 13 }}>{t("villages.troops.foreign")}</b>
+              <ul className="sub" style={{ fontSize: 12, margin: "4px 0 0", paddingLeft: 18 }}>{detail.foreign!.map((g, i) => <li key={i}>{groupLine(g)}</li>)}</ul></div>
+          )}
+          {(detail.deployed?.length ?? 0) > 0 && (
+            <div style={{ marginTop: 8 }}><b style={{ fontSize: 13 }}>{t("villages.troops.deployed")}</b>
+              <ul className="sub" style={{ fontSize: 12, margin: "4px 0 0", paddingLeft: 18 }}>{detail.deployed!.map((g, i) => <li key={i}>{groupLine(g)}</li>)}</ul></div>
           )}
           <form action={saveTroopsAction} style={{ marginTop: 12 }}>
             <input type="hidden" name="villageId" value={id} />

@@ -72,5 +72,10 @@ const en = {
   "villages.bld.editHint": "Change slot (1–40), name and level directly. Names come from the game data; custom entries are allowed. Names per slot are kept on the next village-view screenshot.",
   "villages.bld.noData": "no game data",
   "villages.bld.max": "max.",
+  "villages.troops.upkeep": "Crop upkeep of own troops (incl. away/elsewhere): {n}/h",
+  "villages.troops.upkeepUnknown": "(+ {n} units with unknown upkeep)",
+  "villages.troops.upkeepShort": "{n} crop/h",
+  "villages.troops.foreign": "Foreign troops in this village",
+  "villages.troops.deployed": "Own troops in other villages",
 } as const;
 export default en;

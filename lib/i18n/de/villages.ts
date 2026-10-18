@@ -74,5 +74,10 @@ const de: Record<keyof typeof en, string> = {
   "villages.bld.editHint": "Platz (1–40), Name und Stufe direkt ändern. Die Namen kommen aus den Spieldaten, eigene Eingaben sind möglich. Beim nächsten Screenshot der Dorfansicht bleiben die Namen je Platz erhalten.",
   "villages.bld.noData": "keine Spieldaten",
   "villages.bld.max": "max.",
+  "villages.troops.upkeep": "Getreideverbrauch eigener Truppen (inkl. unterwegs/anderswo): {n}/h",
+  "villages.troops.upkeepUnknown": "(+ {n} Einheiten ohne bekannten Verbrauch)",
+  "villages.troops.upkeepShort": "{n} Getreide/h",
+  "villages.troops.foreign": "Fremde Truppen in diesem Dorf",
+  "villages.troops.deployed": "Eigene Truppen in anderen Dörfern",
 };
 export default de;

@@ -12,7 +12,8 @@ describe("parseTroopsText", () => {
     expect(() => parseTroopsText("Axt; abc")).toThrow(/Line 1/);
     expect(() => parseTroopsText("Axt; -5")).toThrow(TroopsError);
     expect(() => parseTroopsText("ok; 1\n; 5")).toThrow(/Line 2/);
-    expect(() => parseTroopsText("a;1;2;3;4")).toThrow(/too many/);
+    expect(() => parseTroopsText("a;1;2;3;4;5")).toThrow(/too many/);
+    expect(parseTroopsText("a;1;2;3;4")).toEqual([{ unit: "a", inVillage: 1, away: 2, support: 3, foreign: 4 }]);
     expect(() => parseTroopsText("x".repeat(41) + ";1")).toThrow(TroopsError);
   });
   it("Rundreise Text ↔ Daten", () => {
