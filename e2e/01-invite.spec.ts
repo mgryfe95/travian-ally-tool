@@ -20,7 +20,7 @@ test("Einladung erzeugen → einlösen → verifiziert; Systemadmin bleibt unant
   await expect(page.getByText(/Spieler in der Gruppe/).first()).toBeVisible();
   await page.getByRole("button", { name: "Einladung erzeugen" }).first().click();
   const text = await page.locator("textarea").first().inputValue();
-  expect(text).toContain("Einladungslink");
+  expect(text).toContain("invitation link"); // Ingame-Einladung immer auf Englisch
   const url = text.match(/https?:\/\/\S+\/invite\/\S+/)![0];
 
   // Als neuer Nutzer in frischem Kontext einlösen.
