@@ -1,3 +1,4 @@
+import { parseUnitStats, smithyValue } from "./units";
 import { describe, expect, it } from "vitest";
 import { applyOverrides, mergeLanguages, overridesTemplate, parseUnitTables, UnitsError } from "./units";
 
@@ -43,5 +44,25 @@ describe("Händische Ergänzungen", () => {
     expect(Object.keys(t["3"]!)).toHaveLength(10);
     expect(t["3"]!["1"]).toEqual({ en: "Phalanx", de: "Phalanx" });
     expect(t["3"]!["7"]).toEqual({ en: "", de: "" });
+  });
+});
+
+describe("Kampf- und Ausbildungswerte (Stufe 20 → Grundwerte)", () => {
+  const html = `<h2>Romans</h2><table>
+    <tr><th>Stat</th><th>Legionnaire</th><th>Legionnaire (Northern Legends)</th><th>Praetorian</th></tr>
+    <tr><td>Attack</td><td>52.4</td><td>52.4</td><td>40.9</td></tr>
+    <tr><td>Def Infantry</td><td>46.6</td><td>46.6</td><td>81.1</td></tr>
+    <tr><td>Def Cavalry</td><td>63.9</td><td>86.9</td><td>46.6</td></tr>
+    <tr><td>Crop upkeep</td><td>6</td><td>7</td><td>5</td></tr>
+    <tr><td>Capacity</td><td>1</td><td>1</td><td>1</td></tr>
+    <tr><td>Train time</td><td>0:03:36</td><td>0:03:04</td><td>0:03:58</td></tr>
+    <tr><td>Trained / 24h</td><td>400</td><td>469</td><td>363</td></tr>
+    <tr><td>Costs / 24h</td><td>160,000</td><td>187,840</td><td>166,980</td></tr>
+  </table>`;
+  it("rechnet die Grundwerte des Spiels zurück (Legionär 40/35/50, 1600 s, 400 Rohstoffe; Prätorianer 30/65/35)", () => {
+    const [leg, pra] = parseUnitStats(html);
+    expect(leg).toEqual({ tribeVid: 1, slot: 1, attack: 40, defInf: 35, defCav: 50, speed: 6, upkeep: 1, trainTimeSec: 1600, costTotal: 400 });
+    expect(pra).toMatchObject({ slot: 2, attack: 30, defInf: 65, defCav: 35, speed: 5, upkeep: 1, trainTimeSec: 1760 });
+    expect(Math.round(smithyValue(40, 1, 20) * 10) / 10).toBe(52.4);
   });
 });

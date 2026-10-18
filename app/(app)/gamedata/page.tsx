@@ -4,13 +4,14 @@ import { fmt, fmtDate } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
 import type { Locale, MessageKey, T } from "@/lib/i18n";
 import { EFFECTS, EFFECT_IDS, effectLabelKey, effectValue, formatDelta, formatEffect, presentEffects, rowsToEffects } from "@/lib/gamedata/effects";
+import { smithyValue, TRAIN_FACTOR } from "@/lib/gamedata/units";
 import { requirePermission } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
 const TABS = [["buildings", "overview.gamedata.tabBuildings"], ["effects", "overview.gamedata.tabEffects"], ["units", "overview.gamedata.tabUnits"], ["tribes", "overview.gamedata.tabTribes"]] as const satisfies readonly (readonly [string, MessageKey])[];
 
-export default async function GameDataPage({ searchParams }: { searchParams: Promise<{ tab?: string; tribe?: string; b?: string; fx?: string }> }) {
+export default async function GameDataPage({ searchParams }: { searchParams: Promise<{ tab?: string; tribe?: string; b?: string; fx?: string; u?: string }> }) {
   const { t, locale } = await getT();
   await requirePermission("map.view");
   const sp = await searchParams;
@@ -31,7 +32,7 @@ export default async function GameDataPage({ searchParams }: { searchParams: Pro
         <section className="card">
           <p className="sub">{t("overview.gamedata.empty")}</p>
         </section>
-      ) : tab === "buildings" ? <Buildings versionId={version.id} speed={version.serverSpeed} selected={Number(sp.b)} fx={sp.fx} t={t} locale={locale} /> : tab === "effects" ? <EffectsCompare versionId={version.id} fx={sp.fx} selected={Number(sp.b)} t={t} locale={locale} /> : tab === "units" ? <Units versionId={version.id} tribeId={Number(sp.tribe)} t={t} locale={locale} /> : <Tribes versionId={version.id} t={t} locale={locale} />}
+      ) : tab === "buildings" ? <Buildings versionId={version.id} speed={version.serverSpeed} selected={Number(sp.b)} fx={sp.fx} t={t} locale={locale} /> : tab === "effects" ? <EffectsCompare versionId={version.id} fx={sp.fx} selected={Number(sp.b)} t={t} locale={locale} /> : tab === "units" ? <Units versionId={version.id} tribeId={Number(sp.tribe)} unitSlot={Number(sp.u)} speed={version.serverSpeed} t={t} locale={locale} /> : <Tribes versionId={version.id} t={t} locale={locale} />}
     </>
   );
 }
@@ -133,27 +134,61 @@ async function tribesWithNames(versionId: number) {
   });
 }
 
-async function Units({ versionId, tribeId, t, locale }: { versionId: number; tribeId: number; t: T; locale: Locale }) {
+const hms = (sec: number) => { const r = Math.round(sec); return `${Math.floor(r / 3600)}:${String(Math.floor((r % 3600) / 60)).padStart(2, "0")}:${String(r % 60).padStart(2, "0")}`; };
+
+async function Units({ versionId, tribeId, unitSlot, speed, t, locale }: { versionId: number; tribeId: number; unitSlot: number; speed: number; t: T; locale: Locale }) {
   const all = (await tribesWithNames(versionId)).filter((x) => x.names.length > 0);
   const cur = all.find((x) => x.tr.id === tribeId) ?? all[0];
-  const stats = cur ? await db.unit.findMany({ where: { versionId, tribeId: cur.tr.id }, orderBy: { id: "asc" } }) : [];
   if (!cur) return <section className="card"><p className="sub">{t("overview.gamedata.unitsEmpty")}</p></section>;
+  const name = (n: (typeof cur.names)[number]) => (locale === "de" ? n.nameDe ?? n.nameEn : n.nameEn);
+  const hasStats = cur.names.some((n) => n.attack !== null);
+  const sel = cur.names.find((n) => n.slot === unitSlot && n.attack !== null);
+  const one = (v: number) => v.toLocaleString(locale === "de" ? "de-DE" : "en-GB", { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+  const sp = speed > 0 ? speed : 1;
   return (
     <section className="card flush">
       <div className="row" style={{ margin: 12, gap: 8 }} role="group" aria-label={t("overview.gamedata.tribeGroup")}>
         {all.map((x) => <Link key={x.tr.id} href={`/gamedata?tab=units&tribe=${x.tr.id}`} className={`opt ${x.tr.id === cur.tr.id ? "on" : ""}`}>{locale === "de" ? x.tr.name : x.en || x.tr.name}</Link>)}
       </div>
-      <div className="scroll"><table style={{ minWidth: 480 }}>
-        <thead><tr><th>{t("overview.gamedata.unitSlot")}</th><th>{t("overview.gamedata.unitNameDe")}</th><th>{t("overview.gamedata.unitNameEn")}</th></tr></thead>
-        <tbody>{cur.names.map((n) => <tr key={n.slot}><td className="mono">{n.slot}</td><td style={{ fontWeight: 500 }}>{locale === "de" ? n.nameDe ?? n.nameEn : n.nameEn}</td><td className="sub">{locale === "de" ? n.nameEn : n.nameDe ?? ""}</td></tr>)}</tbody>
+      <div className="scroll"><table style={{ minWidth: hasStats ? 900 : 480 }}>
+        <thead><tr><th>{t("overview.gamedata.unitSlot")}</th><th>{t("overview.gamedata.colUnit")}</th>
+          {hasStats ? <><th className="r">{t("overview.gamedata.colAttack")}</th><th className="r">{t("overview.gamedata.colDefInf")}</th><th className="r">{t("overview.gamedata.colDefCav")}</th><th className="r">{t("overview.gamedata.colSpeed")}</th><th className="r">{t("overview.gamedata.colUpkeep")}</th><th className="r">{t("overview.gamedata.colCostTotal")}</th><th className="r">{t("overview.gamedata.colTrain1")}</th></> : <th>{locale === "de" ? t("overview.gamedata.unitNameEn") : t("overview.gamedata.unitNameDe")}</th>}
+        </tr></thead>
+        <tbody>{cur.names.map((n) => (
+          <tr key={n.slot} style={sel?.slot === n.slot ? { background: "rgba(200,150,46,.18)" } : undefined}>
+            <td className="mono">{n.slot}</td>
+            <td style={{ fontWeight: 500 }}>{n.attack !== null ? <Link href={`/gamedata?tab=units&tribe=${cur.tr.id}&u=${n.slot}#unit`}>{name(n)}</Link> : name(n)}</td>
+            {hasStats ? <><td className="mono r">{n.attack ?? "–"}</td><td className="mono r">{n.defInf ?? "–"}</td><td className="mono r">{n.defCav ?? "–"}</td><td className="mono r">{n.speed ?? "–"}</td><td className="mono r">{n.upkeep ?? "–"}</td><td className="mono r">{n.costTotal != null ? fmt(n.costTotal, locale) : "–"}</td><td className="mono r">{n.trainTimeSec != null ? hms(n.trainTimeSec / sp) : "–"}</td></>
+              : <td className="sub">{locale === "de" ? n.nameEn : n.nameDe ?? ""}</td>}
+          </tr>))}</tbody>
       </table></div>
-      {stats.length > 0 && (
-        <div className="scroll"><table style={{ minWidth: 860 }}>
-          <thead><tr><th>{t("overview.gamedata.colUnit")}</th><th className="r">{t("overview.gamedata.colAttack")}</th><th className="r">{t("overview.gamedata.colDefInf")}</th><th className="r">{t("overview.gamedata.colDefCav")}</th><th className="r">{t("overview.gamedata.colSpeed")}</th><th className="r">{t("overview.gamedata.colCarry")}</th><th className="r">{t("overview.gamedata.colCost")}</th><th className="r">{t("overview.gamedata.colUpkeep")}</th><th>{t("overview.gamedata.colBuilding")}</th></tr></thead>
-          <tbody>{stats.map((u) => <tr key={u.id}><td style={{ fontWeight: 500 }}>{u.name}</td><td className="mono r">{u.attack}</td><td className="mono r">{u.defInf}</td><td className="mono r">{u.defCav}</td><td className="mono r">{u.speed}</td><td className="mono r">{u.carry}</td><td className="mono r">{u.costWood}/{u.costClay}/{u.costIron}/{u.costCrop}</td><td className="mono r">{u.upkeep}</td><td className="sub">{u.building}</td></tr>)}</tbody>
-        </table></div>
+      {sel && sel.attack !== null && sel.defInf !== null && sel.defCav !== null && (
+        <div id="unit" style={{ margin: 12 }}>
+          <h2>{name(sel)}</h2>
+          <p className="sub" style={{ fontSize: 12, margin: "4px 0 10px" }}>{t("overview.gamedata.unitDetailIntro", { speed: sp })}</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
+            <div className="scroll" style={{ flex: "1 1 360px" }}><table>
+              <caption className="sub" style={{ textAlign: "left", padding: "0 0 6px" }}>{t("overview.gamedata.smithyTitle")}</caption>
+              <thead><tr><th>{t("overview.gamedata.level")}</th><th className="r">{t("overview.gamedata.colAttack")}</th><th className="r">{t("overview.gamedata.colDefInf")}</th><th className="r">{t("overview.gamedata.colDefCav")}</th><th className="r">Δ</th></tr></thead>
+              <tbody>{Array.from({ length: 21 }, (_, l) => {
+                const a = smithyValue(sel.attack!, sel.upkeep ?? 1, l), di = smithyValue(sel.defInf!, sel.upkeep ?? 1, l), dc = smithyValue(sel.defCav!, sel.upkeep ?? 1, l);
+                return <tr key={l}><td className="mono">{l}</td><td className="mono r">{one(a)}</td><td className="mono r">{one(di)}</td><td className="mono r">{one(dc)}</td><td className="mono r sub">{l === 0 ? "–" : `+${one(((a / sel.attack! - 1) * 100))} %`}</td></tr>;
+              })}</tbody>
+            </table></div>
+            {sel.trainTimeSec != null && (
+              <div className="scroll" style={{ flex: "1 1 320px" }}><table>
+                <caption className="sub" style={{ textAlign: "left", padding: "0 0 6px" }}>{t("overview.gamedata.trainTitle")}</caption>
+                <thead><tr><th>{t("overview.gamedata.level")}</th><th className="r">{t("overview.gamedata.perUnit")}</th><th className="r">{t("overview.gamedata.per24h")}</th></tr></thead>
+                <tbody>{Array.from({ length: 20 }, (_, i) => {
+                  const sec = (sel.trainTimeSec! * TRAIN_FACTOR(i + 1)) / sp;
+                  return <tr key={i}><td className="mono">{i + 1}</td><td className="mono r">{hms(sec)}</td><td className="mono r">{fmt(Math.floor(86400 / sec), locale)}</td></tr>;
+                })}</tbody>
+              </table></div>
+            )}
+          </div>
+        </div>
       )}
-      <p className="sub" style={{ margin: 12, fontSize: 12 }}>{t("overview.gamedata.unitsNote")}</p>
+      <p className="sub" style={{ margin: 12, fontSize: 12 }}>{hasStats ? t("overview.gamedata.unitsNoteStats") : t("overview.gamedata.unitsNote")}</p>
     </section>
   );
 }

@@ -66,7 +66,8 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
   const bNames = (owner ? bSets.byTribe[owner.tribe] : undefined) ?? bSets.all;
   const unitRows = owner ? await db.unitName.findMany({ where: { tribeVid: owner.tribe } }) : [];
   const slotByName = new Map(unitRows.flatMap((u) => [[u.nameEn.toLowerCase(), u.slot] as const, ...(u.nameDe ? [[u.nameDe.toLowerCase(), u.slot] as const] : [])]));
-  const ownUpkeep = troopUpkeep(owner?.tribe, troops.map((tr) => ({ unit: tr.unit, count: tr.inVillage + tr.away + tr.support })), slotByName);
+  const upkeepDb = new Map(unitRows.flatMap((u) => (u.upkeep != null ? [[u.slot, u.upkeep] as const] : [])));
+  const ownUpkeep = troopUpkeep(owner?.tribe, troops.map((tr) => ({ unit: tr.unit, count: tr.inVillage + tr.away + tr.support })), slotByName, upkeepDb);
   const detail = obj<Partial<TroopDetail>>(s?.troopDetail);
   const groupLine = (g: TroopDetail["foreign"][number]) => `${g.player ? `${g.player} · ` : ""}${g.name ?? "?"}${g.x !== null && g.y !== null ? ` (${g.x}|${g.y})` : ""}: ${g.units.map((u) => `${fmt(u.count, locale)} ${unitLabel(unitLabels, u.unit, locale, t)}`).join(", ")}${g.upkeep ? ` · ${t("villages.troops.upkeepShort", { n: fmt(g.upkeep, locale) })}` : ""}`;
   const queue = arr<QueueItem>(obj<{ construction?: unknown }>(s?.queues).construction);

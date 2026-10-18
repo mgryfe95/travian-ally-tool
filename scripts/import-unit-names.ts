@@ -5,7 +5,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { db } from "../lib/db";
 import { env } from "../lib/env";
-import { applyOverrides, mergeLanguages, overridesTemplate, parseUnitTables, UnitsError, type NameOverrides } from "../lib/gamedata/units";
+import { applyOverrides, mergeLanguages, overridesTemplate, parseUnitStats, parseUnitTables, UnitsError, type NameOverrides } from "../lib/gamedata/units";
 import { worldProfile } from "../lib/world-profile";
 
 const args = process.argv.slice(2);
@@ -25,12 +25,21 @@ try {
     process.exit(0);
   }
   if (overridesFile) rows = applyOverrides(rows, JSON.parse(readFileSync(overridesFile, "utf8")) as NameOverrides);
+  // Werte (Stufe 20 → Grundwerte) aus derselben englischen Seite
+  const stats = new Map(parseUnitStats(readFileSync(enFile, "utf8")).map((x) => [`${x.tribeVid}:${x.slot}`, x]));
   const tribes = new Set(rows.map((r) => r.tribeVid)).size;
+  console.log(`Werte: ${stats.size} Einheiten (z. B. Volk 1 Platz 1: ${JSON.stringify(stats.get("1:1") ?? null)})`);
   console.log(`Gelesen: ${rows.length} Einheiten, ${tribes} Völker, Deutsch: ${rows.filter((r) => r.nameDe).length} von ${rows.length}`);
   for (const r of rows.filter((x) => x.slot <= 2)) console.log(`  Volk ${r.tribeVid} Platz ${r.slot}: ${r.nameEn}${r.nameDe ? ` / ${r.nameDe}` : ""}`);
   if (!dry) {
     const source = `https://support.travian.com/en/articles/187-infantry-and-cavalry-units-comparison-table (abgerufen ${new Date().toISOString().slice(0, 10)})`;
-    for (const r of rows) await db.unitName.upsert({ where: { tribeVid_slot: { tribeVid: r.tribeVid, slot: r.slot } }, create: { ...r, gameVersion: world.version, source }, update: { ...r, gameVersion: world.version, source } });
+    for (const r of rows) {
+      const st = stats.get(`${r.tribeVid}:${r.slot}`);
+      const v = st ? { attack: st.attack, defInf: st.defInf, defCav: st.defCav, speed: st.speed, upkeep: st.upkeep, costTotal: st.costTotal, trainTimeSec: st.trainTimeSec } : {};
+      // Ohne deutsche Datei bleiben vorhandene deutsche Namen unangetastet
+      const { nameDe, ...rest } = r;
+      await db.unitName.upsert({ where: { tribeVid_slot: { tribeVid: r.tribeVid, slot: r.slot } }, create: { ...r, ...v, gameVersion: world.version, source }, update: { ...rest, ...(nameDe ? { nameDe } : {}), ...v, gameVersion: world.version, source } });
+    }
     console.log("Importiert.");
   } else console.log("Trockenlauf: nichts geschrieben.");
 } catch (e) {

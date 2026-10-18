@@ -99,3 +99,54 @@ export function overridesTemplate(rows: UnitNameRow[], known: NameOverrides = {}
   }
   return t;
 }
+
+// ───────── Kampf- und Ausbildungswerte ─────────
+// Der Artikel nennt Werte bei Schmiede/Kaserne/Stall Stufe 20. Zwei Zeilen sind dort vertauscht beschriftet:
+// „Crop upkeep“ ist die Geschwindigkeit (Felder/h), „Capacity“ der Getreideverbrauch. Grundwerte rechnen wir zurück:
+//   Schmiede:  v(l) = b + (b + 300·u/7)·(1.007^l − 1)   (u = Getreideverbrauch)  →  b = (v20 − 300u/7·k) / (1 + k), k = 1.007^20 − 1
+//   Ausbildung: t(l) = t1 · 0.9^(l−1)                   →  t1 = t20 / 0.9^19
+export const SMITHY_K = (lvl: number) => 1.007 ** lvl - 1;
+export const TRAIN_FACTOR = (lvl: number) => 0.9 ** (lvl - 1);
+
+/** Wert einer Einheit bei Schmiede-Stufe `lvl` (0 = Grundwert). */
+export const smithyValue = (base: number, upkeep: number, lvl: number) => base + (base + (300 * upkeep) / 7) * SMITHY_K(lvl);
+
+export type UnitStatRow = { tribeVid: number; slot: number; attack: number; defInf: number; defCav: number; speed: number; upkeep: number; trainTimeSec: number; costTotal: number | null };
+
+const clock = (t: string) => {
+  const m = /^(\d+):(\d{2}):(\d{2})$/.exec(t.trim());
+  return m ? Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]) : NaN;
+};
+const num = (t: string | undefined) => Number((t ?? "").replace(/[,\s]/g, ""));
+
+/** Liest je Volk und Einheitenplatz die Werte (Stufe 20) und rechnet sie auf Grundwerte (Stufe 0 bzw. Gebäude Stufe 1) zurück. */
+export function parseUnitStats(html: string): UnitStatRow[] {
+  const body = html.replace(/<(script|style)[\s\S]*?<\/\1>/gi, " ");
+  const out: UnitStatRow[] = [];
+  for (const t of body.matchAll(/<table[\s\S]*?<\/table>/gi)) {
+    const heads = [...body.slice(0, t.index).matchAll(/<h[1-4][^>]*>([\s\S]*?)<\/h[1-4]>/gi)];
+    const vid = TRIBE_VID[clean(heads[heads.length - 1]?.[1] ?? "").toLowerCase()];
+    if (!vid) continue;
+    const rows = [...t[0].matchAll(/<tr[\s\S]*?<\/tr>/gi)].map((r) => [...r[0].matchAll(/<t[hd][^>]*>([\s\S]*?)<\/t[hd]>/gi)].map((c) => clean(c[1] as string)));
+    const header = rows[0] ?? [];
+    const row = (re: RegExp) => rows.find((r) => re.test(r[0] ?? ""));
+    const att = row(/^attack$/i), di = row(/^def infantry/i), dc = row(/^def cavalry/i), spd = row(/crop upkeep/i), upk = row(/^capacity/i);
+    const tt = row(/^train time/i), trained = row(/^trained/i), costs = row(/^costs/i);
+    if (!att || !di || !dc || !spd || !upk || !tt) continue;
+    const k = SMITHY_K(20);
+    let slot = 0;
+    header.forEach((h, i) => {
+      if (i === 0 || /\(.+\)\s*$/.test(h)) return; // Varianten (z. B. Northern Legends) haben keinen eigenen Platz
+      slot++;
+      const u = num(upk[i]);
+      const base = (v20: number) => Math.round((v20 - ((300 * u) / 7) * k) / (1 + k));
+      const t20 = clock(tt[i] ?? ""); // Grundzeiten sind volle 10 s (der Artikel rundet auf Sekunden)
+      const n = num(trained?.[i]), c = num(costs?.[i]);
+      out.push({
+        tribeVid: vid, slot, attack: base(num(att[i])), defInf: base(num(di[i])), defCav: base(num(dc[i])), speed: num(spd[i]), upkeep: u,
+        trainTimeSec: Math.round(t20 / TRAIN_FACTOR(20) / 10) * 10, costTotal: n > 0 && c > 0 ? Math.round(c / n) : null,
+      });
+    });
+  }
+  return out.filter((r) => [r.attack, r.defInf, r.defCav, r.speed, r.upkeep, r.trainTimeSec].every(Number.isFinite));
+}

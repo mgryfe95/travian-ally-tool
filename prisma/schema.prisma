@@ -754,6 +754,17 @@ model UnitName {
   slot        Int
   nameEn      String
   nameDe      String?
+  /// Grundwerte (Schmiede 0, Kaserne/Stall Stufe 1, Speed 1) – aus dem Help-Center-Artikel zurückgerechnet
+  attack       Int?
+  defInf       Int?
+  defCav       Int?
+  /// Felder pro Stunde
+  speed        Int?
+  /// Getreideverbrauch pro Stunde
+  upkeep       Int?
+  /// Summe der Ausbildungskosten (Holz+Lehm+Eisen+Getreide)
+  costTotal    Int?
+  trainTimeSec Int?
   gameVersion String
   source      String
   updatedAt   DateTime @updatedAt
