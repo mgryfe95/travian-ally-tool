@@ -9,7 +9,7 @@ import { getCurrentUser } from "@/lib/session";
 
 export const runtime = "nodejs";
 
-const body = z.object({ action: z.enum(["confirm", "reject", "delete", "retract"]), reading: z.unknown().optional(), villageId: z.number().int().optional(), asExample: z.boolean().optional() });
+const body = z.object({ action: z.enum(["confirm", "reject", "delete", "retract", "reread"]), reading: z.unknown().optional(), villageId: z.number().int().optional(), asExample: z.boolean().optional() });
 
 /** Prüfen eines Screenshots (Lernmodus): bestätigen (optional mit Korrektur) oder verwerfen. Nur der eigene Upload. */
 export function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -25,6 +25,11 @@ export function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
     if (b.data.action === "delete") {
       await deleteScreenshotFiles(db, [id]);
       return NextResponse.json({ status: "deleted" });
+    }
+    if (b.data.action === "reread") {
+      if (shot.removedAt || shot.status === "parsed") return NextResponse.json({ error: t("screenshots.err.badRequest") }, { status: 422 });
+      const r = await new VisionPipeline(db).process(id);
+      return NextResponse.json({ status: r.status, message: r.reason ?? null }, { status: r.status === "failed" ? 422 : 200 });
     }
     if (b.data.action === "retract") {
       const r = await new VisionPipeline(db).retract(id, user.id);

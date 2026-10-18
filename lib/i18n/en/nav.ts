@@ -30,5 +30,13 @@ const en = {
   "table.add": "Add row",
   "table.remove": "Remove row",
   "table.namePh": "Pick or type a name",
+  "table.place": "Set position on the image",
+  "table.placeNone": "No position yet – click, then click on the image",
+  "shot.alt": "Screenshot with markers",
+  "shot.marker": "Marker {n}",
+  "shot.move": "Move position",
+  "shot.close": "Close",
+  "shot.hint": "Hover a marker to edit its values directly; click pins it.",
+  "shot.placing": "Now click the spot in the image where the level is shown.",
 } as const;
 export default en;

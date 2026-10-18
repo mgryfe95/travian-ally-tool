@@ -99,5 +99,7 @@ const de: Record<keyof typeof en, string> = {
   "screenshots.examples.intro": "Diese bestätigten Screenshots dienen der Erkennung als Vorbild (je Art die neuesten {n}). Du kannst sie korrigieren oder entfernen. Gelöschte Screenshots zählen nicht mehr als Beispiel.",
   "screenshots.examples.edit": "Bearbeiten",
   "screenshots.examples.of": "von {user}",
+  "screenshots.review.reread": "Neu auslesen",
+  "screenshots.review.rereadHint": "Liest das Bild erneut aus (inkl. Positionen der Marken). Eigene Änderungen gehen dabei verloren.",
 };
 export default de;

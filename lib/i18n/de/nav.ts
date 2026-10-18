@@ -32,5 +32,13 @@ const de: Record<keyof typeof en, string> = {
   "table.add": "Zeile hinzufügen",
   "table.remove": "Zeile entfernen",
   "table.namePh": "Name wählen oder tippen",
+  "table.place": "Position auf dem Bild setzen",
+  "table.placeNone": "Noch keine Position – klicken, dann aufs Bild klicken",
+  "shot.alt": "Screenshot mit Markierungen",
+  "shot.marker": "Marke {n}",
+  "shot.move": "Position ändern",
+  "shot.close": "Schließen",
+  "shot.hint": "Marke berühren: Werte direkt ändern, Klick hält sie fest.",
+  "shot.placing": "Jetzt auf die Stelle im Bild klicken, an der die Stufe steht.",
 };
 export default de;

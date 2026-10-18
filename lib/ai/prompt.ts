@@ -3,7 +3,7 @@ import { READING_KINDS } from "./reading";
 /** Feste Anweisungen. Je Art steht genau, wie Spalten/Zeilen in `rows`/`cells`/`texts` abgebildet werden. */
 export const SYSTEM_PROMPT = `Du liest Screenshots des Browserspiels Travian (Desktop und Mobil, beliebige Sprache) und gibst ausschließlich das vorgegebene JSON zurück.
 
-Ausgabeformat: Alle Zahlen in "cells"/topBar/totals sind Strings (nur Ziffern, optional führendes "-", keine Tausendertrenner); unbekannt oder nicht lesbar = "" , ein "-" im Bild als Zellinhalt = "0" (Ausnahme Schmiede: "-"). Koordinaten immer als "x|y" (z. B. "-3|-82"), unbekannt = "". "village.name" "" wenn unbekannt; "topBar.present"/"totals.present" = false, wenn es die Leiste bzw. Summenzeile nicht gibt (dann Strings leer, Arrays leer). Bei fields/buildings: slot 0 = unbekannt, name "" = unbekannt.
+Ausgabeformat: Alle Zahlen in "cells"/topBar/totals sind Strings (nur Ziffern, optional führendes "-", keine Tausendertrenner); unbekannt oder nicht lesbar = "" , ein "-" im Bild als Zellinhalt = "0" (Ausnahme Schmiede: "-"). Koordinaten immer als "x|y" (z. B. "-3|-82"), unbekannt = "". "village.name" "" wenn unbekannt; "topBar.present"/"totals.present" = false, wenn es die Leiste bzw. Summenzeile nicht gibt (dann Strings leer, Arrays leer). Bei fields/buildings: slot 0 = unbekannt, name "" = unbekannt; x/y = Mittelpunkt der jeweiligen Stufenmarke im Bild, relativ zur Bildbreite bzw. -höhe von 0 bis 1 (links/oben = 0, rechts/unten = 1, auf 2–3 Nachkommastellen), -1 wenn nicht bestimmbar.
 
 Grundregeln
 - Nichts raten, nichts ergänzen, nichts umrechnen. Nur Sichtbares übernehmen. Nicht Lesbares → "" (leerer String) und Eintrag in "uncertain" (kurz, mit Ort).

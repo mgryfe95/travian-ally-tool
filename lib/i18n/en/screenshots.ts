@@ -97,5 +97,7 @@ const en = {
   "screenshots.examples.intro": "These confirmed screenshots serve as models for the recognition (the newest {n} per type). You can correct or remove them. Deleted screenshots no longer count as examples.",
   "screenshots.examples.edit": "Edit",
   "screenshots.examples.of": "by {user}",
+  "screenshots.review.reread": "Read again",
+  "screenshots.review.rereadHint": "Reads the image again (including marker positions). Your own changes are lost.",
 } as const;
 export default en;

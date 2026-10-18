@@ -41,8 +41,9 @@ export const readingSchema = z.object({
   topBar: topBar.nullable(),
   rows: z.array(row),
   totals: z.object({ cells: z.array(n), texts: z.array(z.string().nullable()) }).nullable(),
-  fields: z.array(z.object({ slot: n, level: z.number() })),
-  buildings: z.array(z.object({ slot: n, name: z.string().nullable(), level: z.number() })),
+  /** x/y = Mittelpunkt der Marke im Bild, relativ 0–1 (links/oben = 0); fehlt bei älteren Lesungen */
+  fields: z.array(z.object({ slot: n, level: z.number(), x: n.optional(), y: n.optional() })),
+  buildings: z.array(z.object({ slot: n, name: z.string().nullable(), level: z.number(), x: n.optional(), y: n.optional() })),
   /** Selbstauskunft des Modells 0–1 (nur Obergrenze, die eigentliche Konfidenz kommt aus den Prüfungen) */
   selfRating: z.number(),
   /** Stellen, bei denen das Modell unsicher ist (Freitext, kurz) */
@@ -63,8 +64,8 @@ export const apiSchema = z.object({
   topBar: z.object({ present: z.boolean(), wood: z.string(), clay: z.string(), iron: z.string(), crop: z.string(), freeCrop: z.string(), warehouse: z.string(), granary: z.string() }),
   rows: z.array(z.object({ name: z.string(), coord: z.string(), current: z.boolean(), cells: z.array(z.string()), texts: z.array(z.string()) })),
   totals: z.object({ present: z.boolean(), cells: z.array(z.string()), texts: z.array(z.string()) }),
-  fields: z.array(z.object({ slot: z.number(), level: z.number() })),
-  buildings: z.array(z.object({ slot: z.number(), name: z.string(), level: z.number() })),
+  fields: z.array(z.object({ slot: z.number(), level: z.number(), x: z.number(), y: z.number() })),
+  buildings: z.array(z.object({ slot: z.number(), name: z.string(), level: z.number(), x: z.number(), y: z.number() })),
   selfRating: z.number(),
   uncertain: z.array(z.string()),
 });
@@ -83,8 +84,8 @@ export const readingJsonSchema = obj({
   topBar: obj({ present: { type: "boolean" }, wood: str, clay: str, iron: str, crop: str, freeCrop: str, warehouse: str, granary: str }),
   rows: arrOf(obj({ name: str, coord: str, current: { type: "boolean" }, cells: arrOf(str), texts: arrOf(str) })),
   totals: obj({ present: { type: "boolean" }, cells: arrOf(str), texts: arrOf(str) }),
-  fields: arrOf(obj({ slot: int, level: int })),
-  buildings: arrOf(obj({ slot: int, name: str, level: int })),
+  fields: arrOf(obj({ slot: int, level: int, x: { type: "number" }, y: { type: "number" } })),
+  buildings: arrOf(obj({ slot: int, name: str, level: int, x: { type: "number" }, y: { type: "number" } })),
   selfRating: { type: "number" },
   uncertain: arrOf(str),
 }) as Record<string, unknown>;
@@ -103,6 +104,9 @@ export function parseCoordStr(raw: string): [number, number] | null {
   return m ? [Number(m[1]), Number(m[2])] : null;
 }
 
+/** Relative Bildposition 0–1; alles andere (z. B. -1) = unbekannt. */
+const rel = (v: number): number | null => (Number.isFinite(v) && v >= 0 && v <= 1 ? Math.round(v * 1000) / 1000 : null);
+
 export function apiToReading(a: ApiReading): Reading {
   const xy = (c: string) => parseCoordStr(c);
   const vc = xy(a.village.coord);
@@ -114,8 +118,8 @@ export function apiToReading(a: ApiReading): Reading {
       : null,
     rows: a.rows.map((r) => { const c = xy(r.coord); return { name: r.name.trim() || null, x: c?.[0] ?? null, y: c?.[1] ?? null, current: r.current, cells: r.cells.map(parseNum), texts: r.texts.map((t) => (t.trim() === "" ? null : t)) }; }),
     totals: a.totals.present ? { cells: a.totals.cells.map(parseNum), texts: a.totals.texts.map((t) => (t.trim() === "" ? null : t)) } : null,
-    fields: a.fields.map((f) => ({ slot: f.slot > 0 ? f.slot : null, level: f.level })),
-    buildings: a.buildings.map((b) => ({ slot: b.slot > 0 ? b.slot : null, name: b.name.trim() || null, level: b.level })),
+    fields: a.fields.map((f) => ({ slot: f.slot > 0 ? f.slot : null, level: f.level, x: rel(f.x), y: rel(f.y) })),
+    buildings: a.buildings.map((b) => ({ slot: b.slot > 0 ? b.slot : null, name: b.name.trim() || null, level: b.level, x: rel(b.x), y: rel(b.y) })),
     selfRating: a.selfRating, uncertain: a.uncertain,
   };
 }
@@ -131,8 +135,8 @@ export function readingToApi(r: Reading): ApiReading {
     topBar: { present: !!r.topBar, wood: ns(r.topBar?.wood ?? null), clay: ns(r.topBar?.clay ?? null), iron: ns(r.topBar?.iron ?? null), crop: ns(r.topBar?.crop ?? null), freeCrop: ns(r.topBar?.freeCrop ?? null), warehouse: ns(r.topBar?.warehouse ?? null), granary: ns(r.topBar?.granary ?? null) },
     rows: r.rows.map((x) => ({ name: x.name ?? "", coord: cs(x.x, x.y), current: x.current, cells: x.cells.map((c) => (c === null ? "-" : String(c))), texts: x.texts.map((t) => t ?? "") })),
     totals: { present: !!r.totals, cells: (r.totals?.cells ?? []).map((c) => (c === null ? "-" : String(c))), texts: (r.totals?.texts ?? []).map((t) => t ?? "") },
-    fields: r.fields.map((f) => ({ slot: f.slot ?? 0, level: f.level })),
-    buildings: r.buildings.map((b) => ({ slot: b.slot ?? 0, name: b.name ?? "", level: b.level })),
+    fields: r.fields.map((f) => ({ slot: f.slot ?? 0, level: f.level, x: f.x ?? -1, y: f.y ?? -1 })),
+    buildings: r.buildings.map((b) => ({ slot: b.slot ?? 0, name: b.name ?? "", level: b.level, x: b.x ?? -1, y: b.y ?? -1 })),
     selfRating: r.selfRating, uncertain: r.uncertain,
   };
 }

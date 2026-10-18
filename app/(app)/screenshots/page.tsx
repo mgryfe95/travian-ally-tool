@@ -64,7 +64,7 @@ export default async function ScreenshotsPage() {
               <span className="sub">{STATUS[s.status] ? t(STATUS[s.status] as MessageKey) : s.status}{s.confidence !== null ? ` · ${t("screenshots.confidence", { pct: Math.round(s.confidence * 100) })}` : ""}</span>
             </div>
             {(p.errorKey || p.error) && <p className="errtext">{p.errorKey ? translate(locale, p.errorKey, p.errorParams) : p.error}</p>}
-            {s.status === "needs_review" && p.reading && <ScreenshotReview id={s.id} reading={p.reading} issues={(p.issues ?? []).map((i) => ({ level: i.level, message: i.key ? translate(locale, i.key, i.params) : i.message }))} villages={villages} defaultVillageId={s.villageId ?? undefined} nameSets={nameSets} kindLabels={kindLabels} />}
+            {s.status === "needs_review" && p.reading && <ScreenshotReview id={s.id} reading={p.reading} issues={(p.issues ?? []).map((i) => ({ level: i.level, message: i.key ? translate(locale, i.key, i.params) : i.message }))} villages={villages} defaultVillageId={s.villageId ?? undefined} nameSets={nameSets} kindLabels={kindLabels} imageUrl={s.removedAt ? undefined : `/api/screenshots/${s.id}/file`} />}
             {s.status === "parsed" && p.confirmedBy && !s.removedAt && <RetractButton id={s.id} />}
           </section>
         );
@@ -83,7 +83,7 @@ export default async function ScreenshotsPage() {
                   <span className="sub" style={{ fontSize: 12 }}>{e.createdAt.toLocaleDateString(locale === "en" ? "en-GB" : "de-DE")}{e.createdBy !== user.id ? ` · ${t("screenshots.examples.of", { user: exampleAuthors.get(e.createdBy) ?? "?" })}` : ""}</span>
                 </summary>
                 <div style={{ marginTop: 8 }}>
-                  <ScreenshotReview id={sh?.id ?? 0} exampleId={e.id} reading={e.gold} issues={[]} villages={[]} nameSets={nameSets} kindLabels={kindLabels} />
+                  <ScreenshotReview id={sh?.id ?? 0} exampleId={e.id} imageUrl={sh ? `/api/screenshots/${sh.id}/file` : undefined} reading={e.gold} issues={[]} villages={[]} nameSets={nameSets} kindLabels={kindLabels} />
                 </div>
               </details>
             );
