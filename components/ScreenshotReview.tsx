@@ -73,7 +73,7 @@ export function ScreenshotReview({ id, reading, issues, villages, defaultVillage
   }
 
   const idxOf = (key: string | null, type: "b" | "f") => (key && key[0] === type ? Number(key.slice(1)) : null);
-  const activeKey = pinKey ?? hoverKey;
+  const activeKey = hoverKey ?? pinKey;
   const markers: Marker[] = [
     ...data.buildings.map((b, i) => ({ key: `b${i}`, label: String(b.slot ?? i + 1), x: b.x, y: b.y, tone: "bld" as const })),
     ...data.fields.map((f, i) => ({ key: `f${i}`, label: `${f.slot ?? i + 1}${f.type ? ` ${t(RES_TYPE_KEYS[f.type]).slice(0, 1)}` : ""}`, x: f.x, y: f.y, tone: "fld" as const })),
@@ -174,13 +174,13 @@ export function ScreenshotReview({ id, reading, issues, villages, defaultVillage
           {(data.kind === "VILLAGE_VIEW" || data.buildings.length > 0) && (
             <div style={{ margin: "8px 0" }}>
               <b>{t("screenshots.review.buildings")}</b>
-              <BuildingsTable rows={data.buildings} onChange={(buildings) => upd({ buildings: buildings.map((b) => ({ slot: b.slot, name: b.name ?? null, level: b.level, x: b.x ?? null, y: b.y ?? null })) })} names={buildingNames} slots={Array.from({ length: 22 }, (_, i) => 19 + i)} activeIndex={idxOf(activeKey, "b")} placingIndex={idxOf(placing, "b")} onHover={(i) => setHoverKey(i === null ? null : `b${i}`)} onPlace={imageUrl ? (i) => setPlacing(placing === `b${i}` ? null : `b${i}`) : undefined} />
+              <BuildingsTable rows={data.buildings} onChange={(buildings) => upd({ buildings: buildings.map((b) => ({ slot: b.slot, name: b.name ?? null, level: b.level, x: b.x ?? null, y: b.y ?? null })) })} names={buildingNames} slots={Array.from({ length: 22 }, (_, i) => 19 + i)} activeIndex={idxOf(activeKey, "b")} placingIndex={idxOf(placing, "b")} onHover={(i) => setHoverKey(i === null ? null : `b${i}`)} onFocusRow={(i) => setPinKey(`b${i}`)} onPlace={imageUrl ? (i) => setPlacing(placing === `b${i}` ? null : `b${i}`) : undefined} />
             </div>
           )}
           {(data.kind === "RESOURCE_VIEW" || data.fields.length > 0) && (
             <div style={{ margin: "8px 0" }}>
               <b>{t("screenshots.review.fields")}</b>
-              <BuildingsTable rows={data.fields} onChange={(fields) => upd({ fields: fields.map((f) => ({ slot: f.slot, level: f.level, type: (f.type as Reading["fields"][number]["type"]) ?? null, x: f.x ?? null, y: f.y ?? null })) })} names={[]} withName={false} withType slots={Array.from({ length: 18 }, (_, i) => i + 1)} activeIndex={idxOf(activeKey, "f")} placingIndex={idxOf(placing, "f")} onHover={(i) => setHoverKey(i === null ? null : `f${i}`)} onPlace={imageUrl ? (i) => setPlacing(placing === `f${i}` ? null : `f${i}`) : undefined} />
+              <BuildingsTable rows={data.fields} onChange={(fields) => upd({ fields: fields.map((f) => ({ slot: f.slot, level: f.level, type: (f.type as Reading["fields"][number]["type"]) ?? null, x: f.x ?? null, y: f.y ?? null })) })} names={[]} withName={false} withType slots={Array.from({ length: 18 }, (_, i) => i + 1)} activeIndex={idxOf(activeKey, "f")} placingIndex={idxOf(placing, "f")} onHover={(i) => setHoverKey(i === null ? null : `f${i}`)} onFocusRow={(i) => setPinKey(`f${i}`)} onPlace={imageUrl ? (i) => setPlacing(placing === `f${i}` ? null : `f${i}`) : undefined} />
             </div>
           )}
           {data.rows.length > 0 && (

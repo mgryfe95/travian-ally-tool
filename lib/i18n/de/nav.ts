@@ -31,7 +31,7 @@ const de: Record<keyof typeof en, string> = {
   "table.fillSlots": "Fehlende Plätze ergänzen ({n})",
   "table.add": "Zeile hinzufügen",
   "table.remove": "Zeile entfernen",
-  "table.namePh": "Name wählen oder tippen",
+  "table.namePh": "– bitte wählen –",
   "table.place": "Position auf dem Bild setzen",
   "table.placeNone": "Noch keine Position – klicken, dann aufs Bild klicken",
   "shot.alt": "Screenshot mit Markierungen",

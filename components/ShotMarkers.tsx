@@ -14,7 +14,8 @@ export function ShotMarkers({ imageUrl, markers, hoverKey, pinKey, placingKey, o
   onHover: (key: string | null) => void; onPin: (key: string | null) => void; onPlace: (x: number, y: number) => void; renderEditor: (key: string) => ReactNode;
 }) {
   const t = useT();
-  const open = pinKey ?? hoverKey;
+  // Hover (Bild oder Tabellenzeile) geht vor der festgehaltenen Marke – das Popup folgt immer der aktuellen Zeile
+  const open = hoverKey ?? pinKey;
   return (
     <div style={{ position: "relative", display: "inline-block", maxWidth: "100%", lineHeight: 0 }}>
       {/* eslint-disable-next-line @next/next/no-img-element -- geschützter Endpoint */}

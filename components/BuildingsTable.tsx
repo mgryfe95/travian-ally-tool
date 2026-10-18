@@ -6,7 +6,7 @@ export type BuildingRow = { slot: number | null; name?: string | null; level: nu
 export const RES_TYPE_KEYS = { wood: "res.wood", clay: "res.clay", iron: "res.iron", crop: "res.crop" } as const;
 
 /** Tabelle zum Korrigieren erkannter Gebäude bzw. Rohstofffelder: Platz, Name (Auswahl aus den Spieldaten oder frei), Stufe. */
-export function BuildingsTable({ rows, onChange, names, withName = true, slots, activeIndex, placingIndex, onHover, onPlace, withType = false }: { rows: BuildingRow[]; onChange: (rows: BuildingRow[]) => void; names: string[]; withName?: boolean; withType?: boolean; slots?: number[]; activeIndex?: number | null; placingIndex?: number | null; onHover?: (i: number | null) => void; onPlace?: (i: number) => void }) {
+export function BuildingsTable({ rows, onChange, names, withName = true, slots, activeIndex, placingIndex, onHover, onPlace, onFocusRow, withType = false }: { rows: BuildingRow[]; onChange: (rows: BuildingRow[]) => void; names: string[]; withName?: boolean; withType?: boolean; slots?: number[]; activeIndex?: number | null; placingIndex?: number | null; onHover?: (i: number | null) => void; onPlace?: (i: number) => void; onFocusRow?: (i: number) => void }) {
   const t = useT();
   const set = (i: number, patch: Partial<BuildingRow>) => onChange(rows.map((r, k) => (k === i ? { ...r, ...patch } : r)));
   const missing = (slots ?? []).filter((n) => !rows.some((r) => r.slot === n));
@@ -16,7 +16,7 @@ export function BuildingsTable({ rows, onChange, names, withName = true, slots, 
         <thead><tr><th style={{ width: 80 }}>{t("table.slot")}</th>{withName && <th>{t("table.building")}</th>}{withType && <th>{t("table.resType")}</th>}<th style={{ width: 90 }}>{t("table.level")}</th><th /></tr></thead>
         <tbody>
           {rows.map((r, i) => (
-            <tr key={i} onMouseEnter={() => onHover?.(i)} onMouseLeave={() => onHover?.(null)} style={activeIndex === i ? { background: "rgba(200,150,46,.22)" } : undefined}>
+            <tr key={i} onFocus={() => onFocusRow?.(i)} onMouseEnter={() => onHover?.(i)} onMouseLeave={() => onHover?.(null)} style={activeIndex === i ? { background: "rgba(200,150,46,.22)" } : undefined}>
               <td><input type="number" min={1} max={40} className="field" style={{ minHeight: 34 }} aria-label={t("table.slot")} value={r.slot ?? ""} onChange={(e) => set(i, { slot: e.target.value === "" ? null : Number(e.target.value) })} /></td>
               {withName && <td>
                 <select className="field" style={{ minHeight: 34 }} aria-label={t("table.building")} value={r.name ?? ""} onChange={(e) => set(i, { name: e.target.value || null })}>

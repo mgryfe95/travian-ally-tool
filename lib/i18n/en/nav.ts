@@ -29,7 +29,7 @@ const en = {
   "table.fillSlots": "Add missing slots ({n})",
   "table.add": "Add row",
   "table.remove": "Remove row",
-  "table.namePh": "Pick or type a name",
+  "table.namePh": "– please choose –",
   "table.place": "Set position on the image",
   "table.placeNone": "No position yet – click, then click on the image",
   "shot.alt": "Screenshot with markers",
