@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { READING_KINDS, type Reading } from "@/lib/ai/reading";
 import { useT } from "@/lib/i18n/client";
-import { BuildingsTable } from "./BuildingsTable";
+import { BuildingsTable, RES_TYPE_KEYS } from "./BuildingsTable";
 import { ShotMarkers, type Marker } from "./ShotMarkers";
 
 const cellsToText = (cells: (number | null)[]) => cells.map((c) => (c === null ? "-" : String(c))).join(", ");
@@ -76,7 +76,7 @@ export function ScreenshotReview({ id, reading, issues, villages, defaultVillage
   const activeKey = pinKey ?? hoverKey;
   const markers: Marker[] = [
     ...data.buildings.map((b, i) => ({ key: `b${i}`, label: String(b.slot ?? i + 1), x: b.x, y: b.y, tone: "bld" as const })),
-    ...data.fields.map((f, i) => ({ key: `f${i}`, label: String(f.slot ?? i + 1), x: f.x, y: f.y, tone: "fld" as const })),
+    ...data.fields.map((f, i) => ({ key: `f${i}`, label: `${f.slot ?? i + 1}${f.type ? ` ${t(RES_TYPE_KEYS[f.type]).slice(0, 1)}` : ""}`, x: f.x, y: f.y, tone: "fld" as const })),
   ];
   const setB = (i: number, patch: Partial<Reading["buildings"][number]>) => upd({ buildings: data.buildings.map((b, k) => (k === i ? { ...b, ...patch } : b)) });
   const setF = (i: number, patch: Partial<Reading["fields"][number]>) => upd({ fields: data.fields.map((f, k) => (k === i ? { ...f, ...patch } : f)) });
@@ -104,6 +104,14 @@ export function ScreenshotReview({ id, reading, issues, villages, defaultVillage
               <option value="">{t("table.namePh")}</option>
               {name && !buildingNames.includes(name) && <option value={name}>{name}</option>}
               {buildingNames.map((n) => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </label>
+        )}
+        {!isB && (
+          <label>{t("table.resType")}
+            <select className="field" style={{ minHeight: 32 }} value={data.fields[i]?.type ?? ""} onChange={(e) => setF(i, { type: (e.target.value || null) as Reading["fields"][number]["type"] })}>
+              <option value="">{t("table.namePh")}</option>
+              {(Object.keys(RES_TYPE_KEYS) as (keyof typeof RES_TYPE_KEYS)[]).map((k) => <option key={k} value={k}>{t(RES_TYPE_KEYS[k])}</option>)}
             </select>
           </label>
         )}
@@ -172,7 +180,7 @@ export function ScreenshotReview({ id, reading, issues, villages, defaultVillage
           {(data.kind === "RESOURCE_VIEW" || data.fields.length > 0) && (
             <div style={{ margin: "8px 0" }}>
               <b>{t("screenshots.review.fields")}</b>
-              <BuildingsTable rows={data.fields} onChange={(fields) => upd({ fields: fields.map((f) => ({ slot: f.slot, level: f.level, x: f.x ?? null, y: f.y ?? null })) })} names={[]} withName={false} slots={Array.from({ length: 18 }, (_, i) => i + 1)} activeIndex={idxOf(activeKey, "f")} placingIndex={idxOf(placing, "f")} onHover={(i) => setHoverKey(i === null ? null : `f${i}`)} onPlace={imageUrl ? (i) => setPlacing(placing === `f${i}` ? null : `f${i}`) : undefined} />
+              <BuildingsTable rows={data.fields} onChange={(fields) => upd({ fields: fields.map((f) => ({ slot: f.slot, level: f.level, type: (f.type as Reading["fields"][number]["type"]) ?? null, x: f.x ?? null, y: f.y ?? null })) })} names={[]} withName={false} withType slots={Array.from({ length: 18 }, (_, i) => i + 1)} activeIndex={idxOf(activeKey, "f")} placingIndex={idxOf(placing, "f")} onHover={(i) => setHoverKey(i === null ? null : `f${i}`)} onPlace={imageUrl ? (i) => setPlacing(placing === `f${i}` ? null : `f${i}`) : undefined} />
             </div>
           )}
           {data.rows.length > 0 && (

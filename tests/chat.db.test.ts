@@ -13,7 +13,8 @@ const db = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL
 const who = (id: string, role: Role) => ({ id, role });
 const member = who("m1", "MEMBER");
 const member2 = who("m2", "MEMBER");
-const guest = who("g1", "GUEST");
+const guest = who("g1", "UNVERIFIED");
+const ally = who("g1", "GUEST");
 const mod = who("mod", "MODERATOR");
 const mod2 = who("mod2", "MODERATOR");
 const admin = who("adm", "ADMIN");
@@ -39,6 +40,7 @@ describe("Seed und Sichtbarkeit", () => {
   it("Member sieht alle, unverifizierter Gast nichts", async () => {
     expect((await listChannels(db, await ctx(member))).length).toBe(8);
     expect((await listChannels(db, await ctx(guest))).map((c) => c.name)).toEqual([]);
+    expect((await listChannels(db, await ctx(ally))).map((c) => c.name)).toEqual(["Mixed topics"]); // Gast = Bündnispartner
   });
 });
 

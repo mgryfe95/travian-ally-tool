@@ -227,6 +227,14 @@ model PlayerLink {
   @@index([travianPlayerId])
 }
 
+/// Vorab vergebene Rolle für einen Spieler (auch ohne Konto): wird bei der Verifizierung übernommen.
+model PlayerRole {
+  travianPlayerId Int      @id
+  role            String
+  setBy           String
+  setAt           DateTime @default(now())
+}
+
 model Invite {
   id              Int       @id @default(autoincrement())
   /// SHA-256 des Tokens; der Klartext wird nur einmal angezeigt.

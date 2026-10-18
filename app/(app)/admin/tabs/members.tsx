@@ -1,5 +1,7 @@
 import { BulkInviteButton, InviteButton } from "@/components/InviteButton";
-import { RoleSelect } from "@/components/AdminControls";
+import { PlayerRoleSelect, RoleSelect } from "@/components/AdminControls";
+import { SortTable } from "@/components/SortTable";
+import { fmtDate } from "@/lib/format";
 import type { MemberRow } from "@/lib/admin-members";
 import { db } from "@/lib/db";
 import { fmt } from "@/lib/format";
@@ -28,6 +30,17 @@ export async function MembersTab({ actor }: { actor: Actor }) {
   const rows = await loadMemberRows(db);
   const assignable = STORED_ROLES.filter((r) => actor.role === "ADMIN" || rank(r) < rank(actor.role)).reverse() as string[];
   const withAccount = rows.filter((r) => r.state === "verified").length;
+  const ids = rows.map((r) => r.player.id);
+  const [alliances, invites, planned] = await Promise.all([
+    db.alliance.findMany({ where: { id: { in: [...new Set(rows.map((r) => r.player.allianceId))] } }, select: { id: true, name: true } }),
+    db.invite.findMany({ where: { travianPlayerId: { in: ids } }, orderBy: { createdAt: "desc" }, select: { travianPlayerId: true, createdAt: true } }),
+    db.playerRole.findMany({ where: { travianPlayerId: { in: ids } } }),
+  ]);
+  const allianceOf = new Map(alliances.map((a) => [a.id, a.name]));
+  const invitedAt = new Map<number, Date>();
+  for (const i of invites) if (!invitedAt.has(i.travianPlayerId)) invitedAt.set(i.travianPlayerId, i.createdAt);
+  const plannedOf = new Map(planned.map((p) => [p.travianPlayerId, p.role]));
+  const STATE_ORDER = { verified: 0, claim_pending: 1, invite_open: 2, none: 3 } as const;
 
   const orphans = await db.playerLink.findMany({
     where: { status: "verified", travianPlayerId: { notIn: rows.map((r) => r.player.id) } },
@@ -49,32 +62,35 @@ export async function MembersTab({ actor }: { actor: Actor }) {
         </div>
         {rows.length === 0 && <p className="sub" style={{ margin: 12 }}>{t("admin.members.noGroup")}</p>}
         <div className="scroll">
-          <table style={{ minWidth: 860 }}>
-            <thead><tr><th>{t("admin.members.colPlayer")}</th><th className="r">{t("admin.members.colPop")}</th><th>{t("admin.members.colAccount")}</th><th>{t("admin.members.colVerification")}</th><th>{t("admin.members.colRole")}</th><th /></tr></thead>
-            <tbody>
-              {rows.map((r) => {
-                return (
-                  <tr key={r.key}>
-                    <td style={{ fontWeight: 500 }}>{r.player.name}</td>
-                    <td className="mono r">{fmt(r.player.population, locale)}</td>
-                    <td style={{ color: "var(--text2)" }}>{r.user ? r.user.name : "—"}{r.extraAccounts > 0 && <span className="sub"> +{r.extraAccounts}</span>}</td>
-                    <td>{status(r, t)}</td>
-                    <td><RoleCell t={t} row={r} actor={actor} canRoles={canRoles} assignable={assignable} emergency={r.user?.locked === true} /></td>
-                    <td className="r" style={{ whiteSpace: "nowrap" }}>
-                      {canInvite && r.state === "none" && <InviteButton playerId={r.player.id} playerName={r.player.name} />}
-                      {canInvite && r.state === "invite_open" && <InviteButton playerId={r.player.id} playerName={r.player.name} label={t("admin.members.newLink")} ghost />}
-                      {canApprove && r.state === "claim_pending" && r.linkId && (
-                        <span className="row" style={{ justifyContent: "flex-end", flexWrap: "nowrap" }}>
-                          <form action={approveLinkAction}><input type="hidden" name="linkId" value={r.linkId} /><button className="btn ghost sm">{t("admin.members.approve")}</button></form>
-                          <form action={rejectLinkAction}><input type="hidden" name="linkId" value={r.linkId} /><button className="btn ghost sm">{t("admin.members.reject")}</button></form>
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <SortTable minWidth={1040} initial={{ col: 2, dir: -1 }}
+            cols={[{ label: t("admin.members.colPlayer") }, { label: t("admin.members.colAlliance") }, { label: t("admin.members.colPop"), align: "r" }, { label: t("admin.members.colAccount") }, { label: t("admin.members.colVerification") }, { label: t("admin.members.colInvited") }, { label: t("admin.members.colRole") }, { label: "", sortable: false }]}
+            rows={rows.map((r) => {
+              const inv = invitedAt.get(r.player.id);
+              const role = r.state === "verified" ? undefined : plannedOf.get(r.player.id);
+              return {
+                key: r.key,
+                sort: [r.player.name.toLowerCase(), allianceOf.get(r.player.allianceId) ?? "", r.player.population, r.user?.name.toLowerCase() ?? null, STATE_ORDER[r.state], inv ? inv.getTime() : null, role ?? (r.state === "verified" ? "~" : null), null],
+                cells: [
+                  <span key="p" style={{ fontWeight: 500 }}>{r.player.name}</span>,
+                  <span key="a" className="sub">{allianceOf.get(r.player.allianceId) ?? "–"}</span>,
+                  <span key="n" className="mono">{fmt(r.player.population, locale)}</span>,
+                  <span key="u" style={{ color: "var(--text2)" }}>{r.user ? r.user.name : "—"}{r.extraAccounts > 0 && <span className="sub"> +{r.extraAccounts}</span>}</span>,
+                  <span key="s">{status(r, t)}</span>,
+                  <span key="i" className="sub mono">{inv ? fmtDate(inv, locale, { day: "2-digit", month: "2-digit", year: "2-digit" }) : "–"}</span>,
+                  <RoleCell key="r" t={t} row={r} actor={actor} canRoles={canRoles} assignable={assignable} emergency={r.user?.locked === true} planned={plannedOf.get(r.player.id) ?? ""} />,
+                  <span key="x" style={{ whiteSpace: "nowrap", display: "inline-flex", gap: 6, justifyContent: "flex-end" }}>
+                    {canInvite && r.state === "none" && <InviteButton playerId={r.player.id} playerName={r.player.name} />}
+                    {canInvite && r.state === "invite_open" && <InviteButton playerId={r.player.id} playerName={r.player.name} label={t("admin.members.newLink")} ghost />}
+                    {canApprove && r.state === "claim_pending" && r.linkId && (
+                      <>
+                        <form action={approveLinkAction}><input type="hidden" name="linkId" value={r.linkId} /><button className="btn ghost sm">{t("admin.members.approve")}</button></form>
+                        <form action={rejectLinkAction}><input type="hidden" name="linkId" value={r.linkId} /><button className="btn ghost sm">{t("admin.members.reject")}</button></form>
+                      </>
+                    )}
+                  </span>,
+                ],
+              };
+            })} />
         </div>
       </section>
       {orphans.length > 0 && (
@@ -88,7 +104,12 @@ export async function MembersTab({ actor }: { actor: Actor }) {
   );
 }
 
-async function RoleCell({ t, row, actor, canRoles, assignable, emergency }: { t: T; row: MemberRow; actor: Actor; canRoles: boolean; assignable: string[]; emergency: boolean }) {
+async function RoleCell({ t, row, actor, canRoles, assignable, emergency, planned }: { t: T; row: MemberRow; actor: Actor; canRoles: boolean; assignable: string[]; emergency: boolean; planned: string }) {
+  // Ohne verifiziertes Konto: Rolle vorab je Spieler (wird bei der Verifizierung übernommen)
+  if (row.state !== "verified") {
+    const editable = canRoles && (actor.role === "ADMIN" || !planned || rank(planned as Role) < rank(actor.role));
+    return editable ? <PlayerRoleSelect playerId={row.player.id} current={planned} options={assignable} /> : <span className="sub">{planned ? t(`admin.role.${planned as Role}`) : t("admin.members.roleAuto")}</span>;
+  }
   if (!row.user) return <span className="sub">—</span>;
   if (emergency) return <span>{t("admin.role.ADMIN")}</span>; // Admin per Server-Konfiguration: Rolle wird dort bestimmt
   const u = await db.user.findUnique({ where: { id: row.user.id }, select: { role: true } });

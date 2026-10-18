@@ -1,3 +1,4 @@
+import { verifiedUserWhere } from "@/lib/services/context";
 import { getT } from "@/lib/i18n/server";
 import { db } from "@/lib/db";
 import { requirePermission } from "@/lib/session";
@@ -9,7 +10,7 @@ export default async function NewTaskforce({ searchParams }: { searchParams: Pro
   const { t } = await getT();
   const user = await requirePermission("taskforce.create");
   const { error } = await searchParams;
-  const users = await db.user.findMany({ where: { banned: false, role: { not: "GUEST" }, id: { not: user.id } }, orderBy: { name: "asc" }, select: { id: true, name: true } });
+  const users = await db.user.findMany({ where: { ...verifiedUserWhere, id: { not: user.id } }, orderBy: { name: "asc" }, select: { id: true, name: true } });
   return (
     <div style={{ padding: "28px clamp(16px,3vw,40px)", maxWidth: 640 }}>
       <h1>{t("chat.tfNew.title")}</h1>

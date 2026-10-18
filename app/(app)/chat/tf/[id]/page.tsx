@@ -1,3 +1,4 @@
+import { verifiedUserWhere } from "@/lib/services/context";
 import { notFound } from "next/navigation";
 import { canManageTaskforce, canReadChannel } from "@/lib/chat/access";
 import { db } from "@/lib/db";
@@ -22,7 +23,7 @@ export default async function TaskforcePage({ params, searchParams }: { params: 
   const isFounder = me?.role === "founder" || ctx.role === "ADMIN";
   const manage = canManageTaskforce(ctx, me?.role === "founder" || me?.role === "lead");
   const invites = manage ? await db.taskforceInvite.findMany({ where: { taskforceId: tf.id, status: "pending" }, orderBy: { id: "asc" } }) : [];
-  const users = await db.user.findMany({ where: { banned: false, role: { not: "GUEST" } }, orderBy: { name: "asc" }, select: { id: true, name: true } });
+  const users = await db.user.findMany({ where: verifiedUserWhere, orderBy: { name: "asc" }, select: { id: true, name: true } });
   const name = new Map(users.map((u) => [u.id, u.name]));
   const candidates = users.filter((u) => !tf.members.some((m) => m.userId === u.id) && !invites.some((i) => i.userId === u.id));
   return (

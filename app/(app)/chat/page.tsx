@@ -1,3 +1,4 @@
+import { verifiedUserWhere } from "@/lib/services/context";
 import { ChatClient } from "@/components/chat/ChatClient";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
@@ -25,7 +26,7 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
   const current: number | "all" = sp.c === "all" ? "all" : byId ? byId.id : sp.tf ? (channels.find((c) => c.tree === "TASKFORCE")?.id ?? "all") : "all";
   const focusId = Number.isInteger(Number(sp.m)) && typeof current === "number" ? Number(sp.m) : undefined;
   const initial = focusId ? await listMessagesAround(db, ctx, current as number, focusId) : await listMessages(db, ctx, { channelId: current });
-  const people = await db.user.findMany({ where: { banned: false, role: { not: "GUEST" } }, select: { id: true, name: true }, orderBy: { name: "asc" } });
+  const people = await db.user.findMany({ where: verifiedUserWhere, select: { id: true, name: true }, orderBy: { name: "asc" } });
   const cfg = env();
 
   return (

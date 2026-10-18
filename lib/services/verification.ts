@@ -32,7 +32,16 @@ export async function requireVerifiablePlayer(db: PrismaClient, playerId: number
   return player;
 }
 
-async function promoteGuest(db: Pick<PrismaClient, "user">, userId: string) {
+/** Nach Verifizierung: Spieler der eigenen Gruppe werden Mitglied; enge Bündnispartner bleiben Gast (eigene Rechte in der Matrix). */
+async function promoteGuest(db: Pick<PrismaClient, "user" | "player" | "allianceClassification" | "setting" | "playerRole">, userId: string, playerId: number) {
+  // Vorab vergebene Rolle (Admin → Mitglieder) hat Vorrang
+  const pre = await db.playerRole.findUnique({ where: { travianPlayerId: playerId } });
+  if (pre) {
+    await db.user.updateMany({ where: { id: userId, role: { in: ["GUEST", "MEMBER"] } }, data: { role: pre.role } });
+    return;
+  }
+  const player = await db.player.findUnique({ where: { id: playerId }, select: { allianceId: true } });
+  if (!player || !ownGroupIds(await loadRelations(db as PrismaClient)).has(player.allianceId)) return;
   await db.user.updateMany({ where: { id: userId, role: "GUEST" }, data: { role: "MEMBER" } });
 }
 
@@ -75,7 +84,7 @@ export async function redeemInvite(db: PrismaClient, token: string, userId: stri
       create: { userId, travianPlayerId: invite.travianPlayerId, status: "verified", method: "invite", verifiedBy: invite.createdBy, verifiedAt: now },
       update: { status: "verified", method: "invite", verifiedBy: invite.createdBy, verifiedAt: now },
     });
-    await promoteGuest(tx, userId);
+    await promoteGuest(tx, userId, invite.travianPlayerId);
   });
   await audit(db, invite.createdBy, "link.verify.invite", `user:${userId}`, undefined, { playerId: invite.travianPlayerId });
   return invite.travianPlayerId;
@@ -123,7 +132,7 @@ export async function checkClaims(db: PrismaClient, now = new Date()): Promise<n
     if (!hit) continue;
     await db.$transaction(async (tx) => {
       await tx.playerLink.update({ where: { id: link.id }, data: { status: "verified", verifiedAt: now, verifiedBy: "system" } });
-      await promoteGuest(tx, link.userId);
+      await promoteGuest(tx, link.userId, link.travianPlayerId);
     });
     await audit(db, "system", "link.verify.village_rename", `user:${link.userId}`, undefined, { playerId: link.travianPlayerId });
     verified++;
@@ -139,7 +148,7 @@ export async function approveLink(db: PrismaClient, actor: Actor, linkId: number
   if (!link) throw new VerificationError("err.verify.linkNotFound");
   await requireVerifiablePlayer(db, link.travianPlayerId);
   await db.playerLink.update({ where: { id: linkId }, data: { status: "verified", method: "admin", verifiedBy: actor.id, verifiedAt: now } });
-  await promoteGuest(db, link.userId);
+  await promoteGuest(db, link.userId, link.travianPlayerId);
   await audit(db, actor.id, "link.verify.admin", `user:${link.userId}`, { status: link.status }, { status: "verified", playerId: link.travianPlayerId });
 }
 
@@ -163,7 +172,7 @@ export async function assignPlayer(db: PrismaClient, actor: Actor, userId: strin
     create: { userId, travianPlayerId: playerId, status: "verified", method: "admin", verifiedBy: actor.id, verifiedAt: now },
     update: { status: "verified", method: "admin", verifiedBy: actor.id, verifiedAt: now, claimCode: null },
   });
-  await promoteGuest(db, userId);
+  await promoteGuest(db, userId, playerId);
   await audit(db, actor.id, "link.assign", `user:${userId}`, { status: prev?.status ?? null }, { status: "verified", playerId });
 }
 

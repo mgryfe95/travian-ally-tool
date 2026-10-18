@@ -5,7 +5,7 @@ import { effectLabelKey, levelBenefits, rowsToEffects } from "./effects";
 /** Gebäudenamen der aktuellen Spieldaten in der UI-Sprache (für Auswahllisten). */
 export async function loadBuildingNames(db: PrismaClient, locale: Locale): Promise<string[]> {
   const rows = await db.building.findMany({ select: { name: true, nameEn: true, gid: true }, orderBy: { gid: "asc" } });
-  return [...new Set(rows.map((r) => (locale === "en" ? (r.nameEn ?? r.name) : r.name)).filter(Boolean))];
+  return [...new Set(rows.map((r) => (locale === "en" ? (r.nameEn ?? r.name) : r.name)).filter(Boolean))].sort(new Intl.Collator(locale, { sensitivity: "base" }).compare);
 }
 
 export type BuildingInfo = { benefit: string; nextCost: string; benefitAfter: string; maxed: boolean };
@@ -43,7 +43,8 @@ export type BuildingNameSets = { all: string[]; byTribe: Record<number, string[]
 export async function loadBuildingNameSets(db: PrismaClient, locale: Locale): Promise<BuildingNameSets> {
   const [rows, tribes] = await Promise.all([db.building.findMany({ select: { name: true, nameEn: true, tribeRestriction: true, gid: true }, orderBy: { gid: "asc" } }), db.tribe.findMany({ select: { key: true, traits: true } })]);
   const label = (r: { name: string; nameEn: string | null }) => (locale === "en" ? (r.nameEn ?? r.name) : r.name);
-  const uniq = (l: string[]) => [...new Set(l.filter(Boolean))];
+  const coll = new Intl.Collator(locale, { sensitivity: "base" });
+  const uniq = (l: string[]) => [...new Set(l.filter(Boolean))].sort(coll.compare); // Gebäude alphabetisch (Truppen behalten ihre Spielreihenfolge)
   const byTribe: Record<number, string[]> = {};
   for (const t of tribes) {
     const vid = Number((t.traits as { vid?: number } | null)?.vid);

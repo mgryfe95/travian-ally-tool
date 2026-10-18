@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import { defaultMatrix, PERMISSIONS, STORED_ROLES, type Matrix, type Permission, type Role, type StoredRole } from "../permissions";
+import { defaultMatrix, effectiveRole, PERMISSIONS, STORED_ROLES, type Matrix, type Permission, type Role, type StoredRole } from "../permissions";
 import { DEFAULT_LOCALE, isLocale, type Locale } from "../i18n";
 
 /** Wer handelt. `role` ist die bereits abgeleitete effektive Rolle (Notzugangs-Adressen aus der ENV sind ADMIN). */
@@ -35,4 +35,14 @@ export async function audit(
   await db.auditLog.create({
     data: { actorId, action, target, before: before === undefined ? undefined : (before as object), after: after === undefined ? undefined : (after as object) },
   });
+}
+
+/** Prisma-Filter: aktive, verifizierte Konten (Mitglieder+ immer; Gäste nur mit verifizierter Spielerzuordnung). */
+export const verifiedUserWhere = { banned: false, OR: [{ role: { not: "GUEST" } }, { links: { some: { status: "verified" } } }] };
+
+/** Effektive Rolle inkl. Verifizierung: ein Gast ohne verifizierte Zuordnung ist UNVERIFIED (Notzugang-Admins immer ADMIN). */
+export async function actorRole(db: Pick<PrismaClient, "playerLink">, user: { id: string; email: string; role: string }, emergencyEmails: readonly string[]): Promise<Role> {
+  const role = effectiveRole(user, emergencyEmails);
+  if (role !== "GUEST") return role;
+  return (await db.playerLink.count({ where: { userId: user.id, status: "verified" } })) > 0 ? "GUEST" : "UNVERIFIED";
 }

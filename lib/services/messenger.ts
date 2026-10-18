@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { ForbiddenError, hasPermission, rank, type Permission } from "../permissions";
 import { publishUser } from "../realtime";
-import { audit, loadMatrix, userLocale, type Actor } from "./context";
+import { audit, loadMatrix, userLocale, verifiedUserWhere, type Actor } from "./context";
 import { ChatError } from "./chat";
 import { DEFAULT_LOCALE, translate, type Locale } from "../i18n";
 import { env } from "../env";
@@ -14,8 +14,8 @@ async function requirePerm(db: PrismaClient, actor: Actor, perm: Permission) {
   if (!hasPermission(actor.role, perm, await loadMatrix(db))) throw new ForbiddenError("err.perm.missing", { perm });
 }
 
-/** Wer ansprechbar ist: aktives Konto, kein Gast. */
-const reachable = { banned: false, role: { not: "GUEST" } } as const;
+/** Wer ansprechbar ist: aktives, verifiziertes Konto (auch Gäste = enge Bündnispartner). */
+const reachable = verifiedUserWhere;
 
 export const pairKey = (a: string, b: string) => (a < b ? `${a}:${b}` : `${b}:${a}`);
 

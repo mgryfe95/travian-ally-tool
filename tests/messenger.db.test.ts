@@ -9,7 +9,7 @@ const db = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL
 const who = (id: string, role: Role) => ({ id, role });
 const m1 = who("m1", "MEMBER");
 const m2 = who("m2", "MEMBER");
-const g1 = who("g1", "GUEST");
+const g1 = who("g1", "UNVERIFIED");
 const mod = who("mod", "MODERATOR");
 const f = async (p: Promise<unknown>) => p.then(() => null, (e: unknown) => e);
 
@@ -38,7 +38,7 @@ describe("Direktnachrichten", () => {
   });
   it("Grenzen: Gast, selbst, Fremde lesen nicht, leer/zu lang, gesperrter Empfänger", async () => {
     expect(await f(getOrCreateThread(db, g1, "m1"))).toBeInstanceOf(ForbiddenError);
-    expect(await f(getOrCreateThread(db, m1, "g1"))).toBeInstanceOf(ChatError); // Gäste nicht erreichbar
+    expect(await f(getOrCreateThread(db, m1, "g1"))).toBeInstanceOf(ChatError); // Unverifizierte nicht erreichbar
     expect(await f(getOrCreateThread(db, m1, "m1"))).toBeInstanceOf(ChatError);
     const t = await getOrCreateThread(db, m1, "m2");
     expect(await f(readThread(db, "m3", t.id))).toBeInstanceOf(ChatError);

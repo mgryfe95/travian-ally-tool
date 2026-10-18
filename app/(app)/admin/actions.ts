@@ -7,8 +7,8 @@ import { env } from "@/lib/env";
 import { AppError, localizeError } from "@/lib/i18n/errors";
 import { getLocale, getT } from "@/lib/i18n/server";
 import { RELATIONS, type Relation } from "@/lib/alliance-group";
-import { ForbiddenError, PERMISSIONS, ROLES, type Permission, type Role } from "@/lib/permissions";
-import { classifyAlliance, deleteUser, setRolePermission, setUserBanned, setUserRole } from "@/lib/services/admin";
+import { ForbiddenError, PERMISSIONS, ROLES, type Permission, type StoredRole } from "@/lib/permissions";
+import { classifyAlliance, deleteUser, setPlayerRole, setRolePermission, setUserBanned, setUserRole } from "@/lib/services/admin";
 import { approveLink, assignPlayer, createInvite, inviteMessage, rejectLink, revokeInvite, VerificationError } from "@/lib/services/verification";
 import { ChatError, chatCtx, createChannel, deleteTag, deleteTagType, moveChannel, saveTag, saveTagType, updateChannel } from "@/lib/services/chat";
 import { berlinToDate, cancelCall, createCall, deleteCall, deleteTemplate, saveTemplate, sendCall, updateCall, saveKind, deleteKind } from "@/lib/services/schedule";
@@ -41,8 +41,16 @@ export async function classifyAllianceAction(f: FormData) {
 export async function setRoleAction(f: FormData) {
   return run(str(f, "tab") || "members", async () => {
     const role = str(f, "role");
-    if (!ROLES.includes(role as Role)) throw new AppError("admin.err.invalidRole");
-    await setUserRole(db, await requireUser(), str(f, "userId"), role as Role);
+    if (!ROLES.includes(role as StoredRole)) throw new AppError("admin.err.invalidRole");
+    await setUserRole(db, await requireUser(), str(f, "userId"), role as StoredRole);
+  });
+}
+
+export async function setPlayerRoleAction(f: FormData) {
+  return run("members", async () => {
+    const role = str(f, "role");
+    if (role && !ROLES.includes(role as StoredRole)) throw new AppError("admin.err.invalidRole");
+    await setPlayerRole(db, await requireUser(), int(f, "playerId"), role ? (role as StoredRole) : null);
   });
 }
 
@@ -58,8 +66,8 @@ export async function setPermissionAction(f: FormData) {
   return run("rights", async () => {
     const perm = str(f, "permission");
     const role = str(f, "role");
-    if (!(PERMISSIONS as readonly string[]).includes(perm) || !ROLES.includes(role as Role)) throw new AppError("admin.err.invalidInput");
-    await setRolePermission(db, await requireUser(), role as Role, perm as Permission, str(f, "enabled") === "1");
+    if (!(PERMISSIONS as readonly string[]).includes(perm) || !ROLES.includes(role as StoredRole)) throw new AppError("admin.err.invalidInput");
+    await setRolePermission(db, await requireUser(), role as StoredRole, perm as Permission, str(f, "enabled") === "1");
   });
 }
 

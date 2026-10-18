@@ -8,12 +8,14 @@ const ally = (o: Partial<ChannelLike> = {}): ChannelLike => ({ tree: "ALLY", tas
 const tf = (id = 1): ChannelLike => ({ tree: "TASKFORCE", taskforceId: id, minReadRole: "MEMBER", minWriteRole: "MEMBER", archivedAt: null });
 
 describe("Allianz-Kanäle", () => {
-  it("Member liest und schreibt, Gast nur wo minReadRole=GUEST und nie schreibt", () => {
+  it("Member liest und schreibt, Gast (Bündnispartner) nur wo minRead/WriteRole=GUEST, Unverifizierte nie", () => {
     expect(canReadChannel(ally(), ctx("MEMBER"))).toBe(true);
     expect(canWriteChannel(ally(), ctx("MEMBER"))).toBe(true);
     expect(canReadChannel(ally(), ctx("GUEST"))).toBe(false);
-    expect(canReadChannel(ally({ minReadRole: "GUEST" }), ctx("GUEST"))).toBe(false); // GUEST hat keine Rechte mehr (gesperrt bis zur Verifizierung)
-    expect(canWriteChannel(ally({ minReadRole: "GUEST", minWriteRole: "GUEST" }), ctx("GUEST"))).toBe(false);
+    expect(canReadChannel(ally({ minReadRole: "GUEST" }), ctx("GUEST"))).toBe(true);
+    expect(canWriteChannel(ally({ minReadRole: "GUEST" }), ctx("GUEST"))).toBe(false); // Schreiben ab Member (Standard)
+    expect(canWriteChannel(ally({ minReadRole: "GUEST", minWriteRole: "GUEST" }), ctx("GUEST"))).toBe(true);
+    expect(canReadChannel(ally({ minReadRole: "GUEST" }), ctx("UNVERIFIED"))).toBe(false);
   });
   it("Schreib-Mindestrolle wird geprüft", () => {
     expect(canWriteChannel(ally({ minWriteRole: "MODERATOR" }), ctx("MEMBER"))).toBe(false);

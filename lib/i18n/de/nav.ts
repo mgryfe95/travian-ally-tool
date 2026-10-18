@@ -58,5 +58,10 @@ const de: Record<keyof typeof en, string> = {
   "fmt.code": "Code",
   "fmt.link": "Link",
   "fmt.linkText": "Text",
+  "table.resType": "Rohstoff",
+  "res.wood": "Holz",
+  "res.clay": "Lehm",
+  "res.iron": "Eisen",
+  "res.crop": "Getreide",
 };
 export default de;

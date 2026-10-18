@@ -1,3 +1,4 @@
+import { verifiedUserWhere } from "@/lib/services/context";
 import { Md } from "@/components/Md";
 import Link from "next/link";
 import { DmComposer, MessengerLive } from "@/components/MessengerLive";
@@ -19,7 +20,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
   const sp = await searchParams;
   const canBroadcast = hasPermission(user.role, "messenger.broadcast", await loadMatrix(db));
   const tab = sp.t === "bc" ? "bc" : "dm";
-  const people = await db.user.findMany({ where: { banned: false, role: { not: "GUEST" }, id: { not: user.id } }, orderBy: { name: "asc" }, select: { id: true, name: true } });
+  const people = await db.user.findMany({ where: { ...verifiedUserWhere, id: { not: user.id } }, orderBy: { name: "asc" }, select: { id: true, name: true } });
 
   let body: React.ReactNode = null;
   if (tab === "dm") {

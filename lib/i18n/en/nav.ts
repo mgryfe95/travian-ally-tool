@@ -56,5 +56,10 @@ const en = {
   "fmt.code": "Code",
   "fmt.link": "Link",
   "fmt.linkText": "text",
+  "table.resType": "Resource",
+  "res.wood": "Wood",
+  "res.clay": "Clay",
+  "res.iron": "Iron",
+  "res.crop": "Crop",
 } as const;
 export default en;

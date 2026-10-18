@@ -23,7 +23,7 @@ const ADMIN_PERMS: Permission[] = ["members.invite", "members.approve", "roles.a
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const user = await requireUser();
-  if (user.role === "GUEST") redirect("/claim"); // unverifizierte Konten sehen nur die Verifizierungsseite
+  if (user.role === "UNVERIFIED") redirect("/claim"); // unverifizierte Konten sehen nur die Verifizierungsseite
   const { t, locale } = await getT();
   const matrix = await loadMatrix(db);
   const can = (p: Permission) => hasPermission(user.role, p, matrix);

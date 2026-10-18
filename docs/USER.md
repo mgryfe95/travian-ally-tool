@@ -85,3 +85,8 @@ Registrieren können sich nur Spieler unserer Allianz(en) und enger Bündnispart
 - **Art beim Upload wählen:** Über „Art des Screenshots“ siehst du, welcher Ausschnitt gebraucht wird, samt Beispielbild. „Automatisch erkennen“ geht weiterhin. Passt das Bild nicht zur Auswahl, landet es zur Prüfung.
 - **Mobil:** Kopfleiste ausklappen, bevor du Rohstofffelder oder Dorfansicht aufnimmst – dann wird die Produktion pro Stunde mitgelesen.
 
+## Rollen
+- **Gast** = verifizierter enger Bündnispartner (eigene Rechte unter Admin → Rechte). Wer noch nicht verifiziert ist, sieht nur die Verifizierungsseite.
+- **Rolle vorab vergeben:** In der Mitgliederliste kannst du Spielern ohne Konto eine Rolle geben (z. B. Admin). Sie gilt automatisch, sobald der Spieler sich registriert und verifiziert.
+- Tabellen lassen sich per Klick auf die Spaltenköpfe sortieren.
+

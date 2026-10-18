@@ -23,7 +23,7 @@ export const dynamic = "force-dynamic";
 
 type Res4 = { wood?: number | null; clay?: number | null; iron?: number | null; crop?: number | null };
 type ResState = { stock?: Res4; production?: Res4; productionGross?: Res4; merchants?: string | null; freeCrop?: number | null };
-type Level = { slot?: number | null; name?: string | null; level: number };
+type Level = { slot?: number | null; name?: string | null; level: number; type?: "wood" | "clay" | "iron" | "crop" | null };
 type QueueItem = { building: string; level: number | null; remaining?: string | null; finishAt?: string | null };
 const arr = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
 const obj = <T,>(v: unknown): T => ((v && typeof v === "object" && !Array.isArray(v) ? v : {}) as T);
@@ -139,7 +139,7 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
           {fields.length > 0 && (
             <div style={{ marginTop: 10 }}>
               <div className="sub" style={{ fontSize: 12, marginBottom: 4 }}>{t("villages.res.fields")}</div>
-              <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>{fields.map((f, i) => <span key={i} className="pill p-none mono">{f.level}</span>)}</div>
+              <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>{fields.map((f, i) => <span key={i} className="pill p-none mono" title={f.type ? t(`res.${f.type}`) : undefined}>{f.type ? `${t(`res.${f.type}`)} ` : ""}{f.level}</span>)}</div>
             </div>
           )}
         </section>

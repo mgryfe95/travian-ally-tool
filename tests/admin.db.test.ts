@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { ForbiddenError } from "@/lib/permissions";
-import { classifyAlliance, deleteUser, seedPermissions, setRolePermission, setUserBanned, setUserRole } from "@/lib/services/admin";
+import { classifyAlliance, deleteUser, seedPermissions, setPlayerRole, setRolePermission, setUserBanned, setUserRole } from "@/lib/services/admin";
 import type { Actor } from "@/lib/services/context";
 
 const db = new PrismaClient({ datasources: { db: { url: process.env.TEST_DATABASE_URL! } } });
@@ -16,7 +16,7 @@ async function expect403(p: Promise<unknown>) {
 }
 
 beforeEach(async () => {
-  await db.$executeRaw`TRUNCATE "User","RolePermission","AuditLog","AllianceClassification" RESTART IDENTITY CASCADE`;
+  await db.$executeRaw`TRUNCATE "User","RolePermission","AuditLog","AllianceClassification","PlayerRole","PlayerLink" RESTART IDENTITY CASCADE`;
   await seedPermissions(db);
   await mk("boss", "boss@example.com", "GUEST"); // DB-Rolle egal: ENV (Notzugang) macht ihn zum Admin
   await mk("admin", "admin@example.com", "ADMIN");
@@ -93,3 +93,18 @@ describe("Allianz-Typ setzen", () => {
     expect(await db.allianceClassification.count()).toBe(0);
   });
 });
+
+describe("Rolle je Spieler vorab", () => {
+  it("speichert Rolle ohne Konto; verifiziertes Konto bekommt sie sofort; Moderator nur Rollen unter sich; leer = automatisch", async () => {
+    await setPlayerRole(db, admin, 777, "ADMIN", SYS);
+    expect((await db.playerRole.findUniqueOrThrow({ where: { travianPlayerId: 777 } })).role).toBe("ADMIN");
+    await mk("pl1", "pl1@x.de", "GUEST");
+    await db.playerLink.create({ data: { userId: "pl1", travianPlayerId: 778, status: "verified", method: "admin" } });
+    await setPlayerRole(db, admin, 778, "MODERATOR", SYS);
+    expect((await db.user.findUniqueOrThrow({ where: { id: "pl1" } })).role).toBe("MODERATOR");
+    await expect403(setPlayerRole(db, { id: "mod", role: "MODERATOR" }, 779, "MODERATOR", SYS));
+    await setPlayerRole(db, admin, 777, null, SYS);
+    expect(await db.playerRole.count({ where: { travianPlayerId: 777 } })).toBe(0);
+  });
+});
+

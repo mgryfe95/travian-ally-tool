@@ -2,7 +2,7 @@
 
 import { useT } from "@/lib/i18n/client";
 import type { MessageKey } from "@/lib/i18n";
-import { setPermissionAction, setRoleAction } from "@/app/(app)/admin/actions";
+import { setPermissionAction, setPlayerRoleAction, setRoleAction } from "@/app/(app)/admin/actions";
 
 export function RoleSelect({ userId, current, options, tab }: { userId: string; current: string; options: string[]; tab: string }) {
   const t = useT();
@@ -15,6 +15,21 @@ export function RoleSelect({ userId, current, options, tab }: { userId: string; 
         {[...new Set([current, ...options])].map((r) => (
           <option key={r} value={r} disabled={r === current ? false : !options.includes(r)}>{t(`admin.role.${r}` as MessageKey)}</option>
         ))}
+      </select>
+    </form>
+  );
+}
+
+/** Rolle eines Spielers vorab (ohne/vor Konto): wird bei der Verifizierung übernommen; leer = automatisch. */
+export function PlayerRoleSelect({ playerId, current, options }: { playerId: number; current: string; options: string[] }) {
+  const t = useT();
+  return (
+    <form action={setPlayerRoleAction}>
+      <input type="hidden" name="playerId" value={playerId} />
+      <label className="sr" htmlFor={`prole-${playerId}`}>{t("admin.role.label")}</label>
+      <select id={`prole-${playerId}`} name="role" defaultValue={current} className="field" style={{ width: "auto", minHeight: 36 }} onChange={(e) => e.currentTarget.form?.requestSubmit()}>
+        <option value="">{t("admin.members.roleAuto")}</option>
+        {[...new Set([...(current ? [current] : []), ...options])].map((r) => <option key={r} value={r} disabled={r !== current && !options.includes(r)}>{t(`admin.role.${r}` as MessageKey)}</option>)}
       </select>
     </form>
   );

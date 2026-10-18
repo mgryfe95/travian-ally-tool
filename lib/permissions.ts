@@ -2,12 +2,13 @@ import { AppError } from "./i18n/errors";
 import type { MessageKey, Params } from "./i18n";
 
 export const ROLES = ["GUEST", "MEMBER", "MODERATOR", "ADMIN"] as const;
-export type Role = (typeof ROLES)[number];
+/** GUEST = verifizierter enger Bündnispartner. UNVERIFIED wird nie gespeichert: Konto ohne verifizierte Spielerzuordnung (nur Verifizierungsseite, keine Rechte). */
+export type Role = (typeof ROLES)[number] | "UNVERIFIED";
 /** Rollen, die in der DB stehen dürfen (identisch mit ROLES). */
 export const STORED_ROLES = ROLES;
 export type StoredRole = (typeof STORED_ROLES)[number];
 
-export const rank = (r: Role) => ROLES.indexOf(r);
+export const rank = (r: Role) => (r === "UNVERIFIED" ? -1 : ROLES.indexOf(r));
 
 export const PERMISSIONS = [
   "chat.read", "chat.write", "chat.moderate", "chat.upload",
@@ -19,7 +20,7 @@ export const PERMISSIONS = [
 export type Permission = (typeof PERMISSIONS)[number];
 
 export const DEFAULT_PERMISSIONS: Record<StoredRole, Permission[]> = {
-  GUEST: [], // unverifizierte Konten sehen nur die Verifizierungsseite
+  GUEST: ["map.view", "chat.read", "chat.write", "schedule.view", "messenger.use"], // enge Bündnispartner (verifiziert); Kanäle steuern per minReadRole
   MEMBER: ["map.view", "chat.read", "chat.write", "chat.upload", "schedule.view", "messenger.use"],
   MODERATOR: ["map.view", "chat.read", "chat.write", "chat.upload", "chat.moderate", "tags.manage", "taskforce.create", "members.invite", "members.approve", "troops.view", "schedule.view", "messenger.use", "messenger.broadcast"],
   ADMIN: [...PERMISSIONS],
@@ -46,6 +47,7 @@ export function effectiveRole(user: { email: string; role: string }, emergencyEm
 /** Admins haben immer alle Rechte (die Matrix gilt für Moderator, Mitglied und Gast). */
 export function hasPermission(role: Role, perm: Permission, matrix: Matrix): boolean {
   if (role === "ADMIN") return true;
+  if (role === "UNVERIFIED") return false;
   return matrix[role].has(perm);
 }
 

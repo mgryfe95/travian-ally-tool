@@ -5,7 +5,7 @@ import { effectiveRole, ForbiddenError, hasPermission, rank, ROLES, type Role } 
 import { publish } from "../realtime";
 import { storage } from "../storage";
 import { extractMentions, mentionHandle } from "../chat/mentions";
-import { audit, loadMatrix, type Actor } from "./context";
+import { audit, loadMatrix, verifiedUserWhere, type Actor } from "./context";
 import { AppError } from "../i18n/errors";
 import { DEFAULT_LOCALE, translate, type MessageKey, type Params } from "../i18n";
 
@@ -213,7 +213,7 @@ async function syncMentions(db: PrismaClient, ch: Parameters<typeof canReadChann
   const handles = new Set(extractMentions(body));
   await db.mention.deleteMany({ where: { messageId } });
   if (handles.size === 0) return;
-  const users = await db.user.findMany({ where: { banned: false, role: { not: "GUEST" } }, select: { id: true, name: true, email: true, role: true } });
+  const users = await db.user.findMany({ where: verifiedUserWhere, select: { id: true, name: true, email: true, role: true } });
   const ids: string[] = [];
   for (const u of users.filter((x) => handles.has(mentionHandle(x.name))).slice(0, 20)) {
     const uctx = await chatCtx(db, { id: u.id, role: effectiveRole(u, env().SYSTEMADMIN_EMAILS) });
@@ -321,7 +321,7 @@ export async function createTaskforce(db: PrismaClient, ctx: ChatCtx, input: { n
   const name = input.name.trim();
   if (name.length < 2 || name.length > 60) throw new ChatError("err.chat.nameLength", { min: 2, max: 60 });
   const memberIds = [...new Set((input.memberIds ?? []).filter((id) => id !== ctx.userId))];
-  const valid = memberIds.length ? await db.user.findMany({ where: { id: { in: memberIds }, banned: false, role: { not: "GUEST" } }, select: { id: true } }) : [];
+  const valid = memberIds.length ? await db.user.findMany({ where: { id: { in: memberIds }, ...verifiedUserWhere }, select: { id: true } }) : [];
   const tf = await db.$transaction(async (tx) => {
     const t = await tx.taskforce.create({
       data: { name, description: input.description?.trim() ?? "", createdBy: ctx.userId, members: { create: [{ userId: ctx.userId, role: "founder" }] }, invites: { create: valid.map((u) => ({ userId: u.id, invitedBy: ctx.userId, role: "member" })) } },
@@ -356,7 +356,7 @@ export async function addTaskforceMember(db: PrismaClient, ctx: ChatCtx, taskfor
   await requireManage(db, ctx, taskforceId);
   if (role === "lead") await requireFounder(db, ctx, taskforceId);
   const u = await db.user.findUnique({ where: { id: userId } });
-  if (!u || u.banned || u.role === "GUEST") throw new ChatError("err.chat.userCannotAdd");
+  if (!u || !(await db.user.count({ where: { id: userId, ...verifiedUserWhere } }))) throw new ChatError("err.chat.userCannotAdd");
   const existing = await db.taskforceMember.findUnique({ where: { taskforceId_userId: { taskforceId, userId } } });
   if (existing?.role === "founder") throw new ChatError("err.chat.founderRoleLocked");
   await db.taskforceMember.upsert({ where: { taskforceId_userId: { taskforceId, userId } }, create: { taskforceId, userId, role }, update: { role } });
@@ -369,7 +369,7 @@ export async function inviteToTaskforce(db: PrismaClient, ctx: ChatCtx, taskforc
   const tf = await db.taskforce.findUnique({ where: { id: taskforceId } });
   if (!tf || tf.archivedAt) throw new ChatError("err.chat.tfNotFound");
   const u = await db.user.findUnique({ where: { id: userId } });
-  if (!u || u.banned || u.role === "GUEST") throw new ChatError("err.chat.userCannotInvite");
+  if (!u || !(await db.user.count({ where: { id: userId, ...verifiedUserWhere } }))) throw new ChatError("err.chat.userCannotInvite");
   if (await db.taskforceMember.findUnique({ where: { taskforceId_userId: { taskforceId, userId } } })) throw new ChatError("err.chat.alreadyMember");
   const open = await db.taskforceInvite.findFirst({ where: { taskforceId, userId, status: "pending" } });
   const inv = open

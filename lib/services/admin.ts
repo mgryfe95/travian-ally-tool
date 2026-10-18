@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { env } from "../env";
 import {
-  assertCanAssignRole, assertCanEditPermission, assertCanModerateUser, effectiveRole, ForbiddenError, isEmergencyAdmin, STORED_ROLES,
+  assertCanAssignRole, assertCanEditPermission, assertCanModerateUser, effectiveRole, ForbiddenError, isEmergencyAdmin, rank, STORED_ROLES,
   type Permission, type Role, type StoredRole,
 } from "../permissions";
 import { audit, loadMatrix, type Actor } from "./context";
@@ -22,6 +22,29 @@ export async function setUserRole(
   if (!(STORED_ROLES as readonly string[]).includes(newRole)) throw new ForbiddenError("err.role.invalid");
   await db.user.update({ where: { id: userId }, data: { role: newRole as StoredRole } });
   await audit(db, actor.id, "user.role", `user:${userId}`, { role: user.role }, { role: newRole });
+}
+
+/**
+ * Rolle je Spieler vorab festlegen (auch vor Registrierung/Einladung). Bei der Verifizierung bekommt das Konto diese Rolle;
+ * ist der Spieler schon verifiziert verknüpft, wird die Rolle sofort übernommen. `null` = automatisch (Mitglied bzw. Gast).
+ */
+export async function setPlayerRole(db: PrismaClient, actor: Actor, playerId: number, newRole: StoredRole | null, sysadmins: readonly string[] = env().SYSTEMADMIN_EMAILS) {
+  const matrix = await loadMatrix(db);
+  const prev = await db.playerRole.findUnique({ where: { travianPlayerId: playerId } });
+  assertCanAssignRole(actor.role, (prev?.role as Role | undefined) ?? "GUEST", newRole ?? "GUEST", matrix);
+  if (newRole && !(STORED_ROLES as readonly string[]).includes(newRole)) throw new ForbiddenError("err.role.invalid");
+  if (newRole) await db.playerRole.upsert({ where: { travianPlayerId: playerId }, create: { travianPlayerId: playerId, role: newRole, setBy: actor.id }, update: { role: newRole, setBy: actor.id, setAt: new Date() } });
+  else await db.playerRole.deleteMany({ where: { travianPlayerId: playerId } });
+  await audit(db, actor.id, "player.role", `player:${playerId}`, { role: prev?.role ?? null }, { role: newRole });
+  if (!newRole) return;
+  const links = await db.playerLink.findMany({ where: { travianPlayerId: playerId, status: "verified" }, select: { userId: true } });
+  for (const l of links) {
+    const t = await loadTarget(db, l.userId, sysadmins).catch(() => null);
+    if (!t || t.emergency || t.user.role === newRole) continue;
+    if (actor.role !== "ADMIN" && rank(t.role) >= rank(actor.role)) continue;
+    await db.user.update({ where: { id: l.userId }, data: { role: newRole } });
+    await audit(db, actor.id, "user.role", `user:${l.userId}`, { role: t.user.role }, { role: newRole, via: "player" });
+  }
 }
 
 export async function setUserBanned(

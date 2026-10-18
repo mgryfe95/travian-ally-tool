@@ -14,7 +14,7 @@ const member: Actor = { id: "m", role: "MEMBER" };
 const t0 = new Date("2026-10-14T10:00:00Z");
 
 beforeEach(async () => {
-  await db.$executeRaw`TRUNCATE "User","Invite","PlayerLink","AuditLog","AllianceClassification","Setting","Player","Village","RolePermission" RESTART IDENTITY CASCADE`;
+  await db.$executeRaw`TRUNCATE "User","Invite","PlayerLink","AuditLog","AllianceClassification","Setting","Player","Village","RolePermission","PlayerRole" RESTART IDENTITY CASCADE`;
   await seedPermissions(db);
   await db.setting.create({ data: { key: "allianceId", value: "36" } });
   await db.allianceClassification.create({ data: { allianceId: 7, relation: "ALLIED" } });
@@ -48,6 +48,12 @@ describe("Einladungslink", () => {
     expect(await db.playerLink.findFirst({ where: { userId: "u1" } })).toMatchObject({ status: "verified", method: "invite", travianPlayerId: 1 });
     expect((await db.user.findUnique({ where: { id: "u1" } }))?.role).toBe("MEMBER");
     await expect(redeemInvite(db, token, "u2", t0)).rejects.toBeInstanceOf(VerificationError);
+  });
+  it("Vorab vergebene Spieler-Rolle (Admin) wird beim Einlösen übernommen", async () => {
+    await db.playerRole.create({ data: { travianPlayerId: 1, role: "ADMIN", setBy: "x" } });
+    const { token } = await createInvite(db, mod, 1, t0);
+    await redeemInvite(db, token, "u1", t0);
+    expect((await db.user.findUnique({ where: { id: "u1" } }))?.role).toBe("ADMIN");
   });
   it("abgelaufen und widerrufen", async () => {
     const a = await createInvite(db, mod, 1, t0);
@@ -165,7 +171,21 @@ describe("Enge Bündnispartner und „Verlinkung nachweisen“", () => {
     // 3) Neue Datei enthält den Code → verifiziert, Rolle MEMBER
     await db.village.updateMany({ where: { playerId: 50 }, data: { name: `Hof ${link.claimCode}` } });
     expect(await proveLink(db, "u1", { fetchAndImport: same, now: () => 9_000_000 })).toBe("verified");
-    expect(await db.user.findUnique({ where: { id: "u1" } })).toMatchObject({ role: "MEMBER" });
+    expect(await db.user.findUnique({ where: { id: "u1" } })).toMatchObject({ role: "GUEST" }); // enger Bündnispartner bleibt Gast (verifiziert)
     expect(await proveLink(db, "u1")).toBe("no_claim");
   });
 });
+
+describe("Rolle mit Verifizierung", () => {
+  it("Gast ohne verifizierte Zuordnung ist UNVERIFIED, mit Zuordnung GUEST; Mitglieder und Notzugang unverändert", async () => {
+    const { actorRole } = await import("@/lib/services/context");
+    await db.user.upsert({ where: { id: "ar1" }, create: { id: "ar1", name: "ar1", email: "ar1@x.de", role: "GUEST" }, update: { role: "GUEST" } });
+    const u = { id: "ar1", email: "ar1@x.de", role: "GUEST" };
+    expect(await actorRole(db, u, [])).toBe("UNVERIFIED");
+    expect(await actorRole(db, u, ["ar1@x.de"])).toBe("ADMIN");
+    await db.playerLink.create({ data: { userId: "ar1", travianPlayerId: 4242, status: "verified", method: "admin" } });
+    expect(await actorRole(db, u, [])).toBe("GUEST");
+    expect(await actorRole(db, { ...u, role: "MEMBER" }, [])).toBe("MEMBER");
+  });
+});
+

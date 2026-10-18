@@ -16,7 +16,7 @@ export default async function ClaimPage({ searchParams }: { searchParams: Promis
   const user = await requireUser();
   const { t, locale } = await getT();
   const { error, r } = await searchParams;
-  if (user.role !== "GUEST") redirect("/");
+  if (user.role !== "UNVERIFIED") redirect("/");
   const lastMap = await db.snapshot.findFirst({ orderBy: { id: "desc" }, select: { fetchedAt: true } });
   const links = await db.playerLink.findMany({ where: { userId: user.id }, orderBy: { id: "desc" } });
   // Verknüpft, aber Rolle noch GUEST (z. B. von einem Moderator zurückgestuft): kein Redirect nach "/" – das Layout schickt GUEST sofort hierher zurück (Schleife).
