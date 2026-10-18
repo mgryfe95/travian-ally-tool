@@ -88,3 +88,9 @@ Offen:
 10. Deploy-Skript: Prüfung auf Container-Neustarts.
 11. Spieldaten-Scraper halbjährlich (Erlaubnis Travian Games offen).
 12. Session-Report nach `projectos-reporter` (Pflicht laut CLAUDE.md).
+
+## 2026-10-20 · Menü & E-Mail
+- Chat: Kanalliste steht jetzt doppelt (Seitenleiste + Chat-Spalte). Chat-Spalte auf Desktop ausblenden? (Sie enthält „Task-Force anlegen“ und Live-Ungelesen-Zähler; die Seitenleiste zählt nur beim Seitenwechsel.)
+- Schedule für Mitglieder/Gäste (nur `schedule.view`) bleibt Hauptpunkt, weil sie keinen Admin-Bereich haben – bestätigen oder Schedule für sie ausblenden.
+- `/villages` (alte Route „Meine Dörfer“) leitet weiter aufs größte Dorf; kann später entfallen.
+- Live-Ungelesen-Zähler auch in der Seitenleiste (Socket) wäre ein Folgeschritt.

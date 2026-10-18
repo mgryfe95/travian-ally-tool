@@ -55,5 +55,9 @@ const en = {
   "auth.claim.mapState": "Latest map data: {time}",
   "auth.claim.step3": "Once the code is found, your account is unlocked automatically – afterwards you can rename the village back (from {time}).",
   "auth.claim.linkedLocked": "Your player is already linked, but your account has not been unlocked. Please ask a moderator.",
+  "auth.claim.mailTitle": "Confirm your email address",
+  "auth.claim.mailBody": "We sent a confirmation link to {email} (valid for 24 hours). Your account is unlocked only after you confirm it.",
+  "auth.claim.mailResend": "Send link again",
+  "auth.claim.mailSent": "Sent – please also check your spam folder.",
 } as const;
 export default en;

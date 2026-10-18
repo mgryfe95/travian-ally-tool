@@ -5,7 +5,7 @@ import { createAuthMiddleware, APIError } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { db } from "./db";
 import { env } from "./env";
-import { resetMail, sendMail } from "./mail";
+import { mailEnabled, resetMail, sendMail, verifyMail } from "./mail";
 import { matchLocale, translate } from "./i18n";
 
 /** Header, mit dem nur unsere eigene Registrierungs-Route (/api/register) den Sign-up von Better Auth aufrufen darf. */
@@ -29,6 +29,16 @@ export const auth = betterAuth({
     password: {
       hash: (password) => hash(password),
       verify: ({ hash: h, password }) => verify(h, password),
+    },
+  },
+  // E-Mail-Bestätigung ist nur aktiv, wenn SMTP in der .env konfiguriert ist (sonst kein Versand und kein Kriterium, siehe actorRole).
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    expiresIn: 24 * 3600,
+    sendVerificationEmail: async ({ user, url }) => {
+      if (!mailEnabled()) return;
+      void sendMail(verifyMail(user.email, user.name, url, (user as { locale?: string | null }).locale)).catch((e) => console.error("[mail] Bestätigungs-Mail fehlgeschlagen", e));
     },
   },
   user: {

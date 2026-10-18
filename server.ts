@@ -5,6 +5,7 @@ import { canReadChannel } from "./lib/chat/access";
 import { auth } from "./lib/auth";
 import { db } from "./lib/db";
 import { env } from "./lib/env";
+import { mailEnabled } from "./lib/mail";
 import { actorRole } from "./lib/services/context";
 import { channelRoom, setIo, userRoom } from "./lib/realtime";
 import { seedPermissions } from "./lib/services/admin";
@@ -33,7 +34,7 @@ async function userFromCookie(cookie: string | undefined) {
   if (!session) return null;
   const u = await db.user.findUnique({ where: { id: session.user.id } });
   if (!u || u.banned) return null;
-  return { id: u.id, role: await actorRole(db, u, env().SYSTEMADMIN_EMAILS) };
+  return { id: u.id, role: await actorRole(db, u, env().SYSTEMADMIN_EMAILS, mailEnabled()) };
 }
 
 // Geplante Calls (Allianz-Schedule) alle 30 s prüfen und zur Zeit in den Zielkanal posten.

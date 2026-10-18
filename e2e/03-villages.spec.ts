@@ -62,6 +62,7 @@ test("Meine Dörfer: Übersicht, KI-Instruktionen, Erinnerungen, Upload, Zugriff
   const b = await other.newPage();
   await login(b, "boss@example.com"); // ohne verifizierten Spieler, aber Systemadmin
   // Systemadmin sieht die Truppen des Mitglieds in der Übersicht
+  await b.getByRole("link", { name: "Admin", exact: true }).click(); // Truppen liegt im Admin-Untermenü
   await b.getByRole("link", { name: "Truppen", exact: true }).click();
   await expect(b.getByRole("heading", { name: "Truppen der Mitglieder" })).toBeVisible();
   await expect(b.getByRole("row", { name: /Axtkämpfer 3\.410/ }).first()).toBeVisible();

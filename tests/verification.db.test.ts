@@ -187,5 +187,14 @@ describe("Rolle mit Verifizierung", () => {
     expect(await actorRole(db, u, [])).toBe("GUEST");
     expect(await actorRole(db, { ...u, role: "MEMBER" }, [])).toBe("MEMBER");
   });
+
+  it("Mit SMTP: ohne bestätigte E-Mail gesperrt (auch Mitglieder), Notzugang ausgenommen; ohne SMTP kein Kriterium", async () => {
+    const { actorRole } = await import("@/lib/services/context");
+    const u = { id: "ar1", email: "ar1@x.de", role: "MEMBER", emailVerified: false };
+    expect(await actorRole(db, u, [], true)).toBe("UNVERIFIED");
+    expect(await actorRole(db, u, ["ar1@x.de"], true)).toBe("ADMIN");
+    expect(await actorRole(db, u, [], false)).toBe("MEMBER");
+    expect(await actorRole(db, { ...u, emailVerified: true }, [], true)).toBe("MEMBER");
+  });
 });
 

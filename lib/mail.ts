@@ -33,3 +33,9 @@ export const resetMail = (to: string, name: string, url: string, locale?: string
   const l = isLocale(locale) ? locale : DEFAULT_LOCALE;
   return { to, subject: translate(l, "err.mail.resetSubject"), text: translate(l, "err.mail.resetBody", { name, url }) };
 };
+
+/** Bestätigungs-Mail nach der Registrierung (bzw. auf Anforderung erneut). */
+export const verifyMail = (to: string, name: string, url: string, locale?: string | null): Mail => {
+  const l = isLocale(locale) ? locale : DEFAULT_LOCALE;
+  return { to, subject: translate(l, "err.mail.verifySubject"), text: translate(l, "err.mail.verifyBody", { name, url }) };
+};

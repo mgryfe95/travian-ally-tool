@@ -9,7 +9,12 @@ import { localizeError } from "@/lib/i18n/errors";
 import { fetchMapSql, importMapSql } from "@/lib/import/importer";
 import { getInactiveDays } from "@/lib/settings";
 import { proveLink, startClaim, VerificationError } from "@/lib/services/verification";
+import { auth } from "@/lib/auth";
+import { mailEnabled } from "@/lib/mail";
+import { createLimiter } from "@/lib/ratelimit";
 import { requireUser } from "@/lib/session";
+
+const resendLimiter = createLimiter(3, 15 * 60_000);
 
 export async function startClaimAction(f: FormData) {
   const user = await requireUser();
@@ -42,4 +47,13 @@ export async function proveLinkAction() {
   const user = await requireUser();
   const r = await proveLink(db, user.id, { fetchAndImport });
   redirect(r === "verified" ? "/" : `/claim?r=${r}`);
+}
+
+/** Bestätigungs-Mail erneut senden (max. 3 je 15 min und Konto). */
+export async function resendVerifyAction() {
+  const user = await requireUser();
+  if (!mailEnabled() || user.emailVerified) redirect("/claim");
+  if (!resendLimiter.check(user.id)) redirect("/claim?mail=limit");
+  await auth.api.sendVerificationEmail({ body: { email: user.email, callbackURL: "/" } }).catch((e) => console.error("[mail] erneuter Versand", e));
+  redirect("/claim?mail=sent");
 }

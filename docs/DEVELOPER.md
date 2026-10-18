@@ -105,3 +105,9 @@ Upload (WebP, S3 Pflicht in Produktion) → Auslese → bei Auto-Übernahme sofo
 ## Erwähnungen & Antworten
 `lib/chat/mentions.ts` (Regex/Handle) wird von Markdown (Hervorhebung), Client (Autovervollständigung) und Server (`syncMentions`) genutzt. Handle = Name klein, Leerzeichen → `_`. `Mention` ist pro Nachricht eindeutig je Nutzer. Antworten: `Message.replyToId`, Flattening auf die Hauptnachricht in `postMessage`.
 
+
+## Navigation (Seitenleiste)
+`app/(app)/layout.tsx` baut die Punkte serverseitig (`NavItem.children` = Untermenü, `group` = Zwischenüberschrift). `components/SideNav.tsx` (`NavList`, auch im Mobilmenü) klappt ein Untermenü auf, wenn der Punkt oder ein Kind aktiv ist (`activeChild`: Query-Kinder exakt, sonst erstes Kind als Standard). `useSearchParams` steht in einer eigenen Suspense-Grenze – ohne sie blieben Weiterleitungen von Server-Actions auf derselben Seite hängen. Kein `loading.tsx` unter `/villages/[id]` (gleicher Effekt + 404 käme als 200); Ladeanzeige über `useLinkStatus`. Admin-Reiter zentral in `lib/adminTabs.ts`.
+
+## E-Mail-Bestätigung
+Better Auth `emailVerification` (sendOnSignUp, 24 h, Auto-Login nach Bestätigung). Der Versand und das Kriterium hängen an `mailEnabled()` (SMTP_HOST gesetzt): `actorRole(..., requireEmail)` liefert `UNVERIFIED` für unbestätigte Konten (Notzugang ausgenommen) → Layout leitet auf `/claim` (Karte „E-Mail-Adresse bestätigen“ + erneut senden, 3×/15 min). Migration `email_verified_existing` markiert Bestandskonten als bestätigt.

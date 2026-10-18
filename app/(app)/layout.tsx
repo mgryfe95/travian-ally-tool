@@ -13,8 +13,11 @@ import { fmtDate } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
 import { hasPermission, type Permission } from "@/lib/permissions";
 import { serverLabel, ownAllianceTag } from "@/lib/serverinfo";
+import { ADMIN_TABS } from "@/lib/adminTabs";
+import { chatCtx, listChannels } from "@/lib/services/chat";
 import { loadMatrix } from "@/lib/services/context";
 import { unreadCounts } from "@/lib/services/messenger";
+import { ownVillages } from "@/lib/services/villages";
 import { getWorldStatus } from "@/lib/services/world";
 import { requireUser } from "@/lib/session";
 
@@ -27,19 +30,30 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const { t, locale } = await getT();
   const matrix = await loadMatrix(db);
   const can = (p: Permission) => hasPermission(user.role, p, matrix);
+  const isAdmin = ADMIN_PERMS.some(can);
+  const villages = await ownVillages(db, user.id);
+  const channels = can("chat.read") ? await listChannels(db, await chatCtx(db, user)) : [];
+  const chan = (c: (typeof channels)[number]): NavItem => ({ href: `/chat?c=${c.id}`, label: c.tree === "TASKFORCE" ? c.name : `# ${c.name}`, badge: c.unread });
+  const ally = channels.filter((c) => c.tree !== "TASKFORCE").map(chan);
+  const tfs = channels.filter((c) => c.tree === "TASKFORCE").map(chan);
+  if (tfs[0]) tfs[0] = { ...tfs[0], group: t("nav.taskForces") };
+  const extras: NavItem[] = [];
+  if (can("schedule.view")) extras.push({ href: "/schedule", label: t("nav.schedule") });
+  if (can("troops.view")) extras.push({ href: "/troops", label: t("nav.troops") });
+
   const items: NavItem[] = [
-    { href: "/", label: t("nav.overview") },
-    { href: "/villages", label: t("nav.myVillages") },
+    { href: "/", label: t("nav.overview"), children: villages.map((v) => ({ href: `/villages/${v.id}`, label: v.name })) },
     { href: "/inactive", label: t("nav.inactive") },
-    { href: "/chat", label: t("nav.chat") },
-    { href: "/chat?tf=1", label: t("nav.taskForces"), match: "/taskforces" },
+    { href: "/chat", label: t("nav.chats"), children: channels.length ? [{ href: "/chat?c=all", label: t("chat.aside.all") }, ...ally, ...tfs] : undefined },
   ];
   if (can("messenger.use")) items.push({ href: "/messages", label: t("nav.messages"), badge: (await unreadCounts(db, user.id)).total });
-  if (can("schedule.view")) items.push({ href: "/schedule", label: t("nav.schedule") });
-  if (can("troops.view")) items.push({ href: "/troops", label: t("nav.troops") });
+  if (!isAdmin) items.push(...extras); // ohne Admin-Bereich bleiben Schedule/Truppen Hauptpunkte
   items.push({ href: "/screenshots", label: t("nav.screenshots") });
-  if (ADMIN_PERMS.some(can)) items.push({ href: "/admin", label: t("nav.admin"), sepBefore: true });
-  items.push({ href: "/gamedata", label: t("nav.gameData"), sepBefore: !ADMIN_PERMS.some(can) });
+  if (isAdmin) {
+    const tabs = ADMIN_TABS.filter((x) => x.perms.some(can)).map((x) => ({ href: `/admin?tab=${x.id}`, label: t(x.label) }));
+    items.push({ href: "/admin", label: t("nav.admin"), sepBefore: true, children: [...tabs, ...extras] });
+  }
+  items.push({ href: "/gamedata", label: t("nav.gameData"), sepBefore: !isAdmin });
   const tag = await ownAllianceTag(db);
   const world = await getWorldStatus(db);
   return (

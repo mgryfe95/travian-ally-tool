@@ -3,8 +3,11 @@
 ## Start
 `cp .env.example .env`, Werte setzen (`AUTH_SECRET` mit `openssl rand -base64 32`, `SYSTEMADMIN_EMAILS`, `TRAVIAN_ALLIANCE_ID=36`), `docker compose up -d`. Health: `/api/health`.
 
-## E-Mail-Versand (Passwort vergessen)
-`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` in der `.env` setzen. Ohne `SMTP_HOST` zeigt „Passwort vergessen?“ nur einen Hinweis. Der Reset-Link ist eine Stunde gültig, einmalig und beendet alle Sitzungen. Ob eine Adresse existiert, wird nie verraten.
+## E-Mail-Versand (Passwort vergessen, E-Mail-Bestätigung)
+`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` in der `.env` setzen, dann deployen – SMTP ist sofort aktiv, sonst bleibt alles wie bisher. Mit SMTP:
+- **Passwort vergessen?** Reset-Link eine Stunde gültig, einmalig, beendet alle Sitzungen. Ob eine Adresse existiert, wird nie verraten.
+- **E-Mail-Bestätigung:** Neue Konten bekommen nach der Registrierung einen Bestätigungslink (24 h). Erst danach ist das Konto freigeschaltet (zusätzlich zur Spieler-Verifizierung). „Link erneut senden“ auf der Verifizierungsseite. Bestehende Konten gelten als bestätigt; Notzugang-Adressen (`SYSTEMADMIN_EMAILS`) brauchen keine Bestätigung.
+- Plesk-Beispiel: `SMTP_HOST=<mail-domain>`, `SMTP_PORT=587`, `SMTP_SECURE=false`, `SMTP_USER=noreply@<domain>` (Postfach in Plesk anlegen), `SMTP_PASS=…`, `SMTP_FROM=Ally Tool <noreply@<domain>>`.
 
 ## Erster Login (Admin)
 Unter `/register` mit einer Adresse aus `SYSTEMADMIN_EMAILS` registrieren. Dafür ist der **Setup-Code** nötig (`SYSTEMADMIN_SETUP_CODE`, sonst der Wert von `AUTH_SECRET`), damit niemand die Admin-Adresse vorab belegen kann. SYSTEMADMIN gilt nur, solange die Adresse in der ENV-Liste steht; er ist im UI nicht änderbar.
@@ -90,3 +93,6 @@ Registrieren können sich nur Spieler unserer Allianz(en) und enger Bündnispart
 - **Rolle vorab vergeben:** In der Mitgliederliste kannst du Spielern ohne Konto eine Rolle geben (z. B. Admin). Sie gilt automatisch, sobald der Spieler sich registriert und verifiziert.
 - Tabellen lassen sich per Klick auf die Spaltenköpfe sortieren.
 
+
+## Menü
+Übersicht (darunter deine Dörfer) · Inaktivensuche · Chats (darunter alle Kanäle und Task-Forces) · Nachrichten · OCR-Scans · Admin (Klick öffnet alle Reiter inkl. Schedule und Truppen) · Spieldaten. Konten ohne Admin-Bereich sehen Schedule weiterhin als eigenen Punkt.

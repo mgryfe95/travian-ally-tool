@@ -123,6 +123,8 @@ const en = {
   "err.mail.smtp": "SMTP is not configured",
   "err.mail.resetSubject": "Ally Tool: reset your password",
   "err.mail.resetBody": "Hello {name},\n\nuse this link to set a new password (valid for one hour):\n\n{url}\n\nIf you did not request this, ignore this message.",
+  "err.mail.verifySubject": "Ally Tool: confirm your email address",
+  "err.mail.verifyBody": "Hello {name},\n\nplease confirm your email address using this link (valid for 24 hours):\n\n{url}\n\nIf you did not sign up, please ignore this message.",
   "err.reminder.never": "never",
   "err.reminder.today": "today",
   "err.reminder.yesterday": "yesterday",

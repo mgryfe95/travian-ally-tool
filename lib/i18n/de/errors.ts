@@ -125,6 +125,8 @@ const de: Record<keyof typeof en, string> = {
   "err.mail.smtp": "SMTP ist nicht konfiguriert",
   "err.mail.resetSubject": "Ally Tool: Passwort zurücksetzen",
   "err.mail.resetBody": "Hallo {name},\n\nüber diesen Link kannst du ein neues Passwort setzen (eine Stunde gültig):\n\n{url}\n\nWenn du das nicht angefordert hast, ignoriere diese Nachricht.",
+  "err.mail.verifySubject": "Ally Tool: E-Mail-Adresse bestätigen",
+  "err.mail.verifyBody": "Hallo {name},\n\nbitte bestätige deine E-Mail-Adresse über diesen Link (24 Stunden gültig):\n\n{url}\n\nWenn du dich nicht registriert hast, ignoriere diese Nachricht.",
   "err.reminder.never": "noch nie",
   "err.reminder.today": "heute",
   "err.reminder.yesterday": "gestern",

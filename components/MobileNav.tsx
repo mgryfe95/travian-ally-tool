@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { LogoutButton } from "@/components/AuthForms";
 import { LanguageSelect } from "@/components/LanguageSelect";
 import { LogoMark } from "@/components/Logo";
-import type { NavItem } from "@/components/SideNav";
+import { NavList, type NavItem } from "@/components/SideNav";
 import { useT } from "@/lib/i18n/client";
 
 /** Mobile Kopfzeile: Burger-Menü (Hauptnavigation, standardmäßig zu) links, Profil-Menü (Konto, Sprache, Abmelden) rechts. */
@@ -29,17 +29,8 @@ export function MobileNav({ items, name, role }: { items: NavItem[]; name: strin
         {name[0]?.toUpperCase() ?? "?"}
       </button>
       {menu && (
-        <nav id="mobile-menu" className="dropdown menu" aria-label={t("nav.mainMobile")}>
-          {items.map((it) => {
-            const base = (it.match ?? it.href).split("?")[0] as string;
-            const on = base === "/" ? path === "/" : path === base || path.startsWith(base + "/");
-            return (
-              <Link key={it.href + it.label} href={it.href} className={`nav ${on ? "on" : ""}`} aria-current={on ? "page" : undefined}>
-                {it.label}
-                {it.badge ? <span className="badge">{it.badge}</span> : null}
-              </Link>
-            );
-          })}
+        <nav id="mobile-menu" className="dropdown menu" aria-label={t("nav.mainMobile")} onClick={(e) => { if ((e.target as HTMLElement).closest("a")) setMenu(false); }}>
+          <NavList items={items} />
         </nav>
       )}
       {profile && (

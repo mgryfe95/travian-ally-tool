@@ -53,7 +53,7 @@ test("Chat: Nachricht mit Tag in Deff-Call erscheint im Sammelraum; Screenshot e
   await expect(dialog).toBeHidden();
 
   // Einzelner Kanal: Nachricht ist dort sichtbar; Tag-Filter blendet andere aus.
-  await page.getByRole("link", { name: "# Deff-Call" }).click();
+  await page.getByRole("complementary", { name: "Kan채le" }).getByRole("link", { name: "# Deff-Call" }).click();
   await expect(page.getByRole("heading", { name: "# Deff-Call" })).toBeVisible();
   await expect(page.locator("article.msg")).toHaveCount(2);
   await page.getByRole("button", { name: "Dringend", exact: true }).click();
@@ -97,19 +97,19 @@ test("Realtime: neue Nachricht erscheint live, Ungelesen-Z채hler in anderen Kan�
   const m = await ctx.newPage();
   await login(m, "member@example.com");
   await m.goto("/chat?c=all");
-  await m.getByRole("link", { name: "# Off-Call" }).click();
+  await m.getByRole("complementary", { name: "Kan채le" }).getByRole("link", { name: "# Off-Call" }).click();
   await expect(m.getByRole("heading", { name: "# Off-Call" })).toBeVisible();
 
   await page.goto("/chat?c=all");
-  await page.getByRole("link", { name: "# Deff-Call" }).click();
+  await page.getByRole("complementary", { name: "Kan채le" }).getByRole("link", { name: "# Deff-Call" }).click();
   await expect(page.getByRole("heading", { name: "# Deff-Call" })).toBeVisible();
   await page.getByLabel("Nachricht", { exact: true }).fill("Live-Test eins");
   await page.getByRole("button", { name: "Senden" }).click();
   await expect(page.locator("article.msg", { hasText: "Live-Test eins" })).toBeVisible();
 
   // Member ist in Off-Call: Badge am Deff-Call-Kanal (und am Sammelraum) ohne Neuladen.
-  await expect(m.getByRole("link", { name: /# Deff-Call/ }).locator(".badge")).toBeVisible();
-  await m.getByRole("link", { name: /# Deff-Call/ }).click();
+  await expect(m.getByRole("complementary", { name: "Kan채le" }).getByRole("link", { name: /# Deff-Call/ }).locator(".badge")).toBeVisible();
+  await m.getByRole("complementary", { name: "Kan채le" }).getByRole("link", { name: /# Deff-Call/ }).click();
   await expect(m.locator("article.msg", { hasText: "Live-Test eins" })).toBeVisible();
 
   await page.getByLabel("Nachricht", { exact: true }).fill("Live-Test zwei");

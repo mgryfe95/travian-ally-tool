@@ -147,3 +147,15 @@ a.mono { text-decoration: underline dotted; text-underline-offset: 3px; }
 .msg.focus { outline: 2px solid var(--accent, #c8962e); outline-offset: 4px; border-radius: 8px; }
 .msg.reply { margin-left: 36px; }
 .replyref { background: transparent; border: 0; padding: 0; color: var(--muted); font-size: 12px; cursor: pointer; text-align: left; }
+
+/* Untermenüs der Seitenleiste (Sekundärlinks in Gold) */
+.subnav { display: flex; flex-direction: column; gap: 2px; margin: 2px 0 6px 12px; padding-left: 8px; border-left: 1px solid var(--steel-line); }
+.subnav-group { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--side-muted); padding: 8px 10px 2px; }
+.nav.sub { min-height: 34px; padding: 5px 10px; font-size: 13px; font-weight: 500; color: var(--gold-hi); }
+.nav.sub .subnav-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
+.nav.sub.on { background: var(--steel); color: #fff; font-weight: 700; box-shadow: inset 3px 0 0 var(--gold-hi); }
+@media (max-width: 760px) { .nav.sub { min-height: 44px; } }
+.spinner { display: inline-block; flex: none; width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--gold); animation: spin 0.8s linear infinite; }
+.spinner.sm { width: 14px; height: 14px; border-width: 2px; border-color: var(--steel-line); border-top-color: var(--gold-hi); }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }

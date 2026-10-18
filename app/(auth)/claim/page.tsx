@@ -8,19 +8,22 @@ import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/lib/session";
 import { LogoutButton } from "@/components/AuthForms";
 import { fmtDate } from "@/lib/format";
-import { proveLinkAction, startClaimAction } from "./actions";
+import { mailEnabled } from "@/lib/mail";
+import { proveLinkAction, resendVerifyAction, startClaimAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function ClaimPage({ searchParams }: { searchParams: Promise<{ error?: string; r?: string }> }) {
+export default async function ClaimPage({ searchParams }: { searchParams: Promise<{ error?: string; r?: string; mail?: string }> }) {
   const user = await requireUser();
   const { t, locale } = await getT();
-  const { error, r } = await searchParams;
+  const { error, r, mail } = await searchParams;
   if (user.role !== "UNVERIFIED") redirect("/");
   const lastMap = await db.snapshot.findFirst({ orderBy: { id: "desc" }, select: { fetchedAt: true } });
   const links = await db.playerLink.findMany({ where: { userId: user.id }, orderBy: { id: "desc" } });
   // Verknüpft, aber Rolle noch GUEST (z. B. von einem Moderator zurückgestuft): kein Redirect nach "/" – das Layout schickt GUEST sofort hierher zurück (Schleife).
-  const linkedButLocked = links.some((l) => l.status === "verified");
+  const mailPending = mailEnabled() && !user.emailVerified;
+  const linked = links.some((l) => l.status === "verified");
+  const linkedButLocked = linked && !mailPending;
   const pending = links.find((l) => l.status === "pending");
   const player = pending ? await db.player.findUnique({ where: { id: pending.travianPlayerId } }) : null;
   const group = await loadRegistrablePlayers(db);
@@ -32,8 +35,18 @@ export default async function ClaimPage({ searchParams }: { searchParams: Promis
     <>
       <h1 style={{ fontSize: 22, marginBottom: 6 }}>{t("auth.claim.title")}</h1>
       <p className="sub" style={{ margin: "0 0 16px" }}>{t("auth.claim.intro")}</p>
+      {mailPending && (
+        <section className="card warn" role="status" style={{ margin: "0 0 16px" }}>
+          <b>{t("auth.claim.mailTitle")}</b>
+          <p className="sub" style={{ margin: "6px 0 10px" }}>{t("auth.claim.mailBody", { email: user.email })}</p>
+          <form action={resendVerifyAction}><button className="btn ghost sm">{t("auth.claim.mailResend")}</button></form>
+          {mail === "sent" && <p className="sub" style={{ marginTop: 8 }}>{t("auth.claim.mailSent")}</p>}
+          {mail === "limit" && <p className="errtext" style={{ marginTop: 8 }}>{t("err.tooManyAttempts")}</p>}
+        </section>
+      )}
       {linkedButLocked && <p className="card warn" role="status" style={{ margin: "0 0 16px" }}>{t("auth.claim.linkedLocked")}</p>}
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        {!(linked && mailPending) && (<>
         <form action={startClaimAction} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <div>
             <label className="lbl" htmlFor="cp">{t("auth.claim.playerName")}</label>
@@ -61,6 +74,7 @@ export default async function ClaimPage({ searchParams }: { searchParams: Promis
             {lastMap && <p className="sub" style={{ fontSize: 12, margin: 0 }}>{t("auth.claim.mapState", { time: fmtDate(lastMap.fetchedAt, locale) })}</p>}
           </>
         )}
+        </>)}
         <div className="sub" style={{ fontSize: 13 }}>{t("auth.claim.manual")}</div>
         <div><LogoutButton /></div>
       </div>

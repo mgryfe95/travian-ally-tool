@@ -66,7 +66,7 @@ const de: Record<keyof typeof en, string> = {
   "admin.perm.messenger.broadcast": "Messenger: Rundnachrichten senden",
   "admin.perm.schedule.manage": "Allianz-Schedule und Call-Vorlagen verwalten, Calls senden",
   "admin.users.title": "Alle Konten",
-  "admin.users.hint": "Gesperrte Admin-Konten (🔒) sind hier nicht änderbar.",
+  "admin.users.emergency": "Notzugang (.env)",
   "admin.users.colName": "Name",
   "admin.users.colRole": "Rolle",
   "admin.users.colStatus": "Status",

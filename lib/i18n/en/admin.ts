@@ -64,7 +64,7 @@ const en = {
   "admin.perm.messenger.broadcast": "Messenger: send broadcast messages",
   "admin.perm.schedule.manage": "Manage alliance schedule and call templates, send calls",
   "admin.users.title": "All accounts",
-  "admin.users.hint": "Locked admin accounts (🔒) cannot be changed here.",
+  "admin.users.emergency": "emergency access (.env)",
   "admin.users.colName": "Name",
   "admin.users.colRole": "Role",
   "admin.users.colStatus": "Status",

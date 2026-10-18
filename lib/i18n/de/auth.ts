@@ -57,5 +57,9 @@ const de: Record<keyof typeof en, string> = {
   "auth.claim.mapState": "Letzter Kartenstand: {time}",
   "auth.claim.step3": "Sobald der Code gefunden wird, ist dein Konto automatisch freigeschaltet – danach kannst du das Dorf zurückbenennen (ab {time} Uhr).",
   "auth.claim.linkedLocked": "Dein Spieler ist bereits verknüpft, dein Konto aber noch nicht freigeschaltet. Bitte wende dich an einen Moderator.",
+  "auth.claim.mailTitle": "E-Mail-Adresse bestätigen",
+  "auth.claim.mailBody": "Wir haben einen Bestätigungslink an {email} geschickt (24 Stunden gültig). Erst nach der Bestätigung wird dein Konto freigeschaltet.",
+  "auth.claim.mailResend": "Link erneut senden",
+  "auth.claim.mailSent": "Gesendet – bitte auch den Spam-Ordner prüfen.",
 };
 export default de;

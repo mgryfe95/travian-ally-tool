@@ -21,7 +21,6 @@ export async function UsersTab({ actor }: { actor: Actor }) {
     <section className="card flush">
       <div style={{ margin: 12 }}>
         <h2>{t("admin.users.title")}</h2>
-        <div className="sub">{t("admin.users.hint")}</div>
       </div>
       <div className="scroll">
         <table style={{ minWidth: 980 }}>
@@ -34,7 +33,7 @@ export async function UsersTab({ actor }: { actor: Actor }) {
               return (
                 <tr key={u.id}>
                   <td style={{ fontWeight: 500 }}>{u.name}</td>
-                  <td>{locked ? t(`admin.role.${role}`) : editable ? <RoleSelect userId={u.id} current={role} options={assignable} tab="users" /> : t(`admin.role.${role}`)}</td>
+                  <td>{locked ? <>{t(`admin.role.${role}`)} <span className="sub" style={{ fontSize: 12 }}>· {t("admin.users.emergency")}</span></> : editable ? <RoleSelect userId={u.id} current={role} options={assignable} tab="users" /> : t(`admin.role.${role}`)}</td>
                   <td>{u.banned ? <span className="pill p-bad">{t("admin.users.banned")}</span> : u.links.length ? <span className="pill p-ok">{t("admin.users.verified")}</span> : <span className="pill p-none">{t("admin.users.guest")}</span>}</td>
                   <td>
                     {u.links.length > 0 && <span className="sub">{u.links.map((l) => playerName.get(l.travianPlayerId) ?? `#${l.travianPlayerId}`).join(", ")}</span>}

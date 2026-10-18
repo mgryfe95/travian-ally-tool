@@ -3,10 +3,11 @@ import { redirect } from "next/navigation";
 import { auth } from "./auth";
 import { db } from "./db";
 import { env } from "./env";
+import { mailEnabled } from "./mail";
 import { hasPermission, type Permission, type Role } from "./permissions";
 import { actorRole, loadMatrix, type Actor } from "./services/context";
 
-export type CurrentUser = Actor & { email: string; name: string; locale: string | null };
+export type CurrentUser = Actor & { email: string; name: string; locale: string | null; emailVerified: boolean };
 
 /** Frisch aus der DB: Rolle und Sperre gelten bei jedem Request sofort; Adressen aus der ENV-Liste (Notzugang) sind immer ADMIN. */
 export async function getCurrentUser(): Promise<CurrentUser | null> {
@@ -14,7 +15,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   if (!session) return null;
   const user = await db.user.findUnique({ where: { id: session.user.id } });
   if (!user || user.banned) return null;
-  return { id: user.id, email: user.email, name: user.name, locale: user.locale, role: await actorRole(db, user, env().SYSTEMADMIN_EMAILS) };
+  return { id: user.id, email: user.email, name: user.name, locale: user.locale, emailVerified: user.emailVerified, role: await actorRole(db, user, env().SYSTEMADMIN_EMAILS, mailEnabled()) };
 }
 
 export async function requireUser(): Promise<CurrentUser> {
