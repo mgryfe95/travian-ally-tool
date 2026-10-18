@@ -72,3 +72,19 @@ Punkte, die Projekt, Aufbau oder andere Bereiche betreffen, aber nicht direkt zu
 
 - 2026-10-16: Offen (Wunsch): Call-Typen frei anlegbar (z. B. Ressourcen), Ziel-Kanal je neuer Vorlage, optional Direktnachricht je Vorlage; Erwähnungen (@), Antworten eine Ebene tief, Seite „Meine Erwähnungen“ mit Sprung zur Nachricht.
 
+
+## 2026-10-18 · Backlog-Stand
+Erledigt seit 16.10.: S3 (Pflicht), Call-Typen/Vorlagen-Kanal/DM, Erwähnungen/Antworten/„Meine Erwähnungen“, Termin vs. Sendezeit, Tabellen-Prüfung mit Marken auf dem Bild, Kern-Beispiele, Import täglich 0:10 Serverzeit.
+Offen:
+1. KI-Advisor (Stub): Datenbasis, Lauf 1–2×/Tag im Worker, gespeicherte Tipps + UI, Nutzersprache.
+2. Produktionsberechnung: Felder + Gebäudeboni + Gold-25 %-Schalter je Dorf + Oasen; Abgleich mit Screenshot-Produktion.
+3. Truppen-Spieldaten (Werte/Unterhalt je Einheit) – Quelle offen; nötig für Getreide-Netto.
+4. Erkennung: „Truppen in Dörfern“ und Kampfbericht in den Dorfzustand übernehmen; Upload asynchron (Worker-Warteschlange).
+5. Schedule: Wiederholungen, Erinnerung vor Call; Entscheidung „nur für Admins sichtbar?“.
+6. Eigene Rolle für enge Bündnispartner (weniger Rechte).
+7. Messenger: Anhänge/Markdown, Blockieren, Aufbewahrung, Push (E-Mail/Discord).
+8. Task-Force: Gründer übertragen.
+9. Datenschutz-Hinweise (Lern-Beispiele an Anthropic-API, DMs nicht E2E) in Onboarding/Nutzungsbedingungen.
+10. Deploy-Skript: Prüfung auf Container-Neustarts.
+11. Spieldaten-Scraper halbjährlich (Erlaubnis Travian Games offen).
+12. Session-Report nach `projectos-reporter` (Pflicht laut CLAUDE.md).
