@@ -150,6 +150,7 @@ const en = {
   "err.vision.truncated": "Response truncated",
   "err.vision.invalidResponse": "Invalid AI response: {detail}",
   "err.ai.screenshotRecognition": "Screenshot recognition is not active in this release yet (ANTHROPIC_API_KEY missing)",
+  "err.check.kindMismatch": "Selected type ({expected}) does not match the detected one ({found}) – please check",
   "err.check.unknownKind": "Screenshot type not recognised",
   "err.check.villageUnmatched": "Village “{name}” not matched",
   "err.check.coordsImplausible": "Implausible coordinates: {x}|{y}",

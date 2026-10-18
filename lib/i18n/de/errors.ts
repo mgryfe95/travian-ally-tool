@@ -152,6 +152,7 @@ const de: Record<keyof typeof en, string> = {
   "err.vision.truncated": "Antwort abgeschnitten",
   "err.vision.invalidResponse": "Ungültige Antwort der KI: {detail}",
   "err.ai.screenshotRecognition": "Screenshot-Erkennung (ANTHROPIC_API_KEY fehlt) ist in dieser Ausbaustufe noch nicht aktiv",
+  "err.check.kindMismatch": "Gewählte Art ({expected}) passt nicht zur erkannten ({found}) – bitte prüfen",
   "err.check.unknownKind": "Screenshot-Art nicht erkannt",
   "err.check.villageUnmatched": "Dorf „{name}“ nicht zugeordnet",
   "err.check.coordsImplausible": "Koordinaten unplausibel: {x}|{y}",

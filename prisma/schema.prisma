@@ -458,6 +458,8 @@ model Screenshot {
   villageId      Int?
   /// Art laut lib/ai/reading.ts (READING_KINDS)
   detectedKind   String   @default("UNKNOWN")
+  /// Vom Nutzer beim Upload gewählte Art (leer = automatisch erkennen)
+  expectedKind   String?
   /// DESKTOP | MOBILE | UNKNOWN
   detectedDevice String   @default("UNKNOWN")
   confidence     Float?

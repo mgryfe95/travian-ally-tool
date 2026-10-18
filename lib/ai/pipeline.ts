@@ -67,7 +67,7 @@ export class VisionPipeline {
     const e = env();
     try {
       const [examples, aliases, known] = await Promise.all([loadExamples(this.db), this.db.visionAlias.findMany({ orderBy: { term: "asc" } }), knownVillages(this.db, shot.userId)]);
-      const runs = await Promise.allSettled(Array.from({ length: e.VISION_PASSES }, () => aiClient().read(image, { examples, aliases })));
+      const runs = await Promise.allSettled(Array.from({ length: e.VISION_PASSES }, () => aiClient().read(image, { examples, aliases, expectedKind: shot.expectedKind ?? undefined })));
       const ok = runs.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
       if (ok.length === 0) {
         const err = runs.find((r) => r.status === "rejected") as PromiseRejectedResult;
@@ -77,6 +77,8 @@ export class VisionPipeline {
       const reading = ok[0]!;
       const agreement = ok.length > 1 ? ok.slice(1).reduce((m, o) => Math.min(m, agreementOf(reading, o)), 1) : 0.9; // ein Durchlauf allein = weniger Vertrauen
       const a: Assessment = assess(reading, known, agreement);
+      // Gewählte Art weicht von der erkannten ab → nicht automatisch übernehmen, sondern prüfen lassen
+      if (shot.expectedKind && shot.expectedKind !== reading.kind) a.issues.push({ level: "soft", key: "err.check.kindMismatch", params: { expected: shot.expectedKind, found: reading.kind }, message: translate("en", "err.check.kindMismatch", { expected: shot.expectedKind, found: reading.kind }) });
       const parsed: ParsedShot = { reading, issues: a.issues, agreement };
       const auto = a.confidence >= e.VISION_AUTO_ACCEPT && a.issues.length === 0 && reading.kind !== "UNKNOWN" && (await learningDone(this.db, reading.kind));
       let applied;

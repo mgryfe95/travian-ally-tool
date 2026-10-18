@@ -82,4 +82,6 @@ Registrieren können sich nur Spieler unserer Allianz(en) und enger Bündnispart
 - **Kern-Beispiel:** Bei der Prüfung entscheidest du per Haken, ob der Screenshot als Lernvorlage dient. Ohne Haken wird das Bild nach der Übernahme gelöscht. Unter „Lern-Beispiele“ (Screenshots-Seite) kannst du Beispiele korrigieren oder entfernen. Gelöschte Screenshots zählen nicht als Beispiel.
 - Gebäude wählst du aus einer Liste, die nur die Gebäude des Volkes des Dorfes enthält; „Fehlende Plätze ergänzen“ legt leere Zeilen für noch nicht erkannte Plätze an.
 - **Marken auf dem Bild:** In der Prüfung steht neben der Tabelle der Screenshot mit nummerierten Punkten an jeder erkannten Stufe. Maus auf einen Punkt → Werte direkt ändern; Klick hält das Feld offen. Ohne Punkt: in der Zeile „⌖“ drücken und auf die Stelle im Bild klicken. Ältere Screenshots ohne Punkte mit „Neu auslesen“ erneut erkennen lassen.
+- **Art beim Upload wählen:** Über „Art des Screenshots“ siehst du, welcher Ausschnitt gebraucht wird, samt Beispielbild. „Automatisch erkennen“ geht weiterhin. Passt das Bild nicht zur Auswahl, landet es zur Prüfung.
+- **Mobil:** Kopfleiste ausklappen, bevor du Rohstofffelder oder Dorfansicht aufnimmst – dann wird die Produktion pro Stunde mitgelesen.
 

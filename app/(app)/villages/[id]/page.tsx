@@ -2,6 +2,7 @@ import { CoordLink } from "@/components/CoordLink";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { UploadBox } from "@/components/UploadBox";
+import { FEATURES } from "@/lib/features";
 import { VillageSwitch } from "@/components/VillageSwitch";
 import { db } from "@/lib/db";
 import { fmt, fmtDate } from "@/lib/format";
@@ -25,6 +26,12 @@ type QueueItem = { building: string; level: number | null; remaining?: string | 
 const arr = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
 const obj = <T,>(v: unknown): T => ((v && typeof v === "object" && !Array.isArray(v) ? v : {}) as T);
 const RES_ROWS = [["wood", "villages.res.wood"], ["clay", "villages.res.clay"], ["iron", "villages.res.iron"], ["crop", "villages.res.crop"]] as const;
+
+const AREA_KINDS: Record<StateArea, string[]> = {
+  troops: ["RALLY_POINT", "VILLAGE_TROOPS", "VILLAGE_TROOPS_PRESENT"],
+  buildings: ["VILLAGE_VIEW", "RESOURCE_VIEW"],
+  resources: ["RESOURCE_VIEW", "VILLAGE_VIEW", "VILLAGE_RESOURCES", "VILLAGE_PRODUCTION"],
+};
 
 const AREAS: { area: StateArea; title: MessageKey; desc: MessageKey; action: MessageKey; at: "troopsAt" | "buildingsAt" | "resourcesAt" }[] = [
   { area: "troops", title: "villages.area.troops.title", desc: "villages.area.troops.desc", action: "villages.area.troops.action", at: "troopsAt" },
@@ -77,7 +84,7 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
               <div key={a.area} id={`up-${a.area}`} className={`card ${old ? "warn" : ""}`}>
                 <div className="row between"><div style={{ fontWeight: 600, fontSize: 15 }}>{t(a.title)}</div><span className={old ? "stale" : "sub"} style={{ fontSize: 12 }}>{ageLabel(age)}</span></div>
                 <div className="sub" style={{ margin: "6px 0 12px" }}>{t(a.desc)}</div>
-                <UploadBox id={`file-${a.area}`} villageId={id} label={t(a.action)} />
+                <UploadBox id={`file-${a.area}`} villageId={id} label={t(a.action)} kinds={AREA_KINDS[a.area]} />
               </div>
             );
           })}
@@ -102,11 +109,11 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
         </form>
       </section>
 
-      <section className="card hi" aria-labelledby="tips">
+      {FEATURES.advisor && <section className="card hi" aria-labelledby="tips">
         <h2 id="tips">{t("villages.tips.title", { name: village.name })}</h2>
         <div className="sub" style={{ margin: "4px 0 10px" }}>{t("villages.tips.sub")}</div>
         <p className="sub">{t("villages.tips.none")}</p>
-      </section>
+      </section>}
 
       <div className="grid2">
         <section className="card" aria-labelledby="res">

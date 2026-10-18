@@ -4,7 +4,7 @@ import { apiSchema, apiToReading, readingJsonSchema, readingSchema, readingToApi
 import { AppError } from "../i18n/errors";
 
 export type Example = { image: Buffer; gold: Reading };
-export type ReadOptions = { examples?: Example[]; aliases?: Alias[] };
+export type ReadOptions = { examples?: Example[]; aliases?: Alias[]; expectedKind?: string };
 
 export class VisionError extends AppError {}
 
@@ -37,7 +37,8 @@ export class ClaudeVision {
         content: [{ type: "text", text: JSON.stringify(readingToApi(ex.gold)), ...(i === examples.length - 1 ? { cache_control: { type: "ephemeral" as const } } : {}) }],
       });
     });
-    messages.push({ role: "user", content: [imageBlock(image), { type: "text", text: ASK }] });
+    const hint = opts.expectedKind ? ` Laut Nutzer ist es: ${opts.expectedKind} (nur wenn das Bild offensichtlich etwas anderes zeigt, die tatsächliche Art angeben und in "uncertain" vermerken).` : "";
+    messages.push({ role: "user", content: [imageBlock(image), { type: "text", text: ASK + hint }] });
 
     const res = await this.api.messages.create({
       model: this.model,

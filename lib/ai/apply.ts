@@ -68,6 +68,9 @@ export function planApply(r: Reading, known: KnownVillage[], hintVillageId?: num
       const p = patch(current);
       if (!p) break;
       p.buildings = r.buildings;
+      // Mobil mit ausgeklappter Kopfleiste: Bestände und Produktion lassen sich auch hier ablesen
+      const vnet = r.rows.find((x) => x.name === "production_net");
+      if (r.topBar || vnet) p.resources = { ...(r.topBar ? { stock: { wood: r.topBar.wood, clay: r.topBar.clay, iron: r.topBar.iron, crop: r.topBar.crop }, freeCrop: r.topBar.freeCrop } : {}), ...(vnet ? { production: four(vnet.cells) } : {}) };
       const queue = r.rows.filter((x) => x.name?.startsWith("queue:"));
       if (queue.length) p.queues = { construction: queue.map((x) => ({ building: x.name!.slice(6), level: x.cells[0], remaining: x.texts[0], finishAt: x.texts[1] })) };
       break;

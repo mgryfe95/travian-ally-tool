@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { applyReading, inheritNames } from "@/lib/ai/apply";
+import { applyReading, inheritNames, planApply } from "@/lib/ai/apply";
 import { setAiClient, StubAiClient } from "@/lib/ai/client";
 import { VisionPipeline } from "@/lib/ai/pipeline";
 import { readingSchema, type Reading } from "@/lib/ai/reading";
@@ -183,5 +183,26 @@ describe("Lern-Beispiele verwalten", () => {
     const sb = await db.screenshot.findFirstOrThrow({ where: { storageKey: "shots/ex/b.webp" } });
     await deleteScreenshotFiles(db, [sb.id]);
     expect(await db.visionExample.count({ where: { id: eb.id } })).toBe(0);
+  });
+});
+
+describe("Produktion aus der mobilen Kopfleiste", () => {
+  it("Dorfansicht mit ausgeklappter Kopfleiste liefert Bestände und Produktion", () => {
+    const r = { ...gold("village-view-mobile-en"), topBar: { wood: 100, clay: 200, iron: 300, crop: 400, freeCrop: 50, warehouse: 8000, granary: 8000 }, rows: [{ name: "production_net", x: null, y: null, current: false, cells: [10, 20, 30, -5], texts: [] }] };
+    const plan = planApply(r, [known[0]!], 9001, true);
+    expect(plan.get(9001)?.resources).toMatchObject({ stock: { wood: 100, crop: 400 }, freeCrop: 50, production: { wood: 10, clay: 20, iron: 30, crop: -5 } });
+    expect(plan.get(9001)?.buildings).toBeTruthy();
+  });
+});
+
+describe("Gewählte Art beim Upload", () => {
+  it("weicht die Erkennung ab, wird nicht automatisch übernommen und ein Hinweis erscheint", async () => {
+    await storage().put("shots/k/a.png", readFileSync(join(dir, "stats-hospital-mobile-en.png")));
+    const shot = await db.screenshot.create({ data: { userId: "vis-user", storageKey: "shots/k/a.png", expectedKind: "VILLAGE_VIEW" } });
+    setAiClient(new FakeClient(gold("stats-hospital-mobile-en")));
+    expect((await new VisionPipeline(db).process(shot.id)).status).toBe("needs_review");
+    const p = (await db.screenshot.findUniqueOrThrow({ where: { id: shot.id } })).parsed as { issues: { key?: string }[] };
+    expect(p.issues.some((i) => i.key === "err.check.kindMismatch")).toBe(true);
+    setAiClient(undefined);
   });
 });

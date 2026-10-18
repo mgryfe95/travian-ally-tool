@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { reasonText, VisionPipeline } from "@/lib/ai/pipeline";
+import { READING_KINDS } from "@/lib/ai/reading";
 import { processUpload } from "@/lib/chat/attachments";
 import { compressScreenshot } from "@/lib/screenshots";
 import { uploadLimiter } from "@/lib/chat/limits";
@@ -30,6 +31,8 @@ export function POST(req: Request) {
     const villageId = villageRaw ? Number(villageRaw) : undefined;
     if (villageId !== undefined && !(await getOwnVillage(db, user.id, villageId))) return NextResponse.json({ error: t("screenshots.err.notYourVillage") }, { status: 403 });
 
+    const kindRaw = String(form.get("kind") ?? "");
+    const expectedKind = (READING_KINDS as readonly string[]).includes(kindRaw) && kindRaw !== "UNKNOWN" ? kindRaw : null;
     const maxImageBytes = env().UPLOAD_MAX_IMAGE_MB * 1_048_576;
     const p = await processUpload({ name: file.name, data: Buffer.from(await file.arrayBuffer()) }, { maxImageBytes, maxFileBytes: maxImageBytes });
     if (p.kind !== "image") return NextResponse.json({ error: t("screenshots.err.notImage") }, { status: 415 });
@@ -39,7 +42,7 @@ export function POST(req: Request) {
     await assertQuota(db, user.id, c.full.length + c.thumb.length);
     await screenshotStorage().put(`${base}.webp`, c.full);
     await screenshotStorage().put(`${base}.thumb.webp`, c.thumb);
-    const shot = await db.screenshot.create({ data: { userId: user.id, villageId: villageId ?? null, storageKey: `${base}.webp`, thumbKey: `${base}.thumb.webp`, sizeBytes: c.full.length + c.thumb.length } });
+    const shot = await db.screenshot.create({ data: { userId: user.id, villageId: villageId ?? null, expectedKind, storageKey: `${base}.webp`, thumbKey: `${base}.thumb.webp`, sizeBytes: c.full.length + c.thumb.length } });
     const result = await new VisionPipeline(db).process(shot.id);
     return NextResponse.json({ id: shot.id, status: result.status, message: reasonText(result, await getLocale()) }, { status: 201 });
   });

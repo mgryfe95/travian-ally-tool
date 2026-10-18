@@ -2,6 +2,7 @@ import { CoordLink } from "@/components/CoordLink";
 import Link from "next/link";
 import { Fragment } from "react";
 import { UploadBox } from "@/components/UploadBox";
+import { FEATURES } from "@/lib/features";
 import { db } from "@/lib/db";
 import { fmt } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
@@ -84,12 +85,12 @@ export default async function Overview({ searchParams }: { searchParams: Promise
         )}
       </section>
 
-      <div className="grid2">
-        <section className="card" aria-labelledby="tips">
+      <div className={FEATURES.advisor ? "grid2" : undefined}>
+        {FEATURES.advisor && <section className="card" aria-labelledby="tips">
           <h2 id="tips">{t("overview.tips.title")}</h2>
           <p className="sub" style={{ margin: "4px 0 10px" }}>{t("overview.tips.basis")}</p>
           <p className="sub">{t("overview.tips.none")}</p>
-        </section>
+        </section>}
         <section id="upload" className="card" aria-labelledby="up">
           <h2 id="up">{t("overview.upload.title")}</h2>
           <div className="sub" style={{ margin: "4px 0 14px" }}>{t("overview.upload.text")}</div>
