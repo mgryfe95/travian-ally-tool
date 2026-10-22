@@ -96,3 +96,9 @@ Registrieren können sich nur Spieler unserer Allianz(en) und enger Bündnispart
 
 ## Menü
 Übersicht (darunter deine Dörfer) · Inaktivensuche · Chats (darunter alle Kanäle und Task-Forces) · Nachrichten · OCR-Scans · Admin (Klick öffnet alle Reiter inkl. Schedule und Truppen) · Spieldaten. Konten ohne Admin-Bereich sehen Schedule weiterhin als eigenen Punkt.
+
+## Mein Konto / Passwort ändern
+Profilbereich → **Mein Konto**: zeigt die eigene Adresse und ob sie bestätigt ist. „Link per E-Mail senden“ schickt einen einmaligen Reset-Link (1 h gültig); er öffnet eine eigene Seite für das neue Passwort, danach ist man überall abgemeldet. Gut als Live-Test für SMTP.
+
+## Deploy: „no space left on device“
+`deploy.sh` räumt Build-Cache und alte Images inzwischen selbst auf. Reicht das nicht: `docker system df`, `du -sh /opt/travian-ally-tool/backups` (Backups älter als die Aufbewahrungsfrist werden gelöscht), ggf. `docker system prune -af` (löscht keine Volumes/Daten).

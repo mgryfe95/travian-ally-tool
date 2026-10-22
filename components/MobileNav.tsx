@@ -37,6 +37,7 @@ export function MobileNav({ items, name, role }: { items: NavItem[]; name: strin
         <div id="profile-menu" className="dropdown profile">
           <div style={{ padding: "6px 12px" }}><div style={{ fontWeight: 700 }}>{name}</div><div className="sub">{role}</div></div>
           <div className="sep" />
+          <Link href="/account" className="nav">{t("account.link")}</Link>
           <Link href="/mentions" className="nav">{t("chat.mentions.link")}</Link>
           <Link href="/files" className="nav">{t("nav.myFiles")}</Link>
           <Link href="/privacy" className="nav">{t("privacy.link")}</Link>

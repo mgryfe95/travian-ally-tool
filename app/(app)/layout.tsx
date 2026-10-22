@@ -67,6 +67,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           <div style={{ fontWeight: 600 }}>{user.name}</div>
           <div className="sub">{ROLE_LABEL[user.role] ? t(ROLE_LABEL[user.role]!) : user.role}</div>
           <div style={{ marginTop: 6, fontSize: 12 }}>
+            <a href="/account" style={{ display: "block", marginBottom: 4 }}>{t("account.link")}</a>
             <a href="/mentions" style={{ display: "block", marginBottom: 4 }}>{t("chat.mentions.link")}</a>
             <a href="/files" style={{ display: "block", marginBottom: 4 }}>{t("nav.myFiles")}</a>
             <a href="/privacy" style={{ display: "block", marginBottom: 4 }}>{t("privacy.link")}</a>

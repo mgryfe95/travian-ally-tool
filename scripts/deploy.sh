@@ -78,6 +78,16 @@ envval() { grep -E "^$1=" .env 2>/dev/null | head -1 | cut -d= -f2- | sed 's/[[:
 S3_MISSING=""; for k in S3_BUCKET_SCREENSHOTS S3_ACCESS_KEY_ID S3_SECRET_ACCESS_KEY; do [ -z "$(envval $k)" ] && S3_MISSING="$S3_MISSING $k"; done
 [ -z "$S3_MISSING" ] && ok "S3 in .env konfiguriert (Bucket $(envval S3_BUCKET_SCREENSHOTS))" || fatal "S3 nicht konfiguriert – in .env fehlen:$S3_MISSING" "Ohne S3 startet die App nicht. Siehe .env.example (S3_ENDPOINT, S3_REGION, S3_FORCE_PATH_STYLE)."
 
+# 2c. Platz schaffen: alter Build-Cache und verwaiste Images (sonst „no space left on device“ beim Entpacken)
+step "Speicherplatz"
+docker builder prune -af >/dev/null 2>&1 || true
+docker image prune -f >/dev/null 2>&1 || true
+FREE_GB=$(df -BG --output=avail /var/lib/docker 2>/dev/null | tail -1 | tr -dc '0-9'); FREE_GB=${FREE_GB:-0}
+[ "$FREE_GB" -ge 5 ] && ok "${FREE_GB} GB frei" || warn "Nur ${FREE_GB} GB frei – Build braucht ca. 5 GB (prüfen: docker system df, du -sh backups)"
+# `$` in der .env wird von Docker Compose als Variable gelesen (Passwort dann verfälscht) → als $$ schreiben
+DOLLAR=$(grep -nE '^[A-Z_]+=(.*[^$])?[$][A-Za-z{]' .env 2>/dev/null | cut -d= -f1 | cut -d: -f2 | tr '\n' ' ')
+[ -z "$DOLLAR" ] || warn "In .env enthält ein Wert ein \$ (${DOLLAR}) – als \$\$ schreiben oder Passwort ohne \$ wählen"
+
 # 3. Bauen und starten
 step "Bauen (dauert einige Minuten)"
 OUT=$(docker compose build 2>&1) || fatal "Build fehlgeschlagen" "$(printf '%s\n' "$OUT" | tail -25)"

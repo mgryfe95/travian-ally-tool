@@ -94,3 +94,7 @@ Offen:
 - Schedule für Mitglieder/Gäste (nur `schedule.view`) bleibt Hauptpunkt, weil sie keinen Admin-Bereich haben – bestätigen oder Schedule für sie ausblenden.
 - `/villages` (alte Route „Meine Dörfer“) leitet weiter aufs größte Dorf; kann später entfallen.
 - Live-Ungelesen-Zähler auch in der Seitenleiste (Socket) wäre ein Folgeschritt.
+
+## 2026-10-22 · Betrieb
+- Backups liegen im Repo-Verzeichnis auf demselben Datenträger. Besser: Ziel außerhalb (z. B. `/var/backups/ally` oder S3) und Aufbewahrung prüfen (`KEEP_DAYS`).
+- Bereits gebaute alte Images enthielten `backups/` inkl. `.env`-Kopien → nach erfolgreichem Deploy mit `docker image prune -af` entfernen; Images nie in eine Registry pushen.

@@ -111,3 +111,6 @@ Upload (WebP, S3 Pflicht in Produktion) → Auslese → bei Auto-Übernahme sofo
 
 ## E-Mail-Bestätigung
 Better Auth `emailVerification` (sendOnSignUp, 24 h, Auto-Login nach Bestätigung). Der Versand und das Kriterium hängen an `mailEnabled()` (SMTP_HOST gesetzt): `actorRole(..., requireEmail)` liefert `UNVERIFIED` für unbestätigte Konten (Notzugang ausgenommen) → Layout leitet auf `/claim` (Karte „E-Mail-Adresse bestätigen“ + erneut senden, 3×/15 min). Migration `email_verified_existing` markiert Bestandskonten als bestätigt.
+
+## Image-Größe und Geheimnisse
+`.dockerignore` schließt `backups/`, `storage/`, `.env*` (außer `.env.example`), Logs und Testberichte aus – vorher landeten DB-Dumps und `.env`-Kopien im Image. Nach `next build` wird `.next/cache` entfernt. `deploy.sh` führt vor dem Build `docker builder prune -af` und `docker image prune -f` aus (nächster Build lädt npm-Pakete neu, dafür kein Platzproblem).
