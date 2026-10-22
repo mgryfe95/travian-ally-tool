@@ -1,0 +1,76 @@
+{
+ "kind": "VILLAGE_PRODUCTION",
+ "device": "DESKTOP",
+ "language": "de",
+ "village": null,
+ "topBar": null,
+ "rows": [
+  {
+   "name": "MG Ryfe",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    2338,
+    2513,
+    1988,
+    3893
+   ],
+   "texts": []
+  },
+  {
+   "name": "OG Ryfe",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    1750,
+    1750,
+    1510,
+    1947
+   ],
+   "texts": []
+  },
+  {
+   "name": "MG",
+   "x": null,
+   "y": null,
+   "current": true,
+   "cells": [
+    1050,
+    1129,
+    858,
+    673
+   ],
+   "texts": []
+  },
+  {
+   "name": "OG",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    770,
+    779,
+    525,
+    761
+   ],
+   "texts": []
+  }
+ ],
+ "totals": {
+  "cells": [
+   5908,
+   6171,
+   4881,
+   7274
+  ],
+  "texts": [
+   "24234"
+  ]
+ },
+ "fields": [],
+ "buildings": [],
+ "selfRating": 0.95,
+ "uncertain": []
+}

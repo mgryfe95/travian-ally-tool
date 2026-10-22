@@ -1,0 +1,296 @@
+{
+ "1": {
+  "1": {
+   "en": "Legionnaire",
+   "de": "Legionäre"
+  },
+  "2": {
+   "en": "Praetorian",
+   "de": "Prätorianer"
+  },
+  "3": {
+   "en": "Imperian",
+   "de": "Imperianer"
+  },
+  "4": {
+   "en": "Equites Legati",
+   "de": "Equites Legati"
+  },
+  "5": {
+   "en": "Equites Imperatoris",
+   "de": "Equites Imperatoris"
+  },
+  "6": {
+   "en": "Equites Caesaris",
+   "de": "Equites Caesaris"
+  },
+  "7": {
+   "en": "Battering Ram",
+   "de": "Rammbock"
+  },
+  "8": {
+   "en": "Fire Catapult",
+   "de": "Feuerkatapult"
+  },
+  "9": {
+   "en": "Senator",
+   "de": "Senator"
+  },
+  "10": {
+   "en": "Settler",
+   "de": "Siedler"
+  }
+ },
+ "2": {
+  "1": {
+   "en": "Clubswinger",
+   "de": "Keulenschwinger"
+  },
+  "2": {
+   "en": "Spearman",
+   "de": "Speerkämpfer"
+  },
+  "3": {
+   "en": "Axeman",
+   "de": "Axtkämpfer"
+  },
+  "4": {
+   "en": "Scout",
+   "de": "Kundschafter"
+  },
+  "5": {
+   "en": "Paladin",
+   "de": "Paladin"
+  },
+  "6": {
+   "en": "Teutonic Knight",
+   "de": "Teutonenreiter"
+  },
+  "7": {
+   "en": "Ram",
+   "de": "Ramme"
+  },
+  "8": {
+   "en": "Catapult",
+   "de": "Katapult"
+  },
+  "9": {
+   "en": "Chief",
+   "de": "Stammesführer"
+  },
+  "10": {
+   "en": "Settler",
+   "de": "Siedler"
+  }
+ },
+ "3": {
+  "1": {
+   "en": "Phalanx",
+   "de": "Phalanx"
+  },
+  "2": {
+   "en": "Swordsman",
+   "de": "Schwertkämpfer"
+  },
+  "3": {
+   "en": "Pathfinder",
+   "de": "Späher"
+  },
+  "4": {
+   "en": "Theutates Thunder",
+   "de": "Theutates Blitz"
+  },
+  "5": {
+   "en": "Druidrider",
+   "de": "Druidenreiter"
+  },
+  "6": {
+   "en": "Haeduan",
+   "de": "Haeduaner"
+  },
+  "7": {
+   "en": "Ram",
+   "de": "Rammholz"
+  },
+  "8": {
+   "en": "Trebuchet",
+   "de": "Kriegskatapult"
+  },
+  "9": {
+   "en": "Chieftain",
+   "de": "Häuptling"
+  },
+  "10": {
+   "en": "Settler",
+   "de": "Siedler"
+  }
+ },
+ "6": {
+  "1": {
+   "en": "Slave Militia",
+   "de": ""
+  },
+  "2": {
+   "en": "Ash Warden",
+   "de": ""
+  },
+  "3": {
+   "en": "Khopesh Warrior",
+   "de": ""
+  },
+  "4": {
+   "en": "Sopdu Explorer",
+   "de": ""
+  },
+  "5": {
+   "en": "Anhur Guard",
+   "de": ""
+  },
+  "6": {
+   "en": "Resheph Chariot",
+   "de": ""
+  },
+  "7": {
+   "en": "",
+   "de": ""
+  },
+  "8": {
+   "en": "",
+   "de": ""
+  },
+  "9": {
+   "en": "",
+   "de": ""
+  },
+  "10": {
+   "en": "",
+   "de": ""
+  }
+ },
+ "7": {
+  "1": {
+   "en": "Mercenary",
+   "de": ""
+  },
+  "2": {
+   "en": "Bowman",
+   "de": ""
+  },
+  "3": {
+   "en": "Spotter",
+   "de": ""
+  },
+  "4": {
+   "en": "Steppe Rider",
+   "de": ""
+  },
+  "5": {
+   "en": "Marksman",
+   "de": ""
+  },
+  "6": {
+   "en": "Marauder",
+   "de": ""
+  },
+  "7": {
+   "en": "",
+   "de": ""
+  },
+  "8": {
+   "en": "",
+   "de": ""
+  },
+  "9": {
+   "en": "",
+   "de": ""
+  },
+  "10": {
+   "en": "",
+   "de": ""
+  }
+ },
+ "8": {
+  "1": {
+   "en": "Hoplite",
+   "de": ""
+  },
+  "2": {
+   "en": "Sentinel",
+   "de": ""
+  },
+  "3": {
+   "en": "Shieldsman",
+   "de": ""
+  },
+  "4": {
+   "en": "Twinsteel Therion",
+   "de": ""
+  },
+  "5": {
+   "en": "Elpida Rider",
+   "de": ""
+  },
+  "6": {
+   "en": "Corinthian Crusher",
+   "de": ""
+  },
+  "7": {
+   "en": "",
+   "de": ""
+  },
+  "8": {
+   "en": "",
+   "de": ""
+  },
+  "9": {
+   "en": "",
+   "de": ""
+  },
+  "10": {
+   "en": "",
+   "de": ""
+  }
+ },
+ "9": {
+  "1": {
+   "en": "Thrall",
+   "de": ""
+  },
+  "2": {
+   "en": "Shield Maiden",
+   "de": ""
+  },
+  "3": {
+   "en": "Berserker",
+   "de": ""
+  },
+  "4": {
+   "en": "Heimdall's Eye",
+   "de": ""
+  },
+  "5": {
+   "en": "Huskarl Riders",
+   "de": ""
+  },
+  "6": {
+   "en": "Valkyrie",
+   "de": ""
+  },
+  "7": {
+   "en": "",
+   "de": ""
+  },
+  "8": {
+   "en": "",
+   "de": ""
+  },
+  "9": {
+   "en": "",
+   "de": ""
+  },
+  "10": {
+   "en": "",
+   "de": ""
+  }
+ }
+}
