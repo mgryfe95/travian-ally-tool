@@ -101,4 +101,4 @@ Registrieren können sich nur Spieler unserer Allianz(en) und enger Bündnispart
 Profilbereich → **Mein Konto**: zeigt die eigene Adresse und ob sie bestätigt ist. „Link per E-Mail senden“ schickt einen einmaligen Reset-Link (1 h gültig); er öffnet eine eigene Seite für das neue Passwort, danach ist man überall abgemeldet. Gut als Live-Test für SMTP.
 
 ## Deploy: „no space left on device“
-`deploy.sh` räumt Build-Cache und alte Images inzwischen selbst auf. Reicht das nicht: `docker system df`, `du -sh /opt/travian-ally-tool/backups` (Backups älter als die Aufbewahrungsfrist werden gelöscht), ggf. `docker system prune -af` (löscht keine Volumes/Daten).
+`deploy.sh` räumt Build-Cache vor dem Build und nach erfolgreichem Start alle nicht laufenden Images (`docker image prune -af`) selbst auf. Reicht das nicht: `docker system df`, `du -sh /opt/travian-ally-tool/backups` (Backups älter als die Aufbewahrungsfrist werden gelöscht), ggf. `docker system prune -af` (löscht keine Volumes/Daten).

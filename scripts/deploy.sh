@@ -95,6 +95,11 @@ ok "Images gebaut"
 step "Starten (Migrationen laufen beim Start)"
 OUT=$(docker compose up -d --wait --wait-timeout 240 2>&1) || fatal "Container sind nicht gesund geworden" "$(printf '%s\n' "$OUT" | tail -15)"
 ok "Container laufen"
+# Alte Images entfernen, sobald die neuen laufen (laufende Container sind geschützt; Rollback baut neu)
+BEFORE=$(df -BG --output=avail /var/lib/docker 2>/dev/null | tail -1 | tr -dc '0-9')
+docker image prune -af >/dev/null 2>&1 || true
+AFTER=$(df -BG --output=avail /var/lib/docker 2>/dev/null | tail -1 | tr -dc '0-9')
+ok "Alte Images entfernt (${AFTER:-?} GB frei$([ -n "$BEFORE" ] && [ -n "$AFTER" ] && [ "$AFTER" -gt "$BEFORE" ] && echo ", +$((AFTER-BEFORE)) GB"))"
 
 # 4. Prüfungen
 PORT=$(grep -E '^APP_PORT=' .env 2>/dev/null | head -1 | cut -d= -f2 | cut -d" " -f1); PORT=${PORT:-3000}
