@@ -124,3 +124,9 @@ Better Auth `emailVerification` (sendOnSignUp, 24 h, Auto-Login nach Bestätigun
 
 ## Incidents
 `lib/incidents.ts` (rein: Kampfbericht-Lesung → Entwurf, Spalten → Einheiten, Eingaben), `lib/services/incidents.ts` (Anlegen nur für eigene Dörfer mit `incidents.report`, Sicht fremder nur mit `incidents.view`, Aktionen nur Besitzer per `WHERE id AND userId`). Truppenkorrektur über Einheitenplatz (DE/EN-Namen aus `UnitName`). Lagebewertung = `runAdvice(..., incidentId)`: eigener Trigger, einmal je Incident, ohne Tages-/Hash-Sperre; Tageslauf prüft nur Läufe mit `trigger = daily`.
+
+## Gedächtnis (Volltextsuche, `lib/services/memory.ts`)
+- Zugriff auf `MemoryDoc` **nur** über `withUserScope(db, userId, fn)`: Transaktion mit `SET LOCAL ROLE ally_memory` + `set_config('app.user_id', …, true)`. Policies: lesen eigene oder `scope = 'global'`, schreiben/ändern/löschen nur eigene `scope = 'user'`. CHECK-Constraint koppelt `scope` und `ownerId`.
+- Zusätzlich filtert jede Abfrage selbst, geklammert und vor `LIMIT`: `WHERE ("ownerId" = $1 OR "scope" = 'global') AND tsv @@ q`.
+- Globale Einträge (Wissen) nur über einen Wartungspfad ohne Nutzer-Scope (Superuser) anlegen – bisher keine.
+- `orQuery` baut aus Begriffen eine `websearch_to_tsquery`-ODER-Suche ohne Sonderzeichen.

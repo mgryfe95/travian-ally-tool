@@ -7,6 +7,7 @@ import { AppError } from "../i18n/errors";
 import { dayInTz } from "../import/importer";
 import { hasPermission } from "../permissions";
 import { loadMatrix, type Actor } from "./context";
+import { upsertMemory } from "./memory";
 
 let advisor: Advisor | null | undefined;
 /** Echter Advisor nur mit ANTHROPIC_API_KEY (Modell: ANTHROPIC_MODEL, sonst Haiku 5.5). */
@@ -95,6 +96,9 @@ export async function runAdvice(db: PrismaClient, actor: Actor, locale: string, 
 export async function setRecommendationStatus(db: PrismaClient, userId: string, id: number, status: "done" | "dismissed" | "open") {
   const r = await db.recommendation.updateMany({ where: { id, userId }, data: { status } });
   if (r.count === 0) throw new AdviceError("err.notFound");
+  // Rückmeldung merken: erledigte/verworfene Vorschläge sind später durchsuchbar
+  const rec = await db.recommendation.findUnique({ where: { id } });
+  if (rec && status !== "open") await upsertMemory(db, userId, { sourceType: "recommendation", sourceId: id, title: `${status}: ${rec.title}`, body: `${rec.type}; priority ${rec.priority}; ${rec.reason}` });
 }
 
 export async function openRecommendations(db: PrismaClient, userId: string, villageId?: number) {

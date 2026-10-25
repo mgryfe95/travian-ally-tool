@@ -6,6 +6,7 @@ import { troopUpkeep } from "../gamedata/upkeep";
 import { ageInDays } from "../reminders";
 import { readTroops } from "../troops";
 import { activeIncidents, incidentContext } from "../services/incidents";
+import { orQuery, searchMemory } from "../services/memory";
 import { ownVillages } from "../services/villages";
 
 type Res4 = { wood?: number; clay?: number; iron?: number; crop?: number };
@@ -36,6 +37,8 @@ export type Situation = {
   villages: SituationVillage[];
   /** Aktive Incidents (Angriffe der letzten Tage) mit Angreifer-Umfeld aus der map.sql – Bedrohungsmodus */
   incidents: SituationIncident[];
+  /** Treffer der Volltextsuche im eigenen Gedächtnis (frühere Incidents derselben Angreifer, Rückmeldungen) – nur eigene/globale Einträge */
+  memory: { type: string; title: string; body: string; date: string }[];
   /** Offene Vorschläge des letzten Laufs und was der Nutzer damit gemacht hat (Kontinuität, keine Wiederholung erledigter Punkte) */
   previous: { title: string; villageId: number | null; status: string }[];
 };
@@ -89,7 +92,11 @@ export async function buildSituation(db: PrismaClient, userId: string, now = new
       answers: i.answers, troopsAlreadyCorrected: i.troopsCorrected, helpRequested: !!i.helpRequestedAt, notes: i.notes,
     });
   }
-  return { account: { tribe, instructions: me?.aiInstructions ?? "", villages: villages.length }, villages: out, incidents, previous: prev };
+  // Gedächtnis: frühere Vorfälle derselben Angreifer bzw. Allianzen (aktuelle Incidents selbst ausgenommen)
+  const terms = incidents.flatMap((i) => [i.attacker.name, i.attacker.alliance]);
+  const current = new Set(incidents.map((i) => i.id));
+  const memory = terms.length ? (await searchMemory(db, userId, orQuery(terms), 6)).filter((h) => !(h.sourceType === "incident" && h.sourceId !== null && current.has(h.sourceId))).slice(0, 5).map((h) => ({ type: h.sourceType, title: h.title, body: h.body, date: h.updatedAt.toISOString().slice(0, 10) })) : [];
+  return { account: { tribe, instructions: me?.aiInstructions ?? "", villages: villages.length }, villages: out, incidents, memory, previous: prev };
 }
 
 /** Hash ohne Datenalter und ohne frühere Vorschläge: nur unveränderte Spieldaten/Ziele → kein neuer (kostenpflichtiger) Lauf. */

@@ -7,16 +7,19 @@ import { getT } from "@/lib/i18n/server";
 import { hasPermission } from "@/lib/permissions";
 import { loadMatrix } from "@/lib/services/context";
 import { listIncidents } from "@/lib/services/incidents";
+import { searchMemory } from "@/lib/services/memory";
 import { requirePermission } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
-export default async function IncidentsPage() {
+export default async function IncidentsPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const user = await requirePermission("incidents.report", "incidents.view");
   const { t, locale } = await getT();
   const matrix = await loadMatrix(db);
   const canReport = hasPermission(user.role, "incidents.report", matrix);
   const canAll = hasPermission(user.role, "incidents.view", matrix);
+  const { q } = await searchParams;
+  const hits = canReport && q ? await searchMemory(db, user.id, q) : [];
   const mine = await listIncidents(db, user);
   const all = canAll ? (await listIncidents(db, user, { all: true, openOnly: true })) : [];
   const ids = [...new Set([...mine, ...all].map((i) => i.villageId))];
@@ -57,6 +60,21 @@ export default async function IncidentsPage() {
         </section>
       )}
       {canReport && <section className="card flush" aria-labelledby="inc-mine"><h2 id="inc-mine" style={{ margin: "12px 12px 8px" }}>{t("incidents.mine")}</h2>{table(mine, false)}</section>}
+      {canReport && (
+        <section className="card" aria-labelledby="inc-search">
+          <h2 id="inc-search">{t("incidents.search.title")}</h2>
+          <p className="sub" style={{ margin: "4px 0 10px" }}>{t("incidents.search.sub")}</p>
+          <form className="row" style={{ gap: 8 }} role="search">
+            <input name="q" className="field" defaultValue={q ?? ""} maxLength={200} aria-label={t("incidents.search.title")} placeholder={t("incidents.search.ph")} style={{ flex: "1 1 220px" }} />
+            <button className="btn ghost">{t("incidents.search.go")}</button>
+          </form>
+          {q && (hits.length === 0 ? <p className="sub" style={{ marginTop: 10 }}>{t("incidents.search.none")}</p> : (
+            <ul style={{ marginTop: 10, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 6 }}>
+              {hits.map((h) => <li key={h.id}>{h.sourceType === "incident" && h.sourceId ? <Link href={`/incidents/${h.sourceId}`}>{h.title}</Link> : <b>{h.title}</b>} <span className="sub">· {fmtDate(h.updatedAt, locale, { dateStyle: "short" })} · {h.body}</span></li>)}
+            </ul>
+          ))}
+        </section>
+      )}
       {canAll && <section className="card flush" aria-labelledby="inc-all"><h2 id="inc-all" style={{ margin: "12px 12px 8px" }}>{t("incidents.all")}</h2>{table(all, true)}</section>}
     </>
   );

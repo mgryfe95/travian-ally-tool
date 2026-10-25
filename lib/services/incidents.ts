@@ -9,6 +9,7 @@ import { readTroops } from "../troops";
 import { chatCtx, postMessage } from "./chat";
 import { loadMatrix, type Actor } from "./context";
 import { saveTroops } from "./troops";
+import { upsertMemory } from "./memory";
 import { getOwnVillage, ownVillages } from "./villages";
 
 export class IncidentError extends AppError {}
@@ -82,6 +83,7 @@ export async function createIncident(db: PrismaClient, actor: Actor, input: Inci
       threatUntil: new Date(now.getTime() + threatDays(input.answers) * 86_400_000),
     },
   });
+  await indexIncident(db, incident.id);
   if (input.correctTroops && defenderLosses.length) {
     const state = await db.villageState.findUnique({ where: { villageId: village.id } });
     const troops = readTroops(state?.troops);
@@ -126,6 +128,21 @@ export async function incidentContext(db: PrismaClient, i: { villageId: number; 
 export async function resolveIncident(db: PrismaClient, actor: Actor, id: number) {
   const r = await db.incident.updateMany({ where: { id, userId: actor.id }, data: { status: "resolved", threatUntil: new Date() } });
   if (r.count === 0) throw new IncidentError("err.notFound");
+  await indexIncident(db, id);
+}
+
+/** Incident ins Gedächtnis des Besitzers schreiben (durchsuchbar für Lagebild und Verlaufssuche). */
+async function indexIncident(db: PrismaClient, id: number) {
+  const i = await db.incident.findUnique({ where: { id } });
+  if (!i) return;
+  const v = await db.village.findUnique({ where: { id: i.villageId }, select: { name: true, x: true, y: true } });
+  const list = (x: unknown) => (Array.isArray(x) ? (x as UnitCount[]).map((u) => `${u.count} ${u.unit}`).join(", ") : "");
+  const a = i.answers as Answers;
+  await upsertMemory(db, i.userId, {
+    sourceType: "incident", sourceId: i.id,
+    title: `${i.kind} on ${v?.name ?? "?"} by ${i.attackerName || (i.attackerX !== null ? `(${i.attackerX}|${i.attackerY})` : "unknown")}${i.attackerAlliance ? ` [${i.attackerAlliance}]` : ""}`,
+    body: [`date ${(i.occurredAt ?? i.createdAt).toISOString().slice(0, 10)}`, `status ${i.status}`, v ? `village ${v.x}|${v.y}` : "", i.defenderLosses ? `own losses ${list(i.defenderLosses)}` : "", i.attackerLosses ? `attacker losses ${list(i.attackerLosses)}` : "", `more attacks expected ${a.moreAttacks}`, i.notes].filter(Boolean).join("; "),
+  });
 }
 
 /** Hilfe im Deff-Call anfragen (einmal je Incident, englisch für die internationale Allianz). */

@@ -865,3 +865,24 @@ model Incident {
   @@index([userId, status])
   @@index([status, createdAt])
 }
+
+/// Durchsuchbares Gedächtnis (Postgres-Volltextsuche) für Lagebild und Verlaufssuche. Zugriff NUR über lib/services/memory.ts:
+/// Row-Level Security (Rolle ally_memory + app.user_id) erlaubt eigene Einträge und scope = global.
+model MemoryDoc {
+  id         Int      @id @default(autoincrement())
+  ownerId    String?
+  /// user | global
+  scope      String   @default("user")
+  /// incident | recommendation | knowledge
+  sourceType String
+  sourceId   Int?
+  title      String
+  body       String   @default("")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  /// generiert: to_tsvector('simple', title || ' ' || body) – GIN-indiziert
+  tsv        Unsupported("tsvector")?
+
+  @@unique([sourceType, sourceId])
+  @@index([ownerId])
+}

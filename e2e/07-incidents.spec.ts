@@ -23,6 +23,10 @@ test("Incidents: Erklärung, manuell melden, Hilfe im Deff-Call, Admin sieht off
   await expect(page.getByText(/10 Keulenschwinger/)).toBeVisible();
   await page.getByRole("button", { name: "Hilfe im Deff-Call anfragen" }).click();
   await expect(page.getByText(/Hilfe angefragt am/)).toBeVisible();
+  await page.goto("/incidents");
+  await page.getByRole("search").getByRole("textbox").fill("Raider42");
+  await page.getByRole("button", { name: "Suchen" }).click();
+  await expect(page.getByRole("link", { name: /raid on .* by Raider42/ }).first()).toBeVisible();
   await page.goto("/chat");
   await page.getByRole("complementary", { name: "Kanäle" }).getByRole("link", { name: "# Deff-Call" }).click();
   await expect(page.locator("article.msg", { hasText: "Defence needed" }).first()).toBeVisible();
@@ -32,6 +36,6 @@ test("Incidents: Erklärung, manuell melden, Hilfe im Deff-Call, Admin sieht off
   await login(b, "boss@example.com");
   await b.goto("/incidents");
   const all = b.getByRole("region", { name: "Alle offenen Incidents der Allianz" });
-  await expect(all.getByRole("row", { name: /Raider42/ })).toBeVisible();
+  await expect(all.getByRole("row", { name: /Raider42/ }).first()).toBeVisible();
   await other.close();
 });

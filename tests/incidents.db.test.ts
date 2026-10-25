@@ -13,7 +13,7 @@ let seen: { focus?: number; incidents: number }[] = [];
 const fake: Advisor = { async advise(s, o) { seen.push({ focus: o.focusIncident, incidents: s.incidents.length }); return { summary: "s", recommendations: [] }; } };
 
 beforeEach(async () => {
-  await db.$executeRaw`TRUNCATE "User","Village","Player","Alliance","Setting","VillageState","AdviceRun","Recommendation","AiUsage","RolePermission","Incident","Channel","Message","UnitName","Screenshot" RESTART IDENTITY CASCADE`;
+  await db.$executeRaw`TRUNCATE "User","Village","Player","Alliance","Setting","VillageState","AdviceRun","Recommendation","AiUsage","RolePermission","Incident","Channel","Message","UnitName","Screenshot","MemoryDoc" RESTART IDENTITY CASCADE`;
   await db.user.createMany({ data: [{ id: "u1", name: "u1", email: "u1@x.de", role: "MEMBER" }, { id: "u2", name: "u2", email: "u2@x.de", role: "MEMBER" }] });
   await db.player.createMany({ data: [
     { id: 1, name: "Me", tribe: 2, allianceId: 0, population: 100, villageCount: 1, status: "active", noGrowthDays: 0, firstSeen: new Date() },
@@ -74,5 +74,15 @@ describe("Incidents", () => {
     const shot = await db.screenshot.create({ data: { userId: "u1", storageKey: "k", parsed: { reading } } });
     expect((await draftFromScreenshot(db, "u1", shot.id))?.villageId).toBe(10);
     expect(await draftFromScreenshot(db, "u2", shot.id)).toBeNull();
+  });
+
+  it("Gedächtnis: früherer Incident desselben Angreifers steht im Lagebild, Suche nur eigene", async () => {
+    const first = await createIncident(db, member, { villageId: 10, kind: "raid", attacker: "Evil", answers, notes: "wall 5" }, "de");
+    await resolveIncident(db, member, first.id);
+    await createIncident(db, member, { villageId: 10, kind: "attack", attacker: "Evil", answers }, "de");
+    const s = await buildSituation(db, "u1");
+    expect(s.incidents).toHaveLength(1);
+    expect(s.memory.map((m) => m.title)).toEqual(["raid on Home by Evil [BAD]"]);
+    expect((await buildSituation(db, "u2")).memory).toEqual([]);
   });
 });

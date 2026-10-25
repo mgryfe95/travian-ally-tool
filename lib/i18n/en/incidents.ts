@@ -60,6 +60,11 @@ const en = {
   "incidents.ai.sub": "One extra AI run for this incident (in addition to the daily run). The new suggestions appear on the overview.",
   "incidents.ai.run": "Assess situation",
   "incidents.saved": "Incident saved.",
+  "incidents.search.title": "Search history",
+  "incidents.search.sub": "Your incidents and your feedback on AI suggestions (done/dismissed). Only your own entries are searched.",
+  "incidents.search.ph": "e.g. attacker name, alliance, village",
+  "incidents.search.go": "Search",
+  "incidents.search.none": "No matches.",
   "incidents.back": "← All incidents",
 } as const;
 export default en;

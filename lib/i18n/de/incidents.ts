@@ -62,6 +62,11 @@ const de: Record<keyof typeof en, string> = {
   "incidents.ai.sub": "Ein zusätzlicher KI-Lauf für diesen Incident (neben dem Tageslauf). Die neuen Vorschläge erscheinen auf der Übersicht.",
   "incidents.ai.run": "Lage bewerten",
   "incidents.saved": "Incident gespeichert.",
+  "incidents.search.title": "Verlauf durchsuchen",
+  "incidents.search.sub": "Deine Incidents und deine Rückmeldungen zu KI-Vorschlägen (erledigt/verworfen). Durchsucht werden nur deine eigenen Einträge.",
+  "incidents.search.ph": "z. B. Angreifer, Allianz, Dorf",
+  "incidents.search.go": "Suchen",
+  "incidents.search.none": "Keine Treffer.",
   "incidents.back": "← Alle Incidents",
 };
 export default de;
