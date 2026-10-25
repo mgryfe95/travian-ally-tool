@@ -49,6 +49,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   if (can("messenger.use")) items.push({ href: "/messages", label: t("nav.messages"), badge: (await unreadCounts(db, user.id)).total });
   if (!isAdmin) items.push(...extras); // ohne Admin-Bereich bleiben Schedule/Truppen Hauptpunkte
   items.push({ href: "/screenshots", label: t("nav.screenshots") });
+  if (can("incidents.report") || can("incidents.view")) items.push({ href: "/incidents", label: t("nav.incidents") });
   if (isAdmin) {
     const tabs = ADMIN_TABS.filter((x) => x.perms.some(can)).map((x) => ({ href: `/admin?tab=${x.id}`, label: t(x.label) }));
     items.push({ href: "/admin", label: t("nav.admin"), sepBefore: true, children: [...tabs, ...extras] });

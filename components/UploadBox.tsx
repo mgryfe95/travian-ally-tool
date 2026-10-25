@@ -14,12 +14,13 @@ export const ALL_UPLOAD_KINDS = ["RESOURCE_VIEW", "VILLAGE_VIEW", "RALLY_POINT",
  * Upload mit optionaler Wahl der Screenshot-Art: zu jeder Art steht, welcher Ausschnitt gebraucht wird, plus Beispielbild.
  * „Automatisch erkennen“ bleibt möglich; die Wahl dient der Erkennung als Hinweis. Auch Strg+V und Drag & Drop.
  */
-export function UploadBox({ villageId, label, hint, id, kinds = ALL_UPLOAD_KINDS }: { villageId?: number; label: string; hint?: string; id: string; kinds?: readonly string[] }) {
+/** `nextHref`: nach erfolgreichem Upload dorthin wechseln, `{id}` wird durch die Screenshot-ID ersetzt (z. B. Incident aus Kampfbericht). */
+export function UploadBox({ villageId, label, hint, id, kinds = ALL_UPLOAD_KINDS, nextHref, defaultKind = "" }: { villageId?: number; label: string; hint?: string; id: string; kinds?: readonly string[]; nextHref?: string; defaultKind?: string }) {
   const router = useRouter();
   const t = useT();
   const [msg, setMsg] = useState<{ text: string; error?: boolean; review?: boolean }>();
   const [busy, setBusy] = useState(false);
-  const [kind, setKind] = useState("");
+  const [kind, setKind] = useState(defaultKind);
 
   async function upload(file: File | undefined) {
     if (!file) return;
@@ -30,9 +31,10 @@ export function UploadBox({ villageId, label, hint, id, kinds = ALL_UPLOAD_KINDS
     if (villageId) form.append("villageId", String(villageId));
     if (kind) form.append("kind", kind);
     const res = await fetch("/api/screenshots", { method: "POST", body: form });
-    const data = (await res.json().catch(() => ({}))) as { error?: string; status?: string; message?: string | null };
+    const data = (await res.json().catch(() => ({}))) as { id?: number; error?: string; status?: string; message?: string | null };
     setBusy(false);
     if (!res.ok) return setMsg({ text: data.error ?? t("screenshots.upload.failed"), error: true });
+    if (nextHref && data.id) return router.push(nextHref.replace("{id}", String(data.id)));
     setMsg({ text: data.status === "needs_review" ? t("screenshots.upload.needsReview") : data.status === "parsed" ? t("screenshots.upload.parsed") : data.status === "failed" ? t("screenshots.upload.recFailed", { msg: data.message ?? "" }) : data.message ? t("screenshots.upload.savedMsg", { msg: data.message }) : t("screenshots.upload.saved"), review: data.status === "needs_review" });
     router.refresh();
   }

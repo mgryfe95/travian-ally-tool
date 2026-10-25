@@ -804,6 +804,8 @@ model AdviceRun {
   status     String
   errorKey   String?
   summary    String   @default("")
+  /// Lagebewertung zu einem Incident (trigger = incident)
+  incidentId Int?
   recommendations Recommendation[]
 
   @@index([userId, createdAt])
@@ -827,4 +829,39 @@ model Recommendation {
   updatedAt DateTime  @updatedAt
 
   @@index([userId, status])
+}
+
+/// Vom Spieler gemeldeter Vorfall (Angriff, Raubzug, Späher) – im Spiel gibt es das nicht; Grundlage für Bedrohungsmodus und Lagebewertung.
+model Incident {
+  id          Int       @id @default(autoincrement())
+  userId      String
+  /// eigenes Ziel-Dorf
+  villageId   Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  occurredAt  DateTime?
+  /// attack | raid | scout | unknown
+  kind        String
+  attackerName     String   @default("")
+  attackerPlayerId Int?
+  attackerAlliance String   @default("")
+  attackerX   Int?
+  attackerY   Int?
+  /// [{unit, count}] je Seite (Einheiten und Verluste)
+  attackerUnits  Json?
+  attackerLosses Json?
+  defenderLosses Json?
+  /// Folgefragen: {moreAttacks: yes|no|unknown, ongoing: yes|no, needHelp: yes|no}
+  answers     Json
+  notes       String    @default("")
+  screenshotId Int?
+  /// Bedrohungsmodus bis (danach normale Vorschläge)
+  threatUntil DateTime
+  /// open | resolved
+  status      String    @default("open")
+  troopsCorrected Boolean @default(false)
+  helpRequestedAt DateTime?
+
+  @@index([userId, status])
+  @@index([status, createdAt])
 }

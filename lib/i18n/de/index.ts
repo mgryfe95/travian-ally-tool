@@ -8,6 +8,7 @@ import schedule from "./schedule";
 import villages from "./villages";
 import screenshots from "./screenshots";
 import overview from "./overview";
+import incidents from "./incidents";
 import errors from "./errors";
 
-export const de = { ...common, ...nav, ...auth, ...admin, ...chat, ...messenger, ...schedule, ...villages, ...screenshots, ...overview, ...errors, };
+export const de = { ...common, ...nav, ...auth, ...admin, ...chat, ...messenger, ...schedule, ...villages, ...screenshots, ...overview, ...incidents, ...errors, };

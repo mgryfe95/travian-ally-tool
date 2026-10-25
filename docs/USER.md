@@ -105,3 +105,6 @@ Profilbereich → **Mein Konto**: zeigt die eigene Adresse und ob sie bestätigt
 
 ## KI-Vorschläge
 Übersicht → „KI-Vorschläge aktualisieren“ (höchstens 1× am Tag und nur, wenn sich Daten oder Ziele geändert haben). Je Dorf lässt sich ein **Dorftyp** (Hauptdorf, Off, Hammer, Deff, Getreide, Handel, Siedeln) setzen. Vorschläge als „Erledigt“ oder „Verwerfen“ markieren – das fließt in den nächsten Lauf ein. Wer die KI nutzen darf, steuert das Recht „KI-Vorschläge nutzen“ (Gäste standardmäßig nicht). Admin → **KI & Kosten**: Monatskosten, Budget (Standard 15 €), Kurs und Hetzner-Preise; halbjährlich die Preise prüfen und bestätigen. Voraussetzung: `ANTHROPIC_API_KEY` in der `.env`.
+
+## Incidents (Angriffe melden)
+Menü **Incidents**: Kampfbericht hochladen (oder von Hand melden), Folgefragen beantworten, Verluste optional von den Truppen abziehen. Danach: „Lage bewerten“ (ein zusätzlicher KI-Lauf), „Hilfe im Deff-Call anfragen“, „Incident abschließen“. Für 3 Tage (1 Tag, wenn keine weiteren Angriffe erwartet werden) bevorzugen die KI-Vorschläge Verteidigung. Admins sehen alle offenen Incidents; das Recht „Alle Incidents einsehen“ lässt sich auch anderen Rollen geben.

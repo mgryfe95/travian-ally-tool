@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Thumb } from "@/components/Thumb";
 import { RetractButton } from "@/components/RetractButton";
 import { ScreenshotReview } from "@/components/ScreenshotReview";
@@ -10,6 +11,8 @@ import { translate, type MessageKey } from "@/lib/i18n";
 import { loadBuildingNameSets } from "@/lib/gamedata/names";
 import { ownVillages } from "@/lib/services/villages";
 import { requireUser } from "@/lib/session";
+import { hasPermission } from "@/lib/permissions";
+import { loadMatrix } from "@/lib/services/context";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +30,7 @@ export default async function ScreenshotsPage() {
   const { t, locale } = await getT();
   const kindLabel = (k: string | null) => (k && KINDS[k] ? t(KINDS[k] as MessageKey) : k);
   const user = await requireUser();
+  const canIncident = hasPermission(user.role, "incidents.report", await loadMatrix(db));
   const shots = await db.screenshot.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 30 });
   const confirmed = await db.visionExample.groupBy({ by: ["kind"], _count: true });
   const need = env().VISION_LEARNING_MIN;
@@ -64,6 +68,7 @@ export default async function ScreenshotsPage() {
               </span>
               <span className="sub">{STATUS[s.status] ? t(STATUS[s.status] as MessageKey) : s.status}{s.confidence !== null ? ` · ${t("screenshots.confidence", { pct: Math.round(s.confidence * 100) })}` : ""}</span>
             </div>
+            {canIncident && s.detectedKind === "BATTLE_REPORT" && p.reading && <p style={{ margin: "6px 0" }}><Link className="btn ghost sm" href={`/incidents/new?shot=${s.id}`}>{t("incidents.fromShot")}</Link></p>}
             {(p.errorKey || p.error) && <p className="errtext">{p.errorKey ? translate(locale, p.errorKey, p.errorParams) : p.error}</p>}
             {s.status === "needs_review" && p.reading && <ScreenshotReview id={s.id} reading={p.reading} issues={(p.issues ?? []).map((i) => ({ level: i.level, message: i.key ? translate(locale, i.key, i.params) : i.message }))} villages={villages} defaultVillageId={s.villageId ?? undefined} nameSets={nameSets} kindLabels={kindLabels} imageUrl={s.removedAt ? undefined : `/api/screenshots/${s.id}/file`} />}
             {s.status === "parsed" && p.confirmedBy && !s.removedAt && <RetractButton id={s.id} />}

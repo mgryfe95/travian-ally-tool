@@ -5,6 +5,7 @@ import { buildingInfos } from "../gamedata/names";
 import { troopUpkeep } from "../gamedata/upkeep";
 import { ageInDays } from "../reminders";
 import { readTroops } from "../troops";
+import { activeIncidents, incidentContext } from "../services/incidents";
 import { ownVillages } from "../services/villages";
 
 type Res4 = { wood?: number; clay?: number; iron?: number; crop?: number };
@@ -24,9 +25,17 @@ export type SituationVillage = {
   troopUpkeepPerHour: number | null;
   queue: unknown;
 };
+export type SituationIncident = {
+  id: number; villageId: number; kind: string; occurredAt: string | null; reportedAt: string;
+  attacker: { name: string; alliance: string; relation: string | null; population: number | null; villages: number | null; nearestVillageFields: number | null };
+  attackerUnits: unknown; attackerLosses: unknown; defenderLosses: unknown;
+  answers: unknown; troopsAlreadyCorrected: boolean; helpRequested: boolean; notes: string;
+};
 export type Situation = {
   account: { tribe: number | null; instructions: string; villages: number };
   villages: SituationVillage[];
+  /** Aktive Incidents (Angriffe der letzten Tage) mit Angreifer-Umfeld aus der map.sql – Bedrohungsmodus */
+  incidents: SituationIncident[];
   /** Offene Vorschläge des letzten Laufs und was der Nutzer damit gemacht hat (Kontinuität, keine Wiederholung erledigter Punkte) */
   previous: { title: string; villageId: number | null; status: string }[];
 };
@@ -70,11 +79,21 @@ export async function buildSituation(db: PrismaClient, userId: string, now = new
       queue: obj<{ construction?: unknown }>(s?.queues).construction ?? null,
     });
   }
-  return { account: { tribe, instructions: me?.aiInstructions ?? "", villages: villages.length }, villages: out, previous: prev };
+  const incidents: SituationIncident[] = [];
+  for (const i of await activeIncidents(db, userId, now)) {
+    const c = await incidentContext(db, i);
+    incidents.push({
+      id: i.id, villageId: i.villageId, kind: i.kind, occurredAt: i.occurredAt?.toISOString() ?? null, reportedAt: i.createdAt.toISOString(),
+      attacker: { name: i.attackerName, alliance: i.attackerAlliance, relation: c.attacker?.relation ?? null, population: c.attacker?.population ?? null, villages: c.attacker?.villages ?? null, nearestVillageFields: c.attacker?.nearest ?? null },
+      attackerUnits: i.attackerUnits, attackerLosses: i.attackerLosses, defenderLosses: i.defenderLosses,
+      answers: i.answers, troopsAlreadyCorrected: i.troopsCorrected, helpRequested: !!i.helpRequestedAt, notes: i.notes,
+    });
+  }
+  return { account: { tribe, instructions: me?.aiInstructions ?? "", villages: villages.length }, villages: out, incidents, previous: prev };
 }
 
 /** Hash ohne Datenalter und ohne frühere Vorschläge: nur unveränderte Spieldaten/Ziele → kein neuer (kostenpflichtiger) Lauf. */
 export function situationHash(s: Situation): string {
-  const stable = { account: s.account, villages: s.villages.map((v) => ({ ...v, dataAgeDays: undefined })) };
+  const stable = { account: s.account, villages: s.villages.map((v) => ({ ...v, dataAgeDays: undefined })), incidents: s.incidents };
   return createHash("sha256").update(JSON.stringify(stable)).digest("hex");
 }

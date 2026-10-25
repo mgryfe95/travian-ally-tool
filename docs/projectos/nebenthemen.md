@@ -103,3 +103,5 @@ Offen:
 - Bei erreichtem Budget läuft die Bilderkennung weiter (nur Vorschläge gesperrt) – bestätigen oder auch OCR sperren?
 - Alte Advisor-Stub-Endpunkte `/api/advisor/account|village/:id` sind ungenutzt (noch im e2e-Test) – entfernen?
 - Hetzner-Preise (1 TB inkl., 8,70 €/TB-Monat) sind aus Sekundärquellen – beim ersten Prüfen mit der offiziellen Preisliste abgleichen.
+- Kampfbericht-Erkennung: neue `info`-Zeile im Prompt ist ungetestet gegen echte Berichte – erste echte Uploads prüfen und ggf. als Kern-Beispiel bestätigen.
+- „Wann“ beim Incident wird als Berliner Zeit gelesen (wie im Schedule), nicht als Spielzeit.

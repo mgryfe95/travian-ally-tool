@@ -121,3 +121,6 @@ Better Auth `emailVerification` (sendOnSignUp, 24 h, Auto-Login nach Bestätigun
 - `lib/services/advice.ts`: Freigabe (`gate`): Recht, API-Key, Budget, 1×/Tag (GAME_TIMEZONE), Hash, Fehlerlimit; Sperre gegen Doppelklick (In-Memory, synchron gesetzt). Neuer Lauf ersetzt offene Vorschläge (`replaced`).
 - `lib/ai/usage.ts`: Listenpreise (Stand 2026-10-25, platform.claude.com/docs/en/about-claude/pricing; Haiku 5.5 zweistufig > 100k Prompt), unbekanntes Modell = Opus-Preise. `monthSpend` = KI × Kurs + S3 über Inklusiv-Volumen. Einstellungen in `Setting` (`aiBudgetEur`, `usdEur`, `s3IncludedTb`, `s3ExtraPerTbEur`, `costPricesCheckedAt`).
 - Bilderkennung zählt ins Budget, wird bei erreichtem Budget aber nicht gesperrt.
+
+## Incidents
+`lib/incidents.ts` (rein: Kampfbericht-Lesung → Entwurf, Spalten → Einheiten, Eingaben), `lib/services/incidents.ts` (Anlegen nur für eigene Dörfer mit `incidents.report`, Sicht fremder nur mit `incidents.view`, Aktionen nur Besitzer per `WHERE id AND userId`). Truppenkorrektur über Einheitenplatz (DE/EN-Namen aus `UnitName`). Lagebewertung = `runAdvice(..., incidentId)`: eigener Trigger, einmal je Incident, ohne Tages-/Hash-Sperre; Tageslauf prüft nur Läufe mit `trigger = daily`.
