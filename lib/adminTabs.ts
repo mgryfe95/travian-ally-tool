@@ -9,4 +9,5 @@ export const ADMIN_TABS: { id: string; label: MessageKey; perms: Permission[] }[
   { id: "alliances", label: "admin.tab.alliances", perms: ["alliances.classify"] },
   { id: "users", label: "admin.tab.users", perms: ["roles.assign"] },
   { id: "audit", label: "admin.tab.audit", perms: ["roles.assign", "permissions.edit"] },
+  { id: "costs", label: "admin.tab.costs", perms: ["settings.edit"] },
 ];

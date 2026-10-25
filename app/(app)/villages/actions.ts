@@ -8,7 +8,7 @@ import { ForbiddenError } from "@/lib/permissions";
 import { saveAccountInstructions, saveBuildings, saveVillageInstructions, VillageError } from "@/lib/services/villages";
 import { parseTroopsText, TroopsError } from "@/lib/troops";
 import { saveTroops } from "@/lib/services/troops";
-import { requireUser } from "@/lib/session";
+import { requirePermission, requireUser } from "@/lib/session";
 
 async function run(back: string, anchor: string, fn: () => Promise<void>): Promise<never> {
   let error: string | undefined;
@@ -23,12 +23,13 @@ async function run(back: string, anchor: string, fn: () => Promise<void>): Promi
 
 export async function saveAccountInstructionsAction(f: FormData) {
   return run(String(f.get("back") ?? "/") === "/" ? "/" : "/villages/" + Number(f.get("villageId")), "strategie", async () =>
-    saveAccountInstructions(db, (await requireUser()).id, String(f.get("text") ?? "")));
+    saveAccountInstructions(db, (await requirePermission("ai.advice")).id, String(f.get("text") ?? "")));
 }
 
 export async function saveVillageInstructionsAction(f: FormData) {
   const id = Number(f.get("villageId"));
-  return run(`/villages/${id}`, "desc", async () => saveVillageInstructions(db, (await requireUser()).id, id, String(f.get("text") ?? "")));
+  const goal = f.get("goal");
+  return run(`/villages/${id}`, "desc", async () => saveVillageInstructions(db, (await requirePermission("ai.advice")).id, id, String(f.get("text") ?? ""), goal === null ? undefined : String(goal)));
 }
 
 export async function saveTroopsAction(f: FormData) {

@@ -16,6 +16,10 @@ test("Meine Dörfer: Übersicht, KI-Instruktionen, Erinnerungen, Upload, Zugriff
   // member ist mit einem Spieler der Gruppe verifiziert (aus 01-invite.spec.ts).
   await login(page, "member@example.com");
   await expect(page.getByRole("heading", { name: /Deine \d+ (Dorf|Dörfer)/ })).toBeVisible();
+  // KI-Vorschläge: Bereich sichtbar, ohne API-Key gesperrt mit Hinweis
+  await expect(page.getByRole("heading", { name: "KI-Vorschläge für deinen Account" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "KI-Vorschläge aktualisieren" })).toBeDisabled();
+  await expect(page.getByText("Auf diesem Server ist keine KI eingerichtet.").first()).toBeVisible();
 
   // Account-Instruktionen speichern (prominent oben)
   await page.getByLabel(/dorfübergreifende Strategie/).fill("Off-Account, Hammerdorf im Hauptdorf");

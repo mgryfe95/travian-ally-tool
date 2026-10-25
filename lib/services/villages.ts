@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { isGoal } from "../ai/goals";
 import { ForbiddenError } from "../permissions";
 import { DEFAULT_STALE_DAYS } from "../reminders";
 import { AppError } from "../i18n/errors";
@@ -38,10 +39,17 @@ export async function saveAccountInstructions(db: PrismaClient, userId: string, 
   await db.user.update({ where: { id: userId }, data: { aiInstructions: clean(text) } });
 }
 
-export async function saveVillageInstructions(db: PrismaClient, userId: string, villageId: number, text: string) {
+/** `goal` (Dorftyp): undefined = unverändert, "" = offen, sonst einer aus VILLAGE_GOALS. */
+export async function saveVillageInstructions(db: PrismaClient, userId: string, villageId: number, text: string, goal?: string) {
   if (!(await getOwnVillage(db, userId, villageId))) throw new ForbiddenError("err.village.notOwn");
   const aiInstructions = clean(text);
-  await db.villageProfile.upsert({ where: { villageId_userId: { villageId, userId } }, create: { villageId, userId, aiInstructions }, update: { aiInstructions } });
+  if (goal !== undefined && goal !== "" && !isGoal(goal)) throw new VillageError("err.village.badGoal");
+  const g = goal === undefined ? {} : { goal: goal || null };
+  await db.villageProfile.upsert({ where: { villageId_userId: { villageId, userId } }, create: { villageId, userId, aiInstructions, ...g }, update: { aiInstructions, ...g } });
+}
+
+export async function getVillageGoal(db: PrismaClient, userId: string, villageId: number) {
+  return (await db.villageProfile.findUnique({ where: { villageId_userId: { villageId, userId } } }))?.goal ?? "";
 }
 
 export async function getVillageInstructions(db: PrismaClient, userId: string, villageId: number) {

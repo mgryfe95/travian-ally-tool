@@ -437,6 +437,8 @@ model VillageProfile {
   villageId      Int
   userId         String
   aiInstructions String   @default("")
+  /// Dorftyp (lib/ai/goals.ts): OFF, DEFF, HAMMER, CROP, CAPITAL, TRADE, SUPPORT – leer = offen
+  goal           String?
   updatedAt      DateTime @updatedAt
 
   @@id([villageId, userId])
@@ -770,4 +772,59 @@ model UnitName {
   updatedAt   DateTime @updatedAt
 
   @@id([tribeVid, slot])
+}
+
+/// Jeder Claude-Aufruf mit Token-Zahlen und berechneten Kosten (USD, Listenpreis) – Grundlage für Budget und Kostenseite.
+model AiUsage {
+  id           Int      @id @default(autoincrement())
+  createdAt    DateTime @default(now())
+  userId       String?
+  /// vision | advice | incident
+  feature      String
+  model        String
+  inputTokens  Int
+  outputTokens Int
+  cacheReadTokens  Int @default(0)
+  cacheWriteTokens Int @default(0)
+  costUsd      Float
+
+  @@index([createdAt])
+}
+
+/// Ein KI-Lauf für einen Account (Knopf „KI-Vorschläge aktualisieren“ oder Incident).
+model AdviceRun {
+  id         Int      @id @default(autoincrement())
+  userId     String
+  createdAt  DateTime @default(now())
+  /// daily | incident
+  trigger    String
+  /// Hash des Lagebilds: gleiches Lagebild → kein neuer Lauf
+  inputHash  String
+  /// ok | error
+  status     String
+  errorKey   String?
+  summary    String   @default("")
+  recommendations Recommendation[]
+
+  @@index([userId, createdAt])
+}
+
+model Recommendation {
+  id        Int       @id @default(autoincrement())
+  runId     Int
+  run       AdviceRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  userId    String
+  villageId Int?
+  /// build | train | defend | request_help | resources | settle | other
+  type      String
+  /// 1 (dringend) … 5
+  priority  Int
+  title     String
+  reason    String
+  /// open | done | dismissed | replaced (durch neueren Lauf ersetzt)
+  status    String    @default("open")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId, status])
 }

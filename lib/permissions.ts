@@ -16,13 +16,14 @@ export const PERMISSIONS = [
   "members.invite", "members.approve", "roles.assign", "permissions.edit",
   "map.view", "settings.edit", "alliances.classify", "gamedata.edit",
   "troops.view", "schedule.view", "schedule.manage", "messenger.use", "messenger.broadcast",
+  "ai.advice", "incidents.report", "incidents.view",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
 export const DEFAULT_PERMISSIONS: Record<StoredRole, Permission[]> = {
   GUEST: ["map.view", "chat.read", "chat.write", "schedule.view", "messenger.use"], // enge Bündnispartner (verifiziert); Kanäle steuern per minReadRole
-  MEMBER: ["map.view", "chat.read", "chat.write", "chat.upload", "schedule.view", "messenger.use"],
-  MODERATOR: ["map.view", "chat.read", "chat.write", "chat.upload", "chat.moderate", "tags.manage", "taskforce.create", "members.invite", "members.approve", "troops.view", "schedule.view", "messenger.use", "messenger.broadcast"],
+  MEMBER: ["map.view", "chat.read", "chat.write", "chat.upload", "schedule.view", "messenger.use", "ai.advice", "incidents.report"],
+  MODERATOR: ["map.view", "chat.read", "chat.write", "chat.upload", "chat.moderate", "tags.manage", "taskforce.create", "members.invite", "members.approve", "troops.view", "schedule.view", "messenger.use", "messenger.broadcast", "ai.advice", "incidents.report"],
   ADMIN: [...PERMISSIONS],
 };
 

@@ -12,7 +12,8 @@ import { classifyAlliance, deleteUser, setPlayerRole, setRolePermission, setUser
 import { approveLink, assignPlayer, createInvite, inviteMessage, rejectLink, revokeInvite, VerificationError } from "@/lib/services/verification";
 import { ChatError, chatCtx, createChannel, deleteTag, deleteTagType, moveChannel, saveTag, saveTagType, updateChannel } from "@/lib/services/chat";
 import { berlinToDate, cancelCall, createCall, deleteCall, deleteTemplate, saveTemplate, sendCall, updateCall, saveKind, deleteKind } from "@/lib/services/schedule";
-import { requireUser } from "@/lib/session";
+import { requirePermission as requirePermissionIn, requireUser } from "@/lib/session";
+import { CostSettingsError, saveCostSettings } from "@/lib/ai/usage";
 import { loadMemberRows } from "./tabs/data";
 
 /** Führt die Aktion aus und leitet zurück; Fachfehler erscheinen als ?error=… statt als Absturz. */
@@ -213,4 +214,16 @@ export async function deleteKindAction(f: FormData) {
 }
 export async function deleteTemplateAction(f: FormData) {
   return runSchedule(async () => deleteTemplate(db, await requireUser(), int(f, "templateId")));
+}
+
+export async function saveCostSettingsAction(f: FormData) {
+  return run("costs", async () => {
+    await requirePermissionIn("settings.edit");
+    try {
+      await saveCostSettings(db, Object.fromEntries(["aiBudgetEur", "usdEur", "s3IncludedTb", "s3ExtraPerTbEur"].map((k) => [k, str(f, k)])), f.get("checked") === "1");
+    } catch (e) {
+      if (e instanceof CostSettingsError) throw new AppError("err.costs.invalid");
+      throw e;
+    }
+  });
 }

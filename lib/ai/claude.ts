@@ -2,9 +2,10 @@ import Anthropic from "@anthropic-ai/sdk";
 import { glossaryBlock, SYSTEM_PROMPT, type Alias } from "./prompt";
 import { apiSchema, apiToReading, readingJsonSchema, readingSchema, readingToApi, type Reading } from "./reading";
 import { AppError } from "../i18n/errors";
+import type { TokenUsage } from "./usage";
 
 export type Example = { image: Buffer; gold: Reading };
-export type ReadOptions = { examples?: Example[]; aliases?: Alias[]; expectedKind?: string };
+export type ReadOptions = { examples?: Example[]; aliases?: Alias[]; expectedKind?: string; onUsage?: (model: string, usage: TokenUsage) => void | Promise<void> };
 
 export class VisionError extends AppError {}
 
@@ -47,6 +48,7 @@ export class ClaudeVision {
       messages,
       output_config: { effort: "high", format: { type: "json_schema", schema: readingJsonSchema } },
     });
+    await opts.onUsage?.(this.model, res.usage);
     if (res.stop_reason === "refusal") throw new VisionError("err.vision.refused");
     if (res.stop_reason === "max_tokens") throw new VisionError("err.vision.truncated");
     const text = res.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");

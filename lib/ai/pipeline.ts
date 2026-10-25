@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { aiClient, NotImplementedError } from "./client";
 import { applyReading } from "./apply";
+import { recordUsage } from "./usage";
 import type { Example } from "./claude";
 import { readingSchema, type Reading } from "./reading";
 import { agreementOf, assess, type Assessment, type Issue } from "./validate";
@@ -67,7 +68,7 @@ export class VisionPipeline {
     const e = env();
     try {
       const [examples, aliases, known] = await Promise.all([loadExamples(this.db), this.db.visionAlias.findMany({ orderBy: { term: "asc" } }), knownVillages(this.db, shot.userId)]);
-      const runs = await Promise.allSettled(Array.from({ length: e.VISION_PASSES }, () => aiClient().read(image, { examples, aliases, expectedKind: shot.expectedKind ?? undefined })));
+      const runs = await Promise.allSettled(Array.from({ length: e.VISION_PASSES }, () => aiClient().read(image, { examples, aliases, expectedKind: shot.expectedKind ?? undefined, onUsage: (model, usage) => recordUsage(this.db, { userId: shot.userId, feature: "vision", model, usage }).catch((err) => console.error("[ai] usage", err)) })));
       const ok = runs.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
       if (ok.length === 0) {
         const err = runs.find((r) => r.status === "rejected") as PromiseRejectedResult;

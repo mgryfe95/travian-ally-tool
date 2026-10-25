@@ -2,14 +2,18 @@ import { CoordLink } from "@/components/CoordLink";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { UploadBox } from "@/components/UploadBox";
-import { FEATURES } from "@/lib/features";
+import { AdvicePanel } from "@/components/AdvicePanel";
+import { VILLAGE_GOALS } from "@/lib/ai/goals";
+import { hasPermission } from "@/lib/permissions";
+import { adviceStatus, openRecommendations } from "@/lib/services/advice";
+import { loadMatrix } from "@/lib/services/context";
 import { VillageSwitch } from "@/components/VillageSwitch";
 import { db } from "@/lib/db";
 import { fmt, fmtDate } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
 import type { MessageKey } from "@/lib/i18n";
 import { ageInDays, type StateArea } from "@/lib/reminders";
-import { getOwnVillage, getStaleDays, getVillageInstructions, ownVillages } from "@/lib/services/villages";
+import { getOwnVillage, getStaleDays, getVillageGoal, getVillageInstructions, ownVillages } from "@/lib/services/villages";
 import { requireUser } from "@/lib/session";
 import { readTroops, troopsToText } from "@/lib/troops";
 import { loadUnitLabels, unitLabel } from "@/lib/unit-labels";
@@ -55,6 +59,8 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
   const [all, me, instructions, staleDays] = await Promise.all([
     ownVillages(db, user.id), db.user.findUnique({ where: { id: user.id }, select: { aiInstructions: true } }), getVillageInstructions(db, user.id, id), getStaleDays(db),
   ]);
+  const canAi = hasPermission(user.role, "ai.advice", await loadMatrix(db));
+  const goal = canAi ? await getVillageGoal(db, user.id, id) : "";
   const now = new Date();
   const s = village.state;
   const troops = readTroops(s?.troops);
@@ -100,13 +106,18 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
         <div className="sub" style={{ marginTop: 8, fontSize: 12 }}>{t("villages.upload.hint")}</div>
       </section>
 
-      <section id="desc" className="card hi" aria-labelledby="desc-h">
+      {canAi && <section id="desc" className="card hi" aria-labelledby="desc-h">
         <div className="row between" style={{ alignItems: "baseline" }}><h2 id="desc-h">{t("villages.instr.title", { name: village.name })}</h2><Link href="/#strategie" style={{ fontSize: 13 }}>{t("villages.instr.editAccount")}</Link></div>
         <div style={{ margin: "10px 0", padding: "10px 12px", borderRadius: 8, background: "var(--soft)", fontSize: 13, color: "var(--text2)" }}>
           <span className="sub">{t("villages.instr.inherited")}</span> {me?.aiInstructions ? me.aiInstructions : <em className="sub">{t("villages.instr.none")}</em>}
         </div>
         <form action={saveVillageInstructionsAction}>
           <input type="hidden" name="villageId" value={id} />
+          <label htmlFor="vgoal" className="sub" style={{ display: "block", marginBottom: 6 }}>{t("advice.goal.label")}</label>
+          <select id="vgoal" name="goal" className="field" style={{ width: "auto", marginBottom: 10 }} defaultValue={goal}>
+            <option value="">{t("advice.goal.none")}</option>
+            {VILLAGE_GOALS.map((g) => <option key={g} value={g}>{t(`advice.goal.${g}`)}</option>)}
+          </select>
           <label htmlFor="vdesc" className="sub" style={{ display: "block", marginBottom: 6 }}>{t("villages.instr.label")}</label>
           <textarea id="vdesc" name="text" rows={3} className="field" maxLength={4000} defaultValue={instructions} />
           <div className="row" style={{ marginTop: 10 }}>
@@ -115,13 +126,10 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
             {error && <span className="errtext" role="alert">{error}</span>}
           </div>
         </form>
-      </section>
-
-      {FEATURES.advisor && <section className="card hi" aria-labelledby="tips">
-        <h2 id="tips">{t("villages.tips.title", { name: village.name })}</h2>
-        <div className="sub" style={{ margin: "4px 0 10px" }}>{t("villages.tips.sub")}</div>
-        <p className="sub">{t("villages.tips.none")}</p>
       </section>}
+
+      {canAi && <AdvicePanel t={t} locale={locale} title={t("advice.village.title", { name: village.name })} sub={t("advice.village.sub")} back={`/villages/${id}`}
+        recs={await openRecommendations(db, user.id, id)} status={await adviceStatus(db, user)} />}
 
       <div className="grid2">
         <section className="card" aria-labelledby="res">

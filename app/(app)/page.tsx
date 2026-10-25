@@ -2,7 +2,10 @@ import { CoordLink } from "@/components/CoordLink";
 import Link from "next/link";
 import { Fragment } from "react";
 import { UploadBox } from "@/components/UploadBox";
-import { FEATURES } from "@/lib/features";
+import { AdvicePanel } from "@/components/AdvicePanel";
+import { hasPermission } from "@/lib/permissions";
+import { loadMatrix } from "@/lib/services/context";
+import { adviceStatus, openRecommendations } from "@/lib/services/advice";
 import { db } from "@/lib/db";
 import { fmt } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
@@ -25,10 +28,11 @@ function Rich({ tpl, parts }: { tpl: string; parts: Record<string, React.ReactNo
   return <>{tpl.split(/(\{\w+\})/).map((s, i) => { const k = /^\{(\w+)\}$/.exec(s)?.[1]; return k !== undefined && k in parts ? <Fragment key={i}>{parts[k]}</Fragment> : s; })}</>;
 }
 
-export default async function Overview({ searchParams }: { searchParams: Promise<{ error?: string; saved?: string }> }) {
+export default async function Overview({ searchParams }: { searchParams: Promise<{ error?: string; saved?: string; advice?: string; adviceError?: string }> }) {
   const { t, locale } = await getT();
   const user = await requireUser();
-  const { error, saved } = await searchParams;
+  const { error, saved, advice, adviceError } = await searchParams;
+  const canAi = hasPermission(user.role, "ai.advice", await loadMatrix(db));
   const villages = await ownVillages(db, user.id);
   const me = await db.user.findUnique({ where: { id: user.id }, select: { aiInstructions: true } });
   const staleDays = await getStaleDays(db);
@@ -53,10 +57,10 @@ export default async function Overview({ searchParams }: { searchParams: Promise
     <>
       <header className="row between" style={{ alignItems: "flex-end" }}>
         <div><div className="sub">{t("overview.title")}</div><h1>{t(villages.length === 1 ? "overview.heading.one" : "overview.heading.other", { n: villages.length })}</h1></div>
-        <div className="row"><a className="btn ghost" href="#strategie">{t("overview.nav.instructions")}</a><a className="btn" href="#upload">{t("overview.nav.upload")}</a></div>
+        <div className="row">{canAi && <a className="btn ghost" href="#strategie">{t("overview.nav.instructions")}</a>}<a className="btn" href="#upload">{t("overview.nav.upload")}</a></div>
       </header>
 
-      <section id="strategie" className="card hi" aria-labelledby="st">
+      {canAi && <section id="strategie" className="card hi" aria-labelledby="st">
         <div className="row between" style={{ alignItems: "baseline" }}><h2 id="st">{t("overview.instr.title")}</h2><span className="sub" style={{ fontSize: 12 }}>{t("overview.instr.scope")}</span></div>
         <form action={saveAccountInstructionsAction}>
           <input type="hidden" name="back" value="/" />
@@ -69,7 +73,13 @@ export default async function Overview({ searchParams }: { searchParams: Promise
             {error && <span className="errtext" role="alert">{error}</span>}
           </div>
         </form>
-      </section>
+      </section>}
+
+      {canAi && (
+        <AdvicePanel t={t} locale={locale} title={t("advice.overview.title")} sub={t("advice.overview.sub")} back="/" showButton
+          recs={await openRecommendations(db, user.id)} status={await adviceStatus(db, user)} villageNames={new Map(villages.map((v) => [v.id, v.name]))}
+          error={adviceError} fresh={!!advice} />
+      )}
 
       <section className="card warn" aria-labelledby="due">
         <h2 id="due" style={{ color: "var(--warn)", marginBottom: 12 }}>{t("overview.due.title")}</h2>
@@ -85,12 +95,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
         )}
       </section>
 
-      <div className={FEATURES.advisor ? "grid2" : undefined}>
-        {FEATURES.advisor && <section className="card" aria-labelledby="tips">
-          <h2 id="tips">{t("overview.tips.title")}</h2>
-          <p className="sub" style={{ margin: "4px 0 10px" }}>{t("overview.tips.basis")}</p>
-          <p className="sub">{t("overview.tips.none")}</p>
-        </section>}
+      <div>
         <section id="upload" className="card" aria-labelledby="up">
           <h2 id="up">{t("overview.upload.title")}</h2>
           <div className="sub" style={{ margin: "4px 0 14px" }}>{t("overview.upload.text")}</div>

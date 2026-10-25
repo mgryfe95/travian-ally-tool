@@ -102,3 +102,6 @@ Profilbereich → **Mein Konto**: zeigt die eigene Adresse und ob sie bestätigt
 
 ## Deploy: „no space left on device“
 `deploy.sh` räumt Build-Cache vor dem Build und nach erfolgreichem Start alle nicht laufenden Images (`docker image prune -af`) selbst auf. Reicht das nicht: `docker system df`, `du -sh /opt/travian-ally-tool/backups` (Backups älter als die Aufbewahrungsfrist werden gelöscht), ggf. `docker system prune -af` (löscht keine Volumes/Daten).
+
+## KI-Vorschläge
+Übersicht → „KI-Vorschläge aktualisieren“ (höchstens 1× am Tag und nur, wenn sich Daten oder Ziele geändert haben). Je Dorf lässt sich ein **Dorftyp** (Hauptdorf, Off, Hammer, Deff, Getreide, Handel, Siedeln) setzen. Vorschläge als „Erledigt“ oder „Verwerfen“ markieren – das fließt in den nächsten Lauf ein. Wer die KI nutzen darf, steuert das Recht „KI-Vorschläge nutzen“ (Gäste standardmäßig nicht). Admin → **KI & Kosten**: Monatskosten, Budget (Standard 15 €), Kurs und Hetzner-Preise; halbjährlich die Preise prüfen und bestätigen. Voraussetzung: `ANTHROPIC_API_KEY` in der `.env`.

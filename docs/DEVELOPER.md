@@ -114,3 +114,10 @@ Better Auth `emailVerification` (sendOnSignUp, 24 h, Auto-Login nach Bestätigun
 
 ## Image-Größe und Geheimnisse
 `.dockerignore` schließt `backups/`, `storage/`, `.env*` (außer `.env.example`), Logs und Testberichte aus – vorher landeten DB-Dumps und `.env`-Kopien im Image. Nach `next build` wird `.next/cache` entfernt. `deploy.sh` führt vor dem Build `docker builder prune -af` und `docker image prune -f` aus (nächster Build lädt npm-Pakete neu, dafür kein Platzproblem) und nach erfolgreichem Start `docker image prune -af` – betrifft alle ungenutzten Images des Servers, laufende Container nie.
+
+## KI-Vorschläge (Advisor)
+- `lib/ai/situation.ts` baut das Lagebild nur aus eigenen Daten (alle Abfragen mit `userId` der Sitzung); `situationHash` ohne Datenalter und frühere Vorschläge.
+- `lib/ai/advice.ts`: fester englischer System-Prompt (gecacht), Ausgabesprache im Nutzer-Teil, Structured Outputs + zod-Prüfung. Modell `ANTHROPIC_MODEL` oder Haiku 5.5, `effort: medium`.
+- `lib/services/advice.ts`: Freigabe (`gate`): Recht, API-Key, Budget, 1×/Tag (GAME_TIMEZONE), Hash, Fehlerlimit; Sperre gegen Doppelklick (In-Memory, synchron gesetzt). Neuer Lauf ersetzt offene Vorschläge (`replaced`).
+- `lib/ai/usage.ts`: Listenpreise (Stand 2026-10-25, platform.claude.com/docs/en/about-claude/pricing; Haiku 5.5 zweistufig > 100k Prompt), unbekanntes Modell = Opus-Preise. `monthSpend` = KI × Kurs + S3 über Inklusiv-Volumen. Einstellungen in `Setting` (`aiBudgetEur`, `usdEur`, `s3IncludedTb`, `s3ExtraPerTbEur`, `costPricesCheckedAt`).
+- Bilderkennung zählt ins Budget, wird bei erreichtem Budget aber nicht gesperrt.

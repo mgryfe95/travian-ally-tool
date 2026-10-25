@@ -98,3 +98,8 @@ Offen:
 ## 2026-10-22 · Betrieb
 - Backups liegen im Repo-Verzeichnis auf demselben Datenträger. Besser: Ziel außerhalb (z. B. `/var/backups/ally` oder S3) und Aufbewahrung prüfen (`KEEP_DAYS`).
 - Bereits gebaute alte Images enthielten `backups/` inkl. `.env`-Kopien → nach erfolgreichem Deploy mit `docker image prune -af` entfernen; Images nie in eine Registry pushen.
+
+## 2026-10-25 · KI
+- Bei erreichtem Budget läuft die Bilderkennung weiter (nur Vorschläge gesperrt) – bestätigen oder auch OCR sperren?
+- Alte Advisor-Stub-Endpunkte `/api/advisor/account|village/:id` sind ungenutzt (noch im e2e-Test) – entfernen?
+- Hetzner-Preise (1 TB inkl., 8,70 €/TB-Monat) sind aus Sekundärquellen – beim ersten Prüfen mit der offiziellen Preisliste abgleichen.

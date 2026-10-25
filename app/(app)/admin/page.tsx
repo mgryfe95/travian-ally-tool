@@ -7,6 +7,7 @@ import { loadMatrix } from "@/lib/services/context";
 import { requirePermission } from "@/lib/session";
 import { AlliancesTab } from "./tabs/alliances";
 import { AuditTab } from "./tabs/audit";
+import { CostsTab } from "./tabs/costs";
 import { ChannelsTab } from "./tabs/channels";
 import { MembersTab } from "./tabs/members";
 import { RightsTab } from "./tabs/rights";
@@ -41,6 +42,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       {current?.id === "alliances" && <AlliancesTab q={q} />}
       {current?.id === "users" && <UsersTab actor={user} />}
       {current?.id === "audit" && <AuditTab />}
+      {current?.id === "costs" && <CostsTab />}
     </>
   );
 }
