@@ -221,3 +221,8 @@ Commits: siehe PR.
 Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`
 Was & Warum: **Öffentliche Hilfeseite `/help`** (ohne Login erreichbar; verlinkt im Profilbereich, Mobilmenü und auf der Anmeldeseite). Vier Bereiche – Chat, OCR-Scans, Inaktivensuche, Admin-Funktionen – mit je einem aufklappbaren Punkt pro Funktion (Anwendersicht, DE/EN) und Quicklinks; ohne Login führen die Quicklinks über `/login?next=…` und danach direkt zum Ziel (nur interne Pfade, `safeNext`). Admin „Leute einladen“ verlinkt beide Listen (Mitglieder laut map.sql, registrierte Konten). Filterfeld, Alle auf/zu, Direktlinks `#id` öffnen den Punkt. Je Bereich ein Kurzvideo (Playwright-Aufnahme mit eingeblendetem Mauszeiger, `npm run help:videos`). Nebenbei: KI-Läufe speichern die übergebene Zeit statt der Datenbankzeit (Tagessperre war sonst in Tests vom echten Datum abhängig); e2e-Setup leert auch Incidents/Gedächtnis/KI-Tabellen.
 Commits: siehe PR.
+
+## 2026-10-29 · travian-ally-tool/ui/help-complete
+Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`
+Was & Warum: Hilfe deckt jetzt alle Funktionen ab (Wunsch Nutzer): neue Bereiche Erste Schritte & Konto, Übersicht & Dörfer (Dorfseite), KI-Vorschläge, Incidents, Spieldaten; zusätzlich „Calls ansehen“ (Chat) und „Spieler, Allianzen, Ereignisse“ (Inaktivensuche). Englisch als Standard, Deutsch umschaltbar; Bezeichnungen mit der Oberfläche abgeglichen. Kurzvideos je Bereich in beiden Sprachen (12 Clips, zusammen ~2,7 MB). Behoben: Upload-Felder hatten dunkle Schrift auf dunklem Grund.
+Commits: siehe PR.

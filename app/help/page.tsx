@@ -14,9 +14,10 @@ export const metadata = { title: "Help · Humans Ally Tool" };
 
 /** Öffentliche Hilfe (ohne Login). Quicklinks führen ohne Anmeldung über /login?next=… zum Ziel. */
 export default async function HelpPage() {
-  const { t } = await getT();
+  const { t, locale } = await getT();
   const signedIn = !!(await getCurrentUser().catch(() => null));
-  const video = (id: string) => (existsSync(path.join(process.cwd(), "public", "help", `${id}.webm`)) ? `/help/${id}.webm` : null);
+  // Kurzvideo in der eingestellten Sprache (public/help/<bereich>.<sprache>.webm), sonst Englisch, sonst keins
+  const video = (id: string) => [locale, "en"].map((l) => `${id}.${l}.webm`).find((f) => existsSync(path.join(process.cwd(), "public", "help", f)))?.replace(/^/, "/help/") ?? null;
   const sections: HelpSectionView[] = HELP.map((s) => ({
     id: s.id, title: t(`help.sec.${s.id}` as MessageKey), intro: t(`help.sec.${s.id}.intro` as MessageKey), video: video(s.id),
     items: s.items.map((i) => ({ id: i.id, title: t(helpKey(i.id, "t")), body: t(helpKey(i.id, "b")), links: i.links.map((l) => ({ href: helpHref(l.href, signedIn), label: t(l.label) })) })),

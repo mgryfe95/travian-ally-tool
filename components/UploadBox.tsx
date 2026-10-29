@@ -66,7 +66,7 @@ export function UploadBox({ villageId, label, hint, id, kinds = ALL_UPLOAD_KINDS
         </div>
       )}
       <label htmlFor={id} className="drop" onDragOver={(e) => e.preventDefault()} onDrop={onDrop}
-        style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, minHeight: 130, border: "1.5px dashed var(--gold)", borderRadius: 10, textAlign: "center", padding: 16, cursor: "pointer", background: "#1a1712" }}>
+        style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, minHeight: 130, border: "1.5px dashed var(--gold)", borderRadius: 10, textAlign: "center", padding: 16, cursor: "pointer", background: "#1a1712", color: "#e9dfc6" }}>
         <span style={{ fontWeight: 600 }}>{busy ? t("screenshots.upload.busy") : label}</span>
         {hint && <span className="sub">{hint}</span>}
       </label>

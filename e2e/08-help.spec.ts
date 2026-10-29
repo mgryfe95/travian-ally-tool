@@ -23,3 +23,14 @@ test("Hilfe: ohne Login erreichbar, Filter, Quicklink über Anmeldung direkt zum
   await expect(page.locator("details#inactive-filters")).toHaveAttribute("open", "");
   await expect(page.locator("details#inactive-filters").getByRole("link", { name: "Inaktivensuche" })).toHaveAttribute("href", "/inactive");
 });
+
+test("Hilfe auf Englisch (Browsersprache) mit allen Bereichen", async ({ browser }) => {
+  const ctx = await browser.newContext({ locale: "en-US" });
+  const page = await ctx.newPage();
+  await page.goto("/help");
+  for (const h of ["Getting started & account", "Overview & villages", "AI suggestions", "Incidents", "Chat", "OCR scans", "Inactive search", "Game data", "Admin features"]) {
+    await expect(page.getByRole("heading", { name: h, exact: true })).toBeVisible();
+  }
+  await expect(page.getByText(/You are not signed in/)).toBeVisible();
+  await ctx.close();
+});

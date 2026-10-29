@@ -108,4 +108,3 @@ Offen:
 
 ## 2026-10-29 · Hilfe
 - Hilfevideos zeigen Testdaten: Inaktivensuche ohne Treffer, OCR mit Hinweis „API-Key fehlt“. Für schönere Videos auf einer Staging-Instanz mit echten Daten neu aufnehmen.
-- Hilfe deckt (wie gewünscht) nur Chat, OCR, Inaktivensuche, Admin ab – KI-Vorschläge, Incidents und Dorfseite könnten eigene Bereiche bekommen.

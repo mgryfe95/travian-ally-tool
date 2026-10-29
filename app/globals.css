@@ -170,3 +170,6 @@ a.mono { text-decoration: underline dotted; text-underline-offset: 3px; }
 .helpitem summary { cursor: pointer; font-weight: 600; min-height: 32px; display: flex; align-items: center; gap: 8px; }
 .helpitem summary::marker { color: var(--gold); }
 .helpitem[open] summary { color: var(--navy); }
+/* Upload-Feld: dunkler Grund → helle Schrift (vorher dunkel auf dunkel) */
+.drop .sub { color: #b9ab8a; }
+.drop:focus-within, .drop:hover { border-color: var(--gold-hi); }
