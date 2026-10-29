@@ -146,6 +146,11 @@ export type CallInput = { kind: string; title?: string; coord?: string; at?: Dat
 
 export async function createCall(db: PrismaClient, actor: Actor, input: CallInput, now = new Date()) {
   await requirePerm(db, actor, "schedule.manage");
+  return createCallUnchecked(db, actor, input, now);
+}
+
+/** Anlegen ohne Rechteprüfung – nur für Aufrufer, die selbst prüfen (createCall, Incident-Call). */
+async function createCallUnchecked(db: PrismaClient, actor: Actor, input: CallInput, now: Date, source?: string) {
   const kindInfo = await requireKind(db, input.kind);
   const kind = input.kind;
   let xy: [number, number] | null = null;
@@ -173,9 +178,50 @@ export async function createCall(db: PrismaClient, actor: Actor, input: CallInpu
       playerName: target?.playerName, at, eventAt, channelId: ch.id, template: tpl.body, sendDm: tpl.sendDm, note, status: at ? "scheduled" : "draft", createdBy: actor.id,
     },
   });
-  await audit(db, actor.id, "call.create", `call:${call.id}`, undefined, { kind, at, eventAt, coord: xy });
-  if (input.sendNow) return sendCall(db, actor, call.id, now);
+  await audit(db, actor.id, "call.create", `call:${call.id}`, undefined, { kind, at, eventAt, coord: xy, ...(source ? { source } : {}) });
+  if (input.sendNow) {
+    const sent = await dispatch(db, call.id, now, actor.id);
+    if (!sent) throw new ChatError("err.call.alreadySent");
+    await audit(db, actor.id, "call.send", `call:${call.id}`);
+    return sent;
+  }
   return call;
+}
+
+// ───────── Calls aus Incidents ─────────
+
+/** Ab welcher Rolle ein Call-Typ aus einem Incident ausgelöst werden darf (Setting `incidentCall:<kind>`; fehlt = nur mit schedule.manage). */
+const INCIDENT_ROLES = ["GUEST", "MEMBER", "MODERATOR"] as const;
+export type IncidentCallRole = (typeof INCIDENT_ROLES)[number];
+
+export async function incidentCallRoles(db: PrismaClient): Promise<Map<string, IncidentCallRole>> {
+  const rows = await db.setting.findMany({ where: { key: { startsWith: "incidentCall:" } } });
+  return new Map(rows.flatMap((r) => ((INCIDENT_ROLES as readonly string[]).includes(r.value) ? [[r.key.slice("incidentCall:".length), r.value as IncidentCallRole] as const] : [])));
+}
+
+export async function setIncidentCallRole(db: PrismaClient, actor: Actor, kind: string, role: string) {
+  await requirePerm(db, actor, "schedule.manage");
+  await requireKind(db, kind);
+  const key = `incidentCall:${kind}`;
+  if (!(INCIDENT_ROLES as readonly string[]).includes(role)) await db.setting.deleteMany({ where: { key } });
+  else await db.setting.upsert({ where: { key }, create: { key, value: role }, update: { value: role } });
+  await audit(db, actor.id, "call.incidentRole", `kind:${kind}`, undefined, { role: role || null });
+}
+
+/** Call-Typen, die dieser Nutzer aus einem Incident senden darf (mit schedule.manage: alle). */
+export async function allowedIncidentKinds(db: PrismaClient, actor: Actor): Promise<KindInfo[]> {
+  const kinds = await listKinds(db);
+  if (hasPermission(actor.role, "schedule.manage", await loadMatrix(db))) return kinds;
+  if (actor.role === "UNVERIFIED") return [];
+  const roles = await incidentCallRoles(db);
+  const order = ["GUEST", "MEMBER", "MODERATOR", "ADMIN"];
+  return kinds.filter((k) => { const min = roles.get(k.key); return !!min && order.indexOf(actor.role) >= order.indexOf(min); });
+}
+
+/** Call aus einem Incident: Ziel = das angegriffene Dorf, sofort gesendet (Direktnachricht laut Vorlage). Recht je Call-Typ. */
+export async function createIncidentCall(db: PrismaClient, actor: Actor, input: { kind: string; x: number; y: number; note: string; eventAt?: Date | null }, now = new Date()) {
+  if (!(await allowedIncidentKinds(db, actor)).some((k) => k.key === input.kind)) throw new ForbiddenError("err.call.kindNotAllowed");
+  return createCallUnchecked(db, actor, { kind: input.kind, coord: `${input.x}|${input.y}`, note: input.note, eventAt: input.eventAt ?? null, sendNow: true }, now, "incident");
 }
 
 /** Postet den Call in den Zielkanal (Autor = Ersteller). Nur aus scheduled/draft. */

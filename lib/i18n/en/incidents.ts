@@ -66,5 +66,8 @@ const en = {
   "incidents.search.go": "Search",
   "incidents.search.none": "No matches.",
   "incidents.back": "← All incidents",
+  "incidents.help.kind": "Call type",
+  "incidents.help.sendCall": "Send help call",
+  "incidents.help.doneCall": "Call sent on {date}.",
 } as const;
 export default en;

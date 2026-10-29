@@ -9,6 +9,7 @@ import { hasPermission } from "@/lib/permissions";
 import { adviceStatus } from "@/lib/services/advice";
 import { loadMatrix } from "@/lib/services/context";
 import { getIncident, incidentContext } from "@/lib/services/incidents";
+import { allowedIncidentKinds } from "@/lib/services/schedule";
 import { requirePermission } from "@/lib/session";
 import { assessIncidentAction, requestHelpAction, resolveIncidentAction } from "../actions";
 
@@ -28,6 +29,8 @@ export default async function IncidentPage({ params, searchParams }: { params: P
   const a = i.answers as Answers;
   const canAi = own && hasPermission(user.role, "ai.advice", await loadMatrix(db));
   const ai = canAi ? await adviceStatus(db, user, new Date(), i.id) : null;
+  const callKinds = own ? await allowedIncidentKinds(db, user) : [];
+  const kindLabel = (k: { key: string; label?: string }) => k.label ?? t(`schedule.kind.${k.key}` as MessageKey);
   const run = await db.adviceRun.findFirst({ where: { incidentId: i.id, status: "ok" }, orderBy: { id: "desc" }, include: { recommendations: true } });
   const list = (l: UnitCount[]) => (l.length ? l.map((u) => `${fmt(u.count, locale)} ${u.unit}`).join(", ") : "–");
   const yn = (v: string) => t(`incidents.a.${v}` as MessageKey);
@@ -63,7 +66,16 @@ export default async function IncidentPage({ params, searchParams }: { params: P
       {own && i.status === "open" && (
         <section className="card" aria-label={t("incidents.help.request")}>
           <div className="row" style={{ gap: 10, flexWrap: "wrap" }}>
-            {i.helpRequestedAt ? <span className="sub">{t("incidents.help.done", { date: fmtDate(i.helpRequestedAt, locale) })}</span> : (
+            {i.helpRequestedAt ? <span className="sub">{t(i.callId ? "incidents.help.doneCall" : "incidents.help.done", { date: fmtDate(i.helpRequestedAt, locale) })}</span> : callKinds.length > 0 ? (
+              <form action={requestHelpAction} className="row" style={{ gap: 8, flexWrap: "wrap" }}>
+                <input type="hidden" name="id" value={i.id} />
+                <label className="sub" htmlFor="hk">{t("incidents.help.kind")}</label>
+                <select id="hk" name="kind" className="field" style={{ width: "auto" }} defaultValue={callKinds.some((k) => k.key === "DEFF") ? "DEFF" : callKinds[0]!.key}>
+                  {callKinds.map((k) => <option key={k.key} value={k.key}>{kindLabel(k)}</option>)}
+                </select>
+                <button className="btn">{t("incidents.help.sendCall")}</button>
+              </form>
+            ) : (
               <form action={requestHelpAction}><input type="hidden" name="id" value={i.id} /><button className="btn">{t("incidents.help.request")}</button></form>
             )}
             <form action={resolveIncidentAction}><input type="hidden" name="id" value={i.id} /><button className="btn ghost">{t("incidents.resolve")}</button></form>

@@ -58,6 +58,6 @@ async function onIncident(f: FormData, fn: (id: number, user: Awaited<ReturnType
   redirect(`/incidents/${id}${error ? `?error=${encodeURIComponent(error)}` : ""}`);
 }
 
-export const requestHelpAction = async (f: FormData) => onIncident(f, (id, u) => requestHelp(db, u, id));
+export const requestHelpAction = async (f: FormData) => onIncident(f, (id, u) => requestHelp(db, u, id, str(f, "kind") || undefined));
 export const resolveIncidentAction = async (f: FormData) => onIncident(f, (id, u) => resolveIncident(db, u, id));
 export const assessIncidentAction = async (f: FormData) => onIncident(f, async (id, u) => runAdvice(db, await requirePermission("ai.advice"), await getLocale(), new Date(), id).then(() => u));

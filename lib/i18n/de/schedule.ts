@@ -66,5 +66,10 @@ const de: Record<keyof typeof en, string> = {
   "schedule.tpl.newBody": "Text neue Vorlage",
   "schedule.tpl.newBodyPh": "⚔️ {art} auf {spieler} {koordinaten} – {zeit} {link}",
   "schedule.tpl.create": "Vorlage anlegen",
+  "schedule.incident.title": "Calls aus Incidents",
+  "schedule.incident.intro": "Wer darf welchen Call-Typ direkt aus einem Incident senden? Ziel ist das angegriffene Dorf; Text, Kanal und Direktnachricht kommen aus der Vorlage. Ohne Freigabe schickt der Incident nur eine kurze Nachricht in den Deff-Call.",
+  "schedule.incident.off": "nur mit Schedule-Recht",
+  "schedule.incident.from": "ab {role}",
+  "schedule.incident.save": "Speichern",
 };
 export default de;

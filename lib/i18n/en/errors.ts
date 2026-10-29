@@ -139,6 +139,7 @@ const en = {
   "err.incident.helpAlready": "Help was already requested for this incident.",
   "err.incident.noDeffChannel": "No “Deff-Call” channel found.",
   "err.incident.badVillage": "Please choose one of your villages as the target.",
+  "err.call.kindNotAllowed": "You may not raise this call type from an incident.",
   "err.mail.smtp": "SMTP is not configured",
   "err.mail.resetSubject": "Ally Tool: reset your password",
   "err.mail.resetBody": "Hello {name},\n\nuse this link to set a new password (valid for one hour):\n\n{url}\n\nIf you did not request this, ignore this message.",

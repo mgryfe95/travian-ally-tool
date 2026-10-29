@@ -165,7 +165,6 @@ a.mono { text-decoration: underline dotted; text-underline-offset: 3px; }
 .helphead { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 24px; background: var(--side); color: var(--side-text); }
 .helphead select { background: var(--steel); color: var(--side-text); border: 1px solid var(--steel-line); border-radius: 8px; min-height: 36px; padding: 0 8px; }
 .helpmain { max-width: 980px; margin: 0 auto; padding: 24px 16px 64px; display: flex; flex-direction: column; gap: 14px; }
-.helptabs { display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
 .helpitem { border-top: 1px solid var(--line2); padding: 10px 2px; }
 .helpitem summary { cursor: pointer; font-weight: 600; min-height: 32px; display: flex; align-items: center; gap: 8px; }
 .helpitem summary::marker { color: var(--gold); }
@@ -173,3 +172,31 @@ a.mono { text-decoration: underline dotted; text-underline-offset: 3px; }
 /* Upload-Feld: dunkler Grund → helle Schrift (vorher dunkel auf dunkel) */
 .drop .sub { color: #b9ab8a; }
 .drop:focus-within, .drop:hover { border-color: var(--gold-hi); }
+/* Hilfe: Bereichs-Kacheln als Buttons; gewählte Kachel = nur dieser Bereich */
+.helptiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr)); gap: 10px; }
+.helptile { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; min-height: 72px; padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); color: var(--text); cursor: pointer; font: inherit; box-shadow: 0 2px 0 var(--line); transition: transform .08s, box-shadow .08s, border-color .08s; }
+.helptile span { font-size: 12px; color: var(--muted); }
+.helptile:hover { border-color: var(--gold); transform: translateY(-1px); box-shadow: 0 4px 0 var(--gold-line); }
+.helptile:focus-visible { outline: 3px solid var(--gold-hi); outline-offset: 2px; }
+.helptile[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: var(--side-text); box-shadow: 0 2px 0 var(--gold); }
+.helptile[aria-pressed="true"] span { color: var(--gold-hi); }
+/* Hilfe: Datenfluss-Skizze */
+.flow { margin: 4px 0 14px; padding: 14px; border-radius: 12px; background: var(--soft); border: 1px solid var(--line); }
+.flow-main { display: flex; align-items: stretch; gap: 10px; }
+.flow-col { display: flex; flex-direction: column; gap: 8px; flex: 1 1 0; min-width: 0; }
+.flow-col.mid { justify-content: center; }
+.flow-box { padding: 10px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); font-size: 14px; }
+.flow-box.ai { background: var(--navy); color: var(--side-text); border-color: var(--navy); }
+.flow-box.out { background: var(--gold); color: var(--gold-ink); border-color: var(--gold-line); }
+.flow-box.inc { border-color: var(--warn-line); background: var(--warn-bg); }
+.flow-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.flow-chips span, .flow-branch .hl, .inc-chip { padding: 2px 8px; border-radius: 999px; background: var(--raised); font-size: 13px; }
+.flow .hl { background: var(--wait-bg); color: var(--wait-fg); font-weight: 600; }
+.inc-chip { background: var(--warn-bg); color: var(--warn); font-weight: 600; }
+.flow-arrow { align-self: center; color: var(--gold-line); font-size: 22px; }
+.flow-branch { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+.flow-branch .flow-box { flex: 1 1 260px; }
+@media (max-width: 700px) {
+  .flow-main { flex-direction: column; }
+  .flow-main > .flow-arrow { transform: rotate(90deg); }
+}

@@ -141,6 +141,7 @@ const de: Record<keyof typeof en, string> = {
   "err.incident.helpAlready": "Für diesen Incident wurde schon Hilfe angefragt.",
   "err.incident.noDeffChannel": "Kein Kanal „Deff-Call“ gefunden.",
   "err.incident.badVillage": "Bitte ein eigenes Ziel-Dorf wählen.",
+  "err.call.kindNotAllowed": "Diesen Call-Typ darfst du aus einem Incident nicht auslösen.",
   "err.mail.smtp": "SMTP ist nicht konfiguriert",
   "err.mail.resetSubject": "Ally Tool: Passwort zurücksetzen",
   "err.mail.resetBody": "Hallo {name},\n\nüber diesen Link kannst du ein neues Passwort setzen (eine Stunde gültig):\n\n{url}\n\nWenn du das nicht angefordert hast, ignoriere diese Nachricht.",

@@ -68,5 +68,8 @@ const de: Record<keyof typeof en, string> = {
   "incidents.search.go": "Suchen",
   "incidents.search.none": "Keine Treffer.",
   "incidents.back": "← Alle Incidents",
+  "incidents.help.kind": "Call-Typ",
+  "incidents.help.sendCall": "Hilfe-Call senden",
+  "incidents.help.doneCall": "Call gesendet am {date}.",
 };
 export default de;

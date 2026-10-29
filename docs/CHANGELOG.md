@@ -226,3 +226,8 @@ Commits: siehe PR.
 Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`
 Was & Warum: Hilfe deckt jetzt alle Funktionen ab (Wunsch Nutzer): neue Bereiche Erste Schritte & Konto, Übersicht & Dörfer (Dorfseite), KI-Vorschläge, Incidents, Spieldaten; zusätzlich „Calls ansehen“ (Chat) und „Spieler, Allianzen, Ereignisse“ (Inaktivensuche). Englisch als Standard, Deutsch umschaltbar; Bezeichnungen mit der Oberfläche abgeglichen. Kurzvideos je Bereich in beiden Sprachen (12 Clips, zusammen ~2,7 MB). Behoben: Upload-Felder hatten dunkle Schrift auf dunklem Grund.
 Commits: siehe PR.
+
+## 2026-10-29 · travian-ally-tool/incidents/one-way + help/tiles-flow
+Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`
+Was & Warum: **Ein Weg vom Incident zum Call.** Je Call-Typ legt ein Admin im Schedule fest, ab welcher Rolle er direkt aus einem Incident gesendet werden darf (`Setting incidentCall:<typ>`; ohne Freigabe nur mit `schedule.manage`). Auf der Incident-Seite gibt es einen Knopf: mit Freigabe „Hilfe-Call senden“ (echter Call am angegriffenen Dorf, Kanal und Direktnachricht laut Vorlage, `Incident.callId`), sonst wie bisher eine kurze Deff-Call-Nachricht. **Hilfe:** Bereichs-Kacheln als Buttons (Klick zeigt nur diesen Bereich, „Alle Themen“ wieder alle, Anker `#sec-…`); Einstieg als Weg A (Einladung) / Weg B (Konto + Nachweis); Datenfluss-Skizze in OCR-Scans und KI-Vorschläge (Truppen → Admins/Moderatoren; Ressourcen, Gebäude, Truppen → KI; A Account-Strategie, B1 Dorftyp, B2 Dorf-Strategie; Incident zu A und B → Hilfe-Call).
+Commits: siehe PR.

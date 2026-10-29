@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { HelpFlow, type FlowLabels } from "@/components/HelpFlow";
 import { useT } from "@/lib/i18n/client";
 
 export type HelpItemView = { id: string; title: string; body: string; links: { href: string; label: string }[] };
-export type HelpSectionView = { id: string; title: string; intro: string; video: string | null; items: HelpItemView[] };
+export type HelpSectionView = { id: string; title: string; intro: string; video: string | null; flow?: boolean; items: HelpItemView[] };
 
 /** Text mit Absätzen (Leerzeile) und Listenzeilen („• “). */
 function Body({ text }: { text: string }) {
@@ -27,24 +28,43 @@ function Body({ text }: { text: string }) {
 }
 
 /** Interaktive Hilfe: Bereiche als Sprungleiste, Volltextfilter, alle auf/zu, Direktlink per #id öffnet den Punkt. */
-export function HelpBrowser({ sections, signedIn }: { sections: HelpSectionView[]; signedIn: boolean }) {
+export function HelpBrowser({ sections, signedIn, flow }: { sections: HelpSectionView[]; signedIn: boolean; flow: FlowLabels }) {
   const t = useT();
   const [q, setQ] = useState("");
   const [open, setOpen] = useState<Set<string>>(new Set());
+  /** Gewählter Bereich (Kachel): nur dieser wird angezeigt; null = alle */
+  const [sec, setSec] = useState<string | null>(null);
   useEffect(() => {
     const id = decodeURIComponent(location.hash.slice(1));
-    if (id) setOpen((o) => new Set(o).add(id));
-  }, []);
+    if (!id) return;
+    const s = sections.find((x) => `sec-${x.id}` === id || x.items.some((i) => i.id === id));
+    if (s) setSec(s.id);
+    setOpen((o) => new Set(o).add(id));
+  }, [sections]);
+  const pick = (id: string | null) => {
+    setSec(id);
+    history.replaceState(null, "", id ? `#sec-${id}` : location.pathname);
+  };
   const needle = q.trim().toLowerCase();
-  const visible = useMemo(() => sections.map((s) => ({ ...s, items: needle ? s.items.filter((i) => `${i.title} ${i.body} ${s.title}`.toLowerCase().includes(needle)) : s.items })), [sections, needle]);
+  // Suche gilt immer über alle Bereiche; ohne Suche zeigt eine gewählte Kachel nur ihren Bereich
+  const visible = useMemo(() => sections
+    .filter((s) => needle || !sec || s.id === sec)
+    .map((s) => ({ ...s, items: needle ? s.items.filter((i) => `${i.title} ${i.body} ${s.title}`.toLowerCase().includes(needle)) : s.items })), [sections, needle, sec]);
   const all = sections.flatMap((s) => s.items.map((i) => i.id));
   const toggle = (id: string, on: boolean) => setOpen((o) => { const n = new Set(o); if (on) n.add(id); else n.delete(id); return n; });
   const empty = visible.every((s) => s.items.length === 0);
 
   return (
     <>
-      <nav className="helptabs" aria-label={t("help.title")}>
-        {sections.map((s) => <a key={s.id} href={`#sec-${s.id}`} className="tab">{s.title}</a>)}
+      <nav className="helptiles" aria-label={t("help.title")}>
+        <button type="button" className="helptile" aria-pressed={!sec} onClick={() => pick(null)}>
+          <b>{t("help.all")}</b><span>{t("help.all.sub", { n: sections.reduce((a, s) => a + s.items.length, 0) })}</span>
+        </button>
+        {sections.map((s) => (
+          <button key={s.id} type="button" className="helptile" aria-pressed={sec === s.id} onClick={() => pick(s.id)}>
+            <b>{s.title}</b><span>{s.items.length === 1 ? t("help.all.subOne") : t("help.all.sub", { n: s.items.length })}</span>
+          </button>
+        ))}
       </nav>
       <div className="row" style={{ gap: 10, flexWrap: "wrap", margin: "14px 0" }} role="search">
         <input className="field" style={{ flex: "1 1 260px" }} value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("help.filter.ph")} aria-label={t("help.filter")} />
@@ -56,6 +76,7 @@ export function HelpBrowser({ sections, signedIn }: { sections: HelpSectionView[
         <section key={s.id} id={`sec-${s.id}`} className="card" aria-labelledby={`h-${s.id}`} style={{ scrollMarginTop: 90 }}>
           <h2 id={`h-${s.id}`}>{s.title}</h2>
           <p className="sub" style={{ margin: "4px 0 12px" }}>{s.intro}</p>
+          {s.flow && !needle && <HelpFlow l={flow} />}
           {s.video && !needle && (
             <details className="helpitem" open={open.has(`video-${s.id}`)} onToggle={(e) => toggle(`video-${s.id}`, (e.currentTarget as HTMLDetailsElement).open)}>
               <summary>▶ {t("help.video")}</summary>

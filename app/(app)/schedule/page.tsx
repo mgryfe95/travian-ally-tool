@@ -6,9 +6,9 @@ import type { MessageKey } from "@/lib/i18n";
 import { getT } from "@/lib/i18n/server";
 import { hasPermission } from "@/lib/permissions";
 import { loadMatrix } from "@/lib/services/context";
-import { CALL_KINDS, PLACEHOLDERS, dateToBerlinLocal, listKinds, renderCall } from "@/lib/services/schedule";
+import { CALL_KINDS, PLACEHOLDERS, dateToBerlinLocal, incidentCallRoles, listKinds, renderCall } from "@/lib/services/schedule";
 import { requirePermission } from "@/lib/session";
-import { cancelCallAction, createCallAction, deleteCallAction, deleteKindAction, deleteTemplateAction, saveKindAction, saveTemplateAction, sendCallAction, updateCallAction } from "../admin/actions";
+import { cancelCallAction, createCallAction, deleteCallAction, deleteKindAction, deleteTemplateAction, saveIncidentRolesAction, saveKindAction, saveTemplateAction, sendCallAction, updateCallAction } from "../admin/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +19,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
   const { t, locale } = await getT();
   const when = (d: Date | null) => (d ? fmtDate(d, locale, { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "–");
   const kinds = await listKinds(db);
+  const incidentRoles = await incidentCallRoles(db);
   const kindLabel = (k: string) => (k in KIND ? t(KIND[k as keyof typeof KIND]) : (kinds.find((x) => x.key === k)?.label ?? k));
   const kindOptions = kinds.map((k) => <option key={k.key} value={k.key}>{kindLabel(k.key)}</option>);
   const statusLabel = (s: string) => (STATUS[s] ? t(STATUS[s]) : s);
@@ -123,6 +124,20 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
         <section className="card" aria-labelledby="kinds">
           <h2 id="kinds">{t("schedule.kinds.title")}</h2>
           <p className="sub" style={{ fontSize: 12, margin: "4px 0 10px" }}>{t("schedule.kinds.intro")}</p>
+          <h3 style={{ marginTop: 6 }}>{t("schedule.incident.title")}</h3>
+          <p className="sub" style={{ fontSize: 12, margin: "4px 0 8px" }}>{t("schedule.incident.intro")}</p>
+          <form action={saveIncidentRolesAction} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 220px), 1fr))", gap: 10, marginBottom: 12 }}>
+            {kinds.map((k) => (
+              <div key={k.key}><label className="lbl" htmlFor={`ir-${k.key}`}>{kindLabel(k.key)}</label>
+                <select id={`ir-${k.key}`} name={`role:${k.key}`} className="field" defaultValue={incidentRoles.get(k.key) ?? ""}>
+                  <option value="">{t("schedule.incident.off")}</option>
+                  <option value="GUEST">{t("schedule.incident.from", { role: t("common.role.guest") })}</option>
+                  <option value="MEMBER">{t("schedule.incident.from", { role: t("common.role.member") })}</option>
+                  <option value="MODERATOR">{t("schedule.incident.from", { role: t("common.role.moderator") })}</option>
+                </select></div>
+            ))}
+            <div style={{ alignSelf: "end" }}><button className="btn ghost sm">{t("schedule.incident.save")}</button></div>
+          </form>
           {kinds.filter((k) => k.custom).map((k) => (
             <form key={k.key} action={deleteKindAction} className="row" style={{ gap: 8, padding: "4px 0" }}>
               <input type="hidden" name="kindId" value={k.key.split(":")[1]} />

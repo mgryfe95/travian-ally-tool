@@ -64,5 +64,10 @@ const en = {
   "schedule.tpl.newBody": "Text of new template",
   "schedule.tpl.newBodyPh": "⚔️ {art} on {spieler} {koordinaten} – {zeit} {link}",
   "schedule.tpl.create": "Create template",
+  "schedule.incident.title": "Calls from incidents",
+  "schedule.incident.intro": "Who may send which call type straight from an incident? The target is the attacked village; text, channel and direct message come from the template. Without a release the incident only posts a short message to Deff-Call.",
+  "schedule.incident.off": "only with schedule right",
+  "schedule.incident.from": "from {role}",
+  "schedule.incident.save": "Save",
 } as const;
 export default en;

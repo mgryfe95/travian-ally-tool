@@ -861,6 +861,8 @@ model Incident {
   status      String    @default("open")
   troopsCorrected Boolean @default(false)
   helpRequestedAt DateTime?
+  /// Call, der aus diesem Incident gesendet wurde (statt einfacher Deff-Call-Nachricht)
+  callId      Int?
 
   @@index([userId, status])
   @@index([status, createdAt])

@@ -9,9 +9,8 @@ const L = (href: string, label: MessageKey): HelpLink => ({ href, label });
 
 export const HELP: HelpSection[] = [
   { id: "start", items: [
-    { id: "start-join", links: [L("/register", "help.l.register")] },
-    { id: "start-email", links: [L("/claim", "help.l.claim")] },
-    { id: "start-verify", links: [L("/claim", "help.l.claim")] },
+    { id: "start-invite", links: [] },
+    { id: "start-self", links: [L("/register", "help.l.register"), L("/claim", "help.l.claim")] },
     { id: "start-password", links: [L("/account", "help.l.account"), L("/forgot", "help.l.forgot")] },
     { id: "start-profile", links: [L("/account", "help.l.account"), L("/mentions", "help.l.mentions"), L("/files", "help.l.files"), L("/privacy", "help.l.privacy")] },
     { id: "start-roles", links: [] },

@@ -32,5 +32,15 @@ test("Hilfe auf Englisch (Browsersprache) mit allen Bereichen", async ({ browser
     await expect(page.getByRole("heading", { name: h, exact: true })).toBeVisible();
   }
   await expect(page.getByText(/You are not signed in/)).toBeVisible();
+  // Kachel = Button; ein Klick zeigt nur diesen Bereich, „All topics“ wieder alle
+  await page.getByRole("button", { name: /^Incidents/ }).click();
+  await expect(page.getByRole("button", { name: /^Incidents/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("heading", { name: "Incidents", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Chat", exact: true })).toHaveCount(0);
+  await expect(page).toHaveURL(/#sec-incidents$/);
+  await page.getByRole("button", { name: /^OCR scans/ }).click();
+  await expect(page.getByRole("figure", { name: "How your data flows" })).toBeVisible();
+  await page.getByRole("button", { name: /^All topics/ }).click();
+  await expect(page.getByRole("heading", { name: "Chat", exact: true })).toBeVisible();
   await ctx.close();
 });

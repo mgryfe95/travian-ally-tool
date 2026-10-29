@@ -11,7 +11,7 @@ import { ForbiddenError, PERMISSIONS, ROLES, type Permission, type StoredRole } 
 import { classifyAlliance, deleteUser, setPlayerRole, setRolePermission, setUserBanned, setUserRole } from "@/lib/services/admin";
 import { approveLink, assignPlayer, createInvite, inviteMessage, rejectLink, revokeInvite, VerificationError } from "@/lib/services/verification";
 import { ChatError, chatCtx, createChannel, deleteTag, deleteTagType, moveChannel, saveTag, saveTagType, updateChannel } from "@/lib/services/chat";
-import { berlinToDate, cancelCall, createCall, deleteCall, deleteTemplate, saveTemplate, sendCall, updateCall, saveKind, deleteKind } from "@/lib/services/schedule";
+import { berlinToDate, cancelCall, createCall, deleteCall, deleteTemplate, saveTemplate, sendCall, updateCall, saveKind, deleteKind, setIncidentCallRole } from "@/lib/services/schedule";
 import { requirePermission as requirePermissionIn, requireUser } from "@/lib/session";
 import { CostSettingsError, saveCostSettings } from "@/lib/ai/usage";
 import { loadMemberRows } from "./tabs/data";
@@ -208,6 +208,13 @@ export async function saveTemplateAction(f: FormData) {
 }
 export async function saveKindAction(f: FormData) {
   return runSchedule(async () => void (await saveKind(db, await requireUser(), { name: str(f, "name"), needsCoords: f.get("needsCoords") === "on" })), "kindSaved");
+}
+/** Je Call-Typ: ab welcher Rolle er aus einem Incident ausgelöst werden darf. */
+export async function saveIncidentRolesAction(f: FormData) {
+  return runSchedule(async () => {
+    const user = await requireUser();
+    for (const [k, v] of f.entries()) if (k.startsWith("role:")) await setIncidentCallRole(db, user, k.slice(5), String(v));
+  }, "kindSaved");
 }
 export async function deleteKindAction(f: FormData) {
   return runSchedule(async () => deleteKind(db, await requireUser(), int(f, "kindId")));

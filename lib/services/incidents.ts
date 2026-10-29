@@ -8,6 +8,7 @@ import { ForbiddenError, hasPermission } from "../permissions";
 import { readTroops } from "../troops";
 import { chatCtx, postMessage } from "./chat";
 import { loadMatrix, type Actor } from "./context";
+import { allowedIncidentKinds, createIncidentCall } from "./schedule";
 import { saveTroops } from "./troops";
 import { upsertMemory } from "./memory";
 import { getOwnVillage, ownVillages } from "./villages";
@@ -145,23 +146,32 @@ async function indexIncident(db: PrismaClient, id: number) {
   });
 }
 
-/** Hilfe im Deff-Call anfragen (einmal je Incident, englisch für die internationale Allianz). */
-export async function requestHelp(db: PrismaClient, actor: Actor, id: number) {
+/**
+ * Hilfe anfragen – ein Weg für alle: Darf die Rolle den gewählten Call-Typ aus Incidents auslösen, entsteht ein echter Call
+ * (Vorlage, Zielkanal, Direktnachricht laut Vorlage). Sonst eine kurze Nachricht im Deff-Call. Einmal je Incident.
+ */
+export async function requestHelp(db: PrismaClient, actor: Actor, id: number, kind?: string) {
   const i = await db.incident.findFirst({ where: { id, userId: actor.id } });
   if (!i) throw new IncidentError("err.notFound");
   if (i.helpRequestedAt) throw new IncidentError("err.incident.helpAlready");
-  const ch = await db.channel.findFirst({ where: { tree: "ALLY", slug: "deff-call", archivedAt: null } });
-  if (!ch) throw new IncidentError("err.incident.noDeffChannel");
   const ctx = await incidentContext(db, i);
   const a = i.answers as Answers;
   const who = i.attackerName || (i.attackerX !== null ? `(${i.attackerX}|${i.attackerY})` : "unknown attacker");
-  const lines = [
-    `🛡️ **Defence needed** – ${i.kind} on **${ctx.village?.name ?? "?"}** (${ctx.village ? `${ctx.village.x}|${ctx.village.y}` : "?"})`,
-    `Attacker: ${who}${i.attackerAlliance ? ` [${i.attackerAlliance}]` : ""}${ctx.attacker?.nearest != null ? ` · nearest village ${ctx.attacker.nearest} fields away` : ""}`,
-    `More attacks expected: ${a.moreAttacks}${a.ongoing === "yes" ? " · attacks incoming right now" : ""}`,
-  ];
-  await postMessage(db, await chatCtx(db, actor), { channelId: ch.id, body: lines.join("\n") });
+  const situation = [
+    `${i.kind} by ${who}${i.attackerAlliance ? ` [${i.attackerAlliance}]` : ""}${ctx.attacker?.nearest != null ? `, nearest village ${ctx.attacker.nearest} fields away` : ""}`,
+    `more attacks expected: ${a.moreAttacks}${a.ongoing === "yes" ? ", attacks incoming right now" : ""}`,
+  ].join(" · ");
+  if (kind && ctx.village && (await allowedIncidentKinds(db, actor)).some((k) => k.key === kind)) {
+    const call = await createIncidentCall(db, actor, { kind, x: ctx.village.x, y: ctx.village.y, note: situation });
+    await db.incident.update({ where: { id }, data: { helpRequestedAt: new Date(), callId: call.id } });
+    return { callId: call.id };
+  }
+  const ch = await db.channel.findFirst({ where: { tree: "ALLY", slug: "deff-call", archivedAt: null } });
+  if (!ch) throw new IncidentError("err.incident.noDeffChannel");
+  const body = `🛡️ **Defence needed** – ${i.kind} on **${ctx.village?.name ?? "?"}** (${ctx.village ? `${ctx.village.x}|${ctx.village.y}` : "?"})\nAttacker: ${who}${i.attackerAlliance ? ` [${i.attackerAlliance}]` : ""}${ctx.attacker?.nearest != null ? ` · nearest village ${ctx.attacker.nearest} fields away` : ""}\nMore attacks expected: ${a.moreAttacks}${a.ongoing === "yes" ? " · attacks incoming right now" : ""}`;
+  await postMessage(db, await chatCtx(db, actor), { channelId: ch.id, body });
   await db.incident.update({ where: { id }, data: { helpRequestedAt: new Date() } });
+  return { callId: null };
 }
 
 /** Aktive Incidents eines Nutzers fürs Lagebild (offen und im Bedrohungszeitraum). */
