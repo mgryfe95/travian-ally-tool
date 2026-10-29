@@ -138,3 +138,6 @@ Videos: erst `npm run e2e` (setzt Testdaten zurück), dann `npm run help:videos`
 
 ## Calls aus Incidents
 `lib/services/schedule.ts`: `incidentCallRoles`/`setIncidentCallRole` (Setting `incidentCall:<kind>` = GUEST|MEMBER|MODERATOR), `allowedIncidentKinds(actor)` (mit `schedule.manage` alle), `createIncidentCall` → `createCallUnchecked` (gemeinsamer Kern mit `createCall`, Audit mit `source: incident`, sofort gesendet). `requestHelp(…, kind)` in `lib/services/incidents.ts` wählt Call oder Nachricht.
+
+## Call-Vorlagen zweisprachig
+`CallTemplate.body` (Haupttext) + `bodyEn` (englisch, leer = Haupttext); beim Anlegen kopiert in `AllianceCall.template`/`templateEn`. `renderCall(c, url, locale)` nimmt bei `en` die englische Fassung. Kanal-Nachricht: Sprache des Absenders; Direktnachrichten und Rundmails: Sprache des Empfängers. Migration `20261029120000_call_template_en` ergänzt die englischen Texte der Standardvorlagen nur, wenn deren Text unverändert ist.

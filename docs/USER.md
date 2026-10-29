@@ -111,3 +111,6 @@ Menü **Incidents**: Kampfbericht hochladen (oder von Hand melden), Folgefragen 
 
 ## Hilfe
 `/help` ist ohne Anmeldung erreichbar (auch über den Link „Hilfe“ im Profilbereich und auf der Anmeldeseite) und erklärt alle Funktionen: Erste Schritte & Konto, Übersicht & Dörfer, KI-Vorschläge, Incidents, Chat, OCR-Scans, Inaktivensuche, Spieldaten, Admin-Funktionen – je Funktion zum Aufklappen, mit Kurzvideo je Bereich. Sprache Englisch/Deutsch umschaltbar (oben rechts), Videos gibt es in beiden Sprachen. Links ins Tool funktionieren nach der Anmeldung; ohne Anmeldung führen sie erst zum Login. Einen Punkt direkt verlinken: `/help#admin-invite`. Eine 5-seitige Kurzübersicht als PDF (Englisch/Deutsch) gibt es ohne Anmeldung unter `/help/pdf` (Deutsch: `/help/pdf?lang=de`).
+
+## Call-Vorlagen auf Englisch
+Im Kalender (Vorlagen) hat jede Vorlage zusätzlich ein Feld „Englischer Text“. Mitglieder mit Sprache Englisch bekommen diese Fassung (Direktnachrichten, Mails); die Nachricht im Kanal erscheint in der Sprache dessen, der den Call sendet. Leer = deutscher Text für alle. Englische Platzhalter: {type} {title} {player} {village} {coords} {time} {note}.

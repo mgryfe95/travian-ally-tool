@@ -83,7 +83,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
                 <td>{when(c.eventAt)}</td><td>{c.status === "sent" ? <span className="sub">{when(c.sentAt)}</span> : when(c.at)}</td><td>{kindLabel(c.kind)}</td>
                 <td>{c.playerName ? <>{c.playerName} <span className="mono sub"><CoordLink x={c.x!} y={c.y!} className="mono sub" /></span></> : c.title || "–"}</td>
                 <td>{chName.get(c.channelId) ?? "?"}</td><td><span className={`pill ${c.status === "sent" ? "p-ok" : "p-wait"}`}>{statusLabel(c.status)}</span></td>
-                <td className="sub" style={{ maxWidth: 280, whiteSpace: "pre-wrap", fontSize: 12 }}>{renderCall({ ...c, kindName: kinds.find((k) => k.key === c.kind)?.label })}</td>
+                <td className="sub" style={{ maxWidth: 280, whiteSpace: "pre-wrap", fontSize: 12 }}>{renderCall({ ...c, kindName: kinds.find((k) => k.key === c.kind)?.label }, undefined, locale)}</td>
                 <td className="r">{manage && (
                   <details>
                     <summary className="btn ghost sm" style={{ display: "inline-flex" }}>{t("schedule.edit")}</summary>
@@ -167,6 +167,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
               </div>
               <label className="sub" style={{ fontSize: 13, display: "block", marginTop: 8 }}><input type="checkbox" name="sendDm" defaultChecked={tpl.sendDm} /> {t("schedule.tpl.sendDm")}</label>
               <textarea name="body" defaultValue={tpl.body} rows={4} className="field" aria-label={t("schedule.tpl.body")} style={{ width: "100%", marginTop: 8, fontFamily: "inherit" }} />
+              <textarea name="bodyEn" defaultValue={tpl.bodyEn} rows={4} className="field" aria-label={t("schedule.tpl.bodyEn")} placeholder={t("schedule.tpl.bodyEnPh")} style={{ width: "100%", marginTop: 6, fontFamily: "inherit" }} />
               <div className="row" style={{ marginTop: 6 }}><button className="btn ghost sm">{t("schedule.tpl.save")}</button><button formAction={deleteTemplateAction} className="btn ghost sm">{t("schedule.delete")}</button></div>
             </form>
           ))}
@@ -178,6 +179,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
             </div>
             <label className="sub" style={{ fontSize: 13, display: "block", marginTop: 8 }}><input type="checkbox" name="sendDm" /> {t("schedule.tpl.sendDm")}</label>
             <textarea name="body" required rows={3} className="field" aria-label={t("schedule.tpl.newBody")} placeholder={t("schedule.tpl.newBodyPh")} style={{ width: "100%", marginTop: 8, fontFamily: "inherit" }} />
+            <textarea name="bodyEn" rows={3} className="field" aria-label={t("schedule.tpl.newBodyEn")} placeholder={t("schedule.tpl.bodyEnPh")} style={{ width: "100%", marginTop: 6, fontFamily: "inherit" }} />
             <button className="btn ghost sm" style={{ marginTop: 6 }}>{t("schedule.tpl.create")}</button>
           </form>
         </section>

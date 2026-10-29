@@ -41,6 +41,12 @@ describe("Hilfsfunktionen", () => {
     const text = renderCall({ kind: "DEFF", title: "", x: -3, y: -82, playerId: 7, playerName: "MG.RYFE", villageName: "MG Ryfe", eventAt: new Date("2026-10-15T16:30:00Z"), at: null, note: "", template: "Deff für {spieler} {koordinaten}\n{zeit}\n{link}\n{notiz}" }, "https://humans-travian.com/", "de");
     expect(text).toBe("Deff für MG.RYFE (-3|-82)\nDo., 15.10., 18:30 Uhr\nhttps://humans-travian.com/players/7");
   });
+  it("renderCall: englische Leser bekommen die englische Fassung, sonst der Haupttext", () => {
+    const c = { kind: "DEFF", title: "", x: 1, y: 2, playerId: null, playerName: "A", villageName: "D", eventAt: null, at: null, note: "n", template: "Deff {spieler}\n{notiz}", templateEn: "Defence {player}\n{note}" };
+    expect(renderCall(c, "https://x.de", "en")).toBe("Defence A\nn");
+    expect(renderCall(c, "https://x.de", "de")).toBe("Deff A\nn");
+    expect(renderCall({ ...c, templateEn: "" }, "https://x.de", "en")).toBe("Deff A\nn");
+  });
   it("renderCall entfernt Zeilen, in denen nur die Beschriftung übrig bliebe", () => {
     const c = { kind: "DEFF", title: "", x: 1, y: 2, playerId: null, playerName: "A", villageName: "D", eventAt: null, at: null, note: "", template: "Deff {spieler}\nBis: {zeit}\nBitte Truppen schicken: {link}\nfest" };
     expect(renderCall(c, "https://x.de", "de")).toBe("Deff A\nfest");
@@ -131,16 +137,19 @@ describe("Calls", () => {
     const key = `custom:${kind.id}`;
     expect((await listKinds(db)).map((k) => k.key)).toContain(key);
     const ch = await db.channel.findFirstOrThrow({ where: { name: "Ressources" } });
-    await saveTemplate(db, admin, { kind: key, name: "Ress-Call", body: "📦 **{art}** {titel} {zeit}", channelId: ch.id, sendDm: true });
+    await saveTemplate(db, admin, { kind: key, name: "Ress-Call", body: "📦 **{art}** {titel} {zeit} DE", bodyEn: "📦 **{type}** {title} {time} EN", channelId: ch.id, sendDm: true });
+    await db.user.update({ where: { id: "mod" }, data: { locale: "de" } });
     const c = await createCall(db, admin, { kind: key, title: "Eisen nötig", eventAt: t0 });
     expect(c.channelId).toBe(ch.id);
     expect(c.sendDm).toBe(true);
     await sendCall(db, admin, c.id, t0);
     const m = await db.message.findFirstOrThrow({ where: { channelId: ch.id } });
     expect(m.body).toContain("Ressourcen");
-    // DM an alle Leser des Kanals außer dem Absender (hier der Moderator)
+    expect(m.body).toMatch(/ EN$/); // Kanal: Sprache des Absenders (Admin ohne Einstellung = Englisch)
+    // DM an alle Leser des Kanals außer dem Absender (hier der Moderator), in dessen Sprache
     const dms = await db.dmMessage.findMany();
-    expect(dms.map((d) => d.body)).toEqual([m.body]);
+    expect(dms).toHaveLength(1);
+    expect(dms[0]!.body).toMatch(/^📦 \*\*Ressourcen\*\* Eisen nötig Do\., .* DE$/);
     expect(await f(createCall(db, admin, { kind: "custom:999" }))).toBeInstanceOf(ChatError);
     expect(await f(deleteKind(db, admin, kind.id))).toBeInstanceOf(ChatError); // Call existiert
     await db.allianceCall.deleteMany();

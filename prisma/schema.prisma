@@ -628,6 +628,8 @@ model CallTemplate {
   kind      String
   name      String @unique
   body      String
+  /// englische Fassung für Nutzer mit Sprache Englisch; leer = `body`
+  bodyEn    String @default("")
   /// Standard-Kanal (Allianz-Kanal); leer = erster Allianz-Kanal
   channelId Int?
   sortOrder Int    @default(0)
@@ -661,6 +663,8 @@ model AllianceCall {
   channelId    Int
   /// Vorlagentext zum Zeitpunkt des Anlegens (Platzhalter werden beim Senden ersetzt)
   template     String
+  /// englische Fassung der Vorlage; leer = `template`
+  templateEn   String  @default("")
   /// Direktnachricht beim Senden mitschicken (von der Vorlage übernommen)
   sendDm       Boolean   @default(false)
   note         String    @default("")

@@ -235,3 +235,7 @@ Commits: siehe PR.
 ## 2026-10-29 · travian-ally-tool/help/overview-pdf
 Was & Warum: (1) Fehler „Bis:“ leer im Call aus einem Incident behoben: `createIncidentCall` bekommt `eventAt = threatUntil`; `renderCall` lässt Zeilen weg, deren Platzhalter alle leer sind (nur die Beschriftung bliebe). (2) 5-seitige Kurzübersicht mit Screenshots und Grafiken als PDF auf Englisch und Deutsch, öffentlich unter `/help/pdf` (`?lang=de|en`, sonst UI-Sprache), Link oben auf der Hilfeseite. Tests: Unit (renderCall), DB (Incident-Call mit Zeit), e2e (/help/pdf ohne Login). Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.
 Commits: siehe PR.
+
+## 2026-10-29 · travian-ally-tool/schedule/templates-en
+Was & Warum: Call-Vorlagen auch auf Englisch. Neues Feld „Englischer Text“ je Vorlage (`CallTemplate.bodyEn`, im Call `templateEn`); Kanal-Nachricht in der Sprache des Absenders, Direktnachrichten und Rundmails je Empfängersprache, Vorschau im Kalender in der UI-Sprache. Standardvorlagen haben englische Texte (Attack / Defence call „Until:“ / Attack day / Other); Migration ergänzt sie bei unveränderten bestehenden Vorlagen. Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.
+Commits: siehe PR.

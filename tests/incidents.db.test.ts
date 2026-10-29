@@ -102,7 +102,7 @@ describe("Incidents", () => {
     expect(call).toMatchObject({ kind: "DEFF", status: "sent", x: 0, y: 0, createdBy: "u1" });
     expect(call.note).toMatch(/attack by Evil/);
     expect(call.eventAt?.getTime()).toBe((await db.incident.findUniqueOrThrow({ where: { id: i.id } })).threatUntil?.getTime()); // „Bis" = Ende des Bedrohungsmodus
-    expect((await db.message.findFirstOrThrow({ where: { channelId: call.channelId }, orderBy: { id: "desc" } })).body).toMatch(/Bis: \S/);
+    expect((await db.message.findFirstOrThrow({ where: { channelId: call.channelId }, orderBy: { id: "desc" } })).body).toMatch(/Until: \S/); // Standardvorlage, englisch (Nutzer ohne Spracheinstellung)
     expect((await db.incident.findUnique({ where: { id: i.id } }))?.callId).toBe(call.id);
 
     // nicht freigegebener Typ fällt auf die einfache Nachricht zurück

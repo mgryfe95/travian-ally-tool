@@ -10,7 +10,7 @@ import { publishUser } from "../realtime";
 import { effectiveRole } from "../permissions";
 import { mailEnabled, sendMail } from "../mail";
 import { AppError } from "../i18n/errors";
-import { DEFAULT_LOCALE, INTL_TAG, translate, type Locale, type MessageKey } from "../i18n";
+import { DEFAULT_LOCALE, INTL_TAG, isLocale, translate, type Locale, type MessageKey } from "../i18n";
 
 export const CALL_KINDS = ["ATTACK", "DEFF", "ATTACK_DAY", "OTHER"] as const;
 export type CallKind = (typeof CALL_KINDS)[number];
@@ -58,11 +58,12 @@ export async function deleteKind(db: PrismaClient, actor: Actor, id: number) {
 
 export const PLACEHOLDERS = ["{art}", "{titel}", "{spieler}", "{dorf}", "{koordinaten}", "{zeit}", "{link}", "{notiz}"] as const;
 
-export const DEFAULT_TEMPLATES: { kind: CallKind; name: string; body: string }[] = [
-  { kind: "ATTACK", name: "Angriff", body: "⚔️ **Angriff** auf **{spieler}** – {dorf} {koordinaten}\nZeit: {zeit}\n{link}\n{notiz}" },
-  { kind: "DEFF", name: "Deff-Unterstützung", body: "🛡️ **Deff-Call** für **{spieler}** – {dorf} {koordinaten}\nBis: {zeit}\nBitte Truppen schicken: {link}\n{notiz}" },
-  { kind: "ATTACK_DAY", name: "Angriffstag", body: "⚔️ **Angriffstag** {zeit}\n{titel}\n{notiz}" },
-  { kind: "OTHER", name: "Sonstiges", body: "📣 **{titel}**\n{zeit}\n{dorf} {koordinaten}\n{notiz}" },
+/** Standardvorlagen: `body` Deutsch, `bodyEn` Englisch (je nach Sprache des Lesers). */
+export const DEFAULT_TEMPLATES: { kind: CallKind; name: string; body: string; bodyEn: string }[] = [
+  { kind: "ATTACK", name: "Angriff", body: "⚔️ **Angriff** auf **{spieler}** – {dorf} {koordinaten}\nZeit: {zeit}\n{link}\n{notiz}", bodyEn: "⚔️ **Attack** on **{player}** – {village} {coords}\nTime: {time}\n{link}\n{note}" },
+  { kind: "DEFF", name: "Deff-Unterstützung", body: "🛡️ **Deff-Call** für **{spieler}** – {dorf} {koordinaten}\nBis: {zeit}\nBitte Truppen schicken: {link}\n{notiz}", bodyEn: "🛡️ **Defence call** for **{player}** – {village} {coords}\nUntil: {time}\nPlease send troops: {link}\n{note}" },
+  { kind: "ATTACK_DAY", name: "Angriffstag", body: "⚔️ **Angriffstag** {zeit}\n{titel}\n{notiz}", bodyEn: "⚔️ **Attack day** {time}\n{title}\n{note}" },
+  { kind: "OTHER", name: "Sonstiges", body: "📣 **{titel}**\n{zeit}\n{dorf} {koordinaten}\n{notiz}", bodyEn: "📣 **{title}**\n{time}\n{village} {coords}\n{note}" },
 ];
 
 async function requirePerm(db: PrismaClient, actor: Actor, perm: Permission) {
@@ -110,11 +111,12 @@ async function kindNames(db: PrismaClient): Promise<Map<string, string>> {
 const fmtTime = (d: Date | null, locale: Locale) =>
   d ? translate(locale, "err.call.time", { time: new Intl.DateTimeFormat(INTL_TAG[locale], { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" }).format(d) }) : "";
 
-type CallLike = { kind: string; title: string; x: number | null; y: number | null; playerId: number | null; playerName: string | null; villageName: string | null; at: Date | null; eventAt?: Date | null; template: string; note: string; kindName?: string };
+type CallLike = { kind: string; title: string; x: number | null; y: number | null; playerId: number | null; playerName: string | null; villageName: string | null; at: Date | null; eventAt?: Date | null; template: string; templateEn?: string; note: string; kindName?: string };
 
 /**
  * Setzt Platzhalter ein; leere Zeilen (nicht belegte Platzhalter) werden entfernt – auch Zeilen, deren Platzhalter alle leer sind
  * und von denen nur die Beschriftung bliebe (z.B. „Bis: {zeit}" ohne Zeit). Link führt zur Spielerseite im Tool.
+ * Englische Leser bekommen `templateEn`, sofern gesetzt.
  */
 export function renderCall(c: CallLike, appUrl = env().APP_URL, locale: Locale = DEFAULT_LOCALE): string {
   const vars: Record<string, string> = {
@@ -124,7 +126,8 @@ export function renderCall(c: CallLike, appUrl = env().APP_URL, locale: Locale =
   // Englische Aliase für dieselben Platzhalter ({type}, {title}, {player}, {village}, {coords}, {time}, {note})
   Object.assign(vars, { type: vars.art, title: vars.titel, player: vars.spieler, village: vars.dorf, coords: vars.koordinaten, time: vars.zeit, note: vars.notiz });
   const keys = (l: string) => [...l.matchAll(/\{(\w+)\}/g)].map((m) => m[1]!);
-  return c.template
+  const template = locale === "en" && c.templateEn?.trim() ? c.templateEn : c.template;
+  return template
     .split("\n").filter((l) => { const k = keys(l); return k.length === 0 || k.some((x) => (vars[x] ?? "").trim() !== ""); })
     .map((l) => l.replace(/\{(\w+)\}/g, (_, k: string) => vars[k] ?? "")).map((l) => l.replace(/[ \t]+/g, " ").trimEnd()).filter((l, i, a) => l.trim() !== "" || (i > 0 && a[i - 1]!.trim() !== "" && i < a.length - 1))
     .join("\n").trim();
@@ -179,7 +182,7 @@ async function createCallUnchecked(db: PrismaClient, actor: Actor, input: CallIn
   const call = await db.allianceCall.create({
     data: {
       kind, title: (input.title ?? "").trim().slice(0, 80), x: xy?.[0] ?? null, y: xy?.[1] ?? null, villageId: target?.villageId, villageName: target?.villageName, playerId: target?.playerId,
-      playerName: target?.playerName, at, eventAt, channelId: ch.id, template: tpl.body, sendDm: tpl.sendDm, note, status: at ? "scheduled" : "draft", createdBy: actor.id,
+      playerName: target?.playerName, at, eventAt, channelId: ch.id, template: tpl.body, templateEn: tpl.bodyEn ?? "", sendDm: tpl.sendDm, note, status: at ? "scheduled" : "draft", createdBy: actor.id,
     },
   });
   await audit(db, actor.id, "call.create", `call:${call.id}`, undefined, { kind, at, eventAt, coord: xy, ...(source ? { source } : {}) });
@@ -243,7 +246,7 @@ async function dispatch(db: PrismaClient, id: number, now: Date, actorId?: strin
       body: m.body, createdAt: m.createdAt.toISOString(), editedAt: null, tags: [], attachments: [],
     });
     const done = await db.allianceCall.update({ where: { id }, data: { status: "sent", sentAt: now, messageId: m.id } });
-    if (call.sendDm) await sendCallDms(db, call, body).catch((e) => console.error("[schedule] Direktnachrichten fehlgeschlagen", e));
+    if (call.sendDm) await sendCallDms(db, { ...call, kindName: names.get(call.kind) }).catch((e) => console.error("[schedule] Direktnachrichten fehlgeschlagen", e));
     return done;
   } catch (e) {
     await db.allianceCall.update({ where: { id }, data: { status: call.at ? "scheduled" : "draft" } });
@@ -252,11 +255,11 @@ async function dispatch(db: PrismaClient, id: number, now: Date, actorId?: strin
 }
 
 /** Direktnachricht an die Betroffenen: verifizierte Nutzer des Zielspielers, sonst alle aktiven Nicht-Gäste mit Leserecht im Kanal. Absender = Ersteller. */
-async function sendCallDms(db: PrismaClient, call: { channelId: number; createdBy: string; playerId: number | null }, body: string) {
+async function sendCallDms(db: PrismaClient, call: CallLike & { channelId: number; createdBy: string }) {
   const channel = await db.channel.findUniqueOrThrow({ where: { id: call.channelId } });
   let ids: string[] = [];
   if (call.playerId) ids = (await db.playerLink.findMany({ where: { travianPlayerId: call.playerId, status: "verified" }, select: { userId: true } })).map((l) => l.userId);
-  const users = await db.user.findMany({ where: { banned: false, role: { not: "GUEST" }, ...(ids.length ? { id: { in: ids } } : {}) }, select: { id: true, role: true, email: true } });
+  const users = await db.user.findMany({ where: { banned: false, role: { not: "GUEST" }, ...(ids.length ? { id: { in: ids } } : {}) }, select: { id: true, role: true, email: true, locale: true } });
   const sender = call.createdBy;
   for (const u of users.slice(0, 300)) {
     if (u.id === sender) continue;
@@ -264,7 +267,7 @@ async function sendCallDms(db: PrismaClient, call: { channelId: number; createdB
     const key = pairKey(sender, u.id);
     const [a, b] = sender < u.id ? [sender, u.id] : [u.id, sender];
     const thread = await db.dmThread.upsert({ where: { pairKey: key }, create: { pairKey: key, userA: a, userB: b }, update: {} });
-    await db.dmMessage.create({ data: { threadId: thread.id, authorId: sender, body } });
+    await db.dmMessage.create({ data: { threadId: thread.id, authorId: sender, body: renderCall(call, undefined, isLocale(u.locale) ? u.locale : DEFAULT_LOCALE) } });
     publishUser(u.id, "messenger:new", { threadId: thread.id });
   }
 }
@@ -306,7 +309,7 @@ async function notifyChange(db: PrismaClient, actor: Actor, call: CallLike & { c
   if (!mail) return;
   const users = await db.user.findMany({ where: { role: { not: "GUEST" }, banned: false }, select: { email: true, locale: true } });
   for (const u of users) {
-    const l = u.locale && (u.locale === "de" || u.locale === "en") ? u.locale : DEFAULT_LOCALE;
+    const l = isLocale(u.locale) ? u.locale : DEFAULT_LOCALE;
     try {
       await sendMail({ to: u.email, subject: translate(l, key === "err.call.msg.cancelled" ? "err.call.mail.cancelled" : "err.call.mail.updated"), text: translate(l, key, { text: renderCall(withName, undefined, l) }) });
     } catch (e) {
@@ -368,16 +371,18 @@ export async function updateCall(db: PrismaClient, actor: Actor, id: number, inp
   return upd;
 }
 
-export async function saveTemplate(db: PrismaClient, actor: Actor, input: { id?: number; kind: string; name: string; body: string; channelId?: number | null; sendDm?: boolean }) {
+export async function saveTemplate(db: PrismaClient, actor: Actor, input: { id?: number; kind: string; name: string; body: string; bodyEn?: string; channelId?: number | null; sendDm?: boolean }) {
   await requirePerm(db, actor, "schedule.manage");
   const name = input.name.trim();
   const body = input.body.trim();
+  const bodyEn = (input.bodyEn ?? "").trim();
   await requireKind(db, input.kind);
   if (name.length < 2 || name.length > 40) throw new ChatError("err.chat.nameLength", { min: 2, max: 40 });
   if (body.length < 3 || body.length > 2000) throw new ChatError("err.call.textLength", { min: 3, max: 2000 });
+  if (bodyEn && (bodyEn.length < 3 || bodyEn.length > 2000)) throw new ChatError("err.call.textLength", { min: 3, max: 2000 });
   if (input.channelId && !(await db.channel.findFirst({ where: { id: input.channelId, tree: "ALLY" } }))) throw new ChatError("err.chat.channelInvalid");
   try {
-    const data = { kind: input.kind, name, body, channelId: input.channelId ?? null, sendDm: !!input.sendDm };
+    const data = { kind: input.kind, name, body, bodyEn, channelId: input.channelId ?? null, sendDm: !!input.sendDm };
     return input.id ? await db.callTemplate.update({ where: { id: input.id }, data }) : await db.callTemplate.create({ data });
   } catch {
     throw new ChatError("err.call.templateExists");

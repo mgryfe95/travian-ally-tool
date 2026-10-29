@@ -203,7 +203,7 @@ export async function deleteCallAction(f: FormData) {
 }
 export async function saveTemplateAction(f: FormData) {
   return runSchedule(async () => void (await saveTemplate(db, await requireUser(), {
-    id: f.get("templateId") ? int(f, "templateId") : undefined, kind: str(f, "kind"), name: str(f, "name"), body: str(f, "body"), channelId: f.get("channelId") ? int(f, "channelId") : null, sendDm: f.get("sendDm") === "on",
+    id: f.get("templateId") ? int(f, "templateId") : undefined, kind: str(f, "kind"), name: str(f, "name"), body: str(f, "body"), bodyEn: str(f, "bodyEn"), channelId: f.get("channelId") ? int(f, "channelId") : null, sendDm: f.get("sendDm") === "on",
   })));
 }
 export async function saveKindAction(f: FormData) {
