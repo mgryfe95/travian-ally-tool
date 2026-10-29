@@ -1,7 +1,11 @@
 services:
   db:
     image: postgres:16
-    environment: { POSTGRES_USER: ally, POSTGRES_PASSWORD: ally, POSTGRES_DB: ally }
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ally
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ally}
+      POSTGRES_DB: ally
     volumes: [dbdata:/var/lib/postgresql/data]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ally"]
@@ -9,15 +13,26 @@ services:
       retries: 10
   app:
     build: .
+    restart: unless-stopped
     env_file: .env
-    ports: ["3000:3000"]
+    # Nur lokal erreichbar; Nginx/Apache davor übernimmt TLS (siehe docs/DEPLOY.md).
+    ports: ["127.0.0.1:${APP_PORT:-3000}:3000"]   # Host-Port per APP_PORT in der .env änderbar (z. B. wenn 3000 belegt ist)
     depends_on: { db: { condition: service_healthy } }
     volumes: [storage:/app/storage]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
   worker:
     build: .
+    restart: unless-stopped
     command: ["npm", "run", "worker"]
     env_file: .env
-    depends_on: { db: { condition: service_healthy } }
+    # Gleiches Storage-Volume: der Worker räumt verwaiste Uploads auf.
+    volumes: [storage:/app/storage]
+    depends_on: { app: { condition: service_healthy } }
 volumes:
   dbdata:
   storage:

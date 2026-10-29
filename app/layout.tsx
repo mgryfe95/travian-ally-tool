@@ -1,12 +1,20 @@
 import type { ReactNode } from "react";
+import { MapBaseProvider } from "@/components/CoordLink";
+import { env } from "@/lib/env";
+import { I18nProvider } from "@/lib/i18n/client";
+import { messagesFor } from "@/lib/i18n";
+import { getLocale } from "@/lib/i18n/server";
 import "./globals.css";
 
-export const metadata = { title: "Travian Ally Tool" };
+export const metadata = { title: "Humans Ally Tool" };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const locale = await getLocale();
   return (
-    <html lang="de" className="dark">
-      <body className="min-h-screen bg-zinc-950 text-zinc-100 antialiased">{children}</body>
+    <html lang={locale}>
+      <body>
+        <I18nProvider locale={locale} messages={messagesFor(locale)}><MapBaseProvider serverUrl={env().TRAVIAN_SERVER_URL}>{children}</MapBaseProvider></I18nProvider>
+      </body>
     </html>
   );
 }

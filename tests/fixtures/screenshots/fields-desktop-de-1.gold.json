@@ -1,0 +1,212 @@
+{
+ "kind": "RESOURCE_VIEW",
+ "device": "DESKTOP",
+ "language": "de",
+ "village": {
+  "name": "MG",
+  "x": -3,
+  "y": -83
+ },
+ "topBar": {
+  "wood": 221,
+  "clay": 239,
+  "iron": 181,
+  "crop": 12509,
+  "freeCrop": 480,
+  "warehouse": 25900,
+  "granary": 25900
+ },
+ "rows": [
+  {
+   "name": "info",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    288,
+    100
+   ],
+   "texts": []
+  },
+  {
+   "name": "production_net",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    1050,
+    1129,
+    858,
+    -2334
+   ],
+   "texts": []
+  },
+  {
+   "name": "unit:Phalanx",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    1867
+   ],
+   "texts": []
+  },
+  {
+   "name": "unit:Späher",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    1
+   ],
+   "texts": []
+  },
+  {
+   "name": "unit:Druidenreiter",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    370
+   ],
+   "texts": []
+  },
+  {
+   "name": "unit:Legionäre",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    200
+   ],
+   "texts": []
+  },
+  {
+   "name": "unit:Prätorianer",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    200
+   ],
+   "texts": []
+  },
+  {
+   "name": "queue:Palisade",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    6
+   ],
+   "texts": [
+    "0:12:51",
+    "15:25"
+   ]
+  },
+  {
+   "name": "queue:Palisade",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    7
+   ],
+   "texts": [
+    "1:43:31",
+    "16:56"
+   ]
+  },
+  {
+   "name": "incoming",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    2
+   ],
+   "texts": [
+    "Unterst.",
+    "1:32:30"
+   ]
+  }
+ ],
+ "totals": null,
+ "fields": [
+  {
+   "slot": null,
+   "level": 8
+  },
+  {
+   "slot": null,
+   "level": 7
+  },
+  {
+   "slot": null,
+   "level": 7
+  },
+  {
+   "slot": null,
+   "level": 10
+  },
+  {
+   "slot": null,
+   "level": 10
+  },
+  {
+   "slot": null,
+   "level": 8
+  },
+  {
+   "slot": null,
+   "level": 8
+  },
+  {
+   "slot": null,
+   "level": 7
+  },
+  {
+   "slot": null,
+   "level": 7
+  },
+  {
+   "slot": null,
+   "level": 9
+  },
+  {
+   "slot": null,
+   "level": 9
+  },
+  {
+   "slot": null,
+   "level": 7
+  },
+  {
+   "slot": null,
+   "level": 8
+  },
+  {
+   "slot": null,
+   "level": 8
+  },
+  {
+   "slot": null,
+   "level": 10
+  },
+  {
+   "slot": null,
+   "level": 9
+  },
+  {
+   "slot": null,
+   "level": 10
+  },
+  {
+   "slot": null,
+   "level": 10
+  }
+ ],
+ "buildings": [],
+ "selfRating": 0.95,
+ "uncertain": []
+}

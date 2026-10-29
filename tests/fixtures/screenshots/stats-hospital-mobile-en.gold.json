@@ -1,0 +1,94 @@
+{
+ "kind": "VILLAGE_HOSPITAL",
+ "device": "MOBILE",
+ "language": "en",
+ "village": {
+  "name": "MG Ryfe",
+  "x": -3,
+  "y": -82
+ },
+ "topBar": {
+  "wood": 13982,
+  "clay": 25758,
+  "iron": 17252,
+  "crop": 2515,
+  "freeCrop": 2435,
+  "warehouse": null,
+  "granary": null
+ },
+ "rows": [
+  {
+   "name": "MG Ryfe",
+   "x": -3,
+   "y": -82,
+   "current": true,
+   "cells": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "texts": [
+    "-"
+   ]
+  },
+  {
+   "name": "OG Ryfe",
+   "x": -7,
+   "y": -82,
+   "current": false,
+   "cells": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "texts": [
+    "-"
+   ]
+  },
+  {
+   "name": "MG",
+   "x": -3,
+   "y": -83,
+   "current": false,
+   "cells": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "texts": [
+    "-"
+   ]
+  },
+  {
+   "name": "OG",
+   "x": -4,
+   "y": -81,
+   "current": false,
+   "cells": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "texts": [
+    "-"
+   ]
+  }
+ ],
+ "totals": null,
+ "fields": [],
+ "buildings": [],
+ "selfRating": 0.95,
+ "uncertain": []
+}
