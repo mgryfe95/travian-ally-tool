@@ -41,6 +41,10 @@ describe("Hilfsfunktionen", () => {
     const text = renderCall({ kind: "DEFF", title: "", x: -3, y: -82, playerId: 7, playerName: "MG.RYFE", villageName: "MG Ryfe", eventAt: new Date("2026-10-15T16:30:00Z"), at: null, note: "", template: "Deff für {spieler} {koordinaten}\n{zeit}\n{link}\n{notiz}" }, "https://humans-travian.com/", "de");
     expect(text).toBe("Deff für MG.RYFE (-3|-82)\nDo., 15.10., 18:30 Uhr\nhttps://humans-travian.com/players/7");
   });
+  it("renderCall entfernt Zeilen, in denen nur die Beschriftung übrig bliebe", () => {
+    const c = { kind: "DEFF", title: "", x: 1, y: 2, playerId: null, playerName: "A", villageName: "D", eventAt: null, at: null, note: "", template: "Deff {spieler}\nBis: {zeit}\nBitte Truppen schicken: {link}\nfest" };
+    expect(renderCall(c, "https://x.de", "de")).toBe("Deff A\nfest");
+  });
 });
 
 describe("Calls", () => {

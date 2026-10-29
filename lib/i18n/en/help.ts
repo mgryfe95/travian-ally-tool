@@ -11,6 +11,7 @@ const en = {
   "help.loginHint": "You are not signed in. The links take you to sign-in first and then straight to the page.",
   "help.login": "Sign in",
   "help.toApp": "Open the tool",
+  "help.pdf": "Overview as PDF",
   "help.video": "Short video: where to click",
   "help.videoNote": "Recorded with test data.",
   "help.all": "All topics",

@@ -34,6 +34,7 @@ export default async function HelpPage() {
         </Link>
         <div className="row" style={{ gap: 12 }}>
           <LanguageSelect />
+          <a className="btn ghost" href={`/help/pdf?lang=${locale}`} target="_blank" rel="noopener">{t("help.pdf")}</a>
           <Link className="btn" href={signedIn ? "/" : "/login?next=%2Fhelp"}>{signedIn ? t("help.toApp") : t("help.login")}</Link>
         </div>
       </header>

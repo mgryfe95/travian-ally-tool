@@ -44,3 +44,18 @@ test("Hilfe auf Englisch (Browsersprache) mit allen Bereichen", async ({ browser
   await expect(page.getByRole("heading", { name: "Chat", exact: true })).toBeVisible();
   await ctx.close();
 });
+
+test("PDF-Übersicht ohne Login unter /help/pdf (Sprache per ?lang oder Browsersprache)", async ({ browser }) => {
+  const ctx = await browser.newContext({ locale: "en-US" });
+  const page = await ctx.newPage();
+  await page.goto("/help");
+  await expect(page.getByRole("link", { name: "Overview as PDF" })).toHaveAttribute("href", "/help/pdf?lang=en");
+  const en = await ctx.request.get("/help/pdf");
+  expect(en.status()).toBe(200);
+  expect(en.headers()["content-type"]).toBe("application/pdf");
+  expect(en.headers()["content-disposition"]).toContain("overview.en.pdf");
+  expect((await en.body()).subarray(0, 5).toString()).toBe("%PDF-");
+  const de = await ctx.request.get("/help/pdf?lang=de");
+  expect(de.headers()["content-disposition"]).toContain("overview.de.pdf");
+  await ctx.close();
+});

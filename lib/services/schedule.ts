@@ -112,7 +112,10 @@ const fmtTime = (d: Date | null, locale: Locale) =>
 
 type CallLike = { kind: string; title: string; x: number | null; y: number | null; playerId: number | null; playerName: string | null; villageName: string | null; at: Date | null; eventAt?: Date | null; template: string; note: string; kindName?: string };
 
-/** Setzt Platzhalter ein; leere Zeilen (nicht belegte Platzhalter) werden entfernt. Link führt zur Spielerseite im Tool. */
+/**
+ * Setzt Platzhalter ein; leere Zeilen (nicht belegte Platzhalter) werden entfernt – auch Zeilen, deren Platzhalter alle leer sind
+ * und von denen nur die Beschriftung bliebe (z.B. „Bis: {zeit}" ohne Zeit). Link führt zur Spielerseite im Tool.
+ */
 export function renderCall(c: CallLike, appUrl = env().APP_URL, locale: Locale = DEFAULT_LOCALE): string {
   const vars: Record<string, string> = {
     art: c.kindName ?? (c.kind in KIND_KEY ? translate(locale, KIND_KEY[c.kind as CallKind]) : c.kind), titel: c.title, spieler: c.playerName ?? "", dorf: c.villageName ?? "",
@@ -120,9 +123,10 @@ export function renderCall(c: CallLike, appUrl = env().APP_URL, locale: Locale =
   };
   // Englische Aliase für dieselben Platzhalter ({type}, {title}, {player}, {village}, {coords}, {time}, {note})
   Object.assign(vars, { type: vars.art, title: vars.titel, player: vars.spieler, village: vars.dorf, coords: vars.koordinaten, time: vars.zeit, note: vars.notiz });
+  const keys = (l: string) => [...l.matchAll(/\{(\w+)\}/g)].map((m) => m[1]!);
   return c.template
-    .replace(/\{(\w+)\}/g, (_, k: string) => vars[k] ?? "")
-    .split("\n").map((l) => l.replace(/[ \t]+/g, " ").trimEnd()).filter((l, i, a) => l.trim() !== "" || (i > 0 && a[i - 1]!.trim() !== "" && i < a.length - 1))
+    .split("\n").filter((l) => { const k = keys(l); return k.length === 0 || k.some((x) => (vars[x] ?? "").trim() !== ""); })
+    .map((l) => l.replace(/\{(\w+)\}/g, (_, k: string) => vars[k] ?? "")).map((l) => l.replace(/[ \t]+/g, " ").trimEnd()).filter((l, i, a) => l.trim() !== "" || (i > 0 && a[i - 1]!.trim() !== "" && i < a.length - 1))
     .join("\n").trim();
 }
 

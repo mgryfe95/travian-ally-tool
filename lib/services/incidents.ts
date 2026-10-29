@@ -162,7 +162,7 @@ export async function requestHelp(db: PrismaClient, actor: Actor, id: number, ki
     `more attacks expected: ${a.moreAttacks}${a.ongoing === "yes" ? ", attacks incoming right now" : ""}`,
   ].join(" · ");
   if (kind && ctx.village && (await allowedIncidentKinds(db, actor)).some((k) => k.key === kind)) {
-    const call = await createIncidentCall(db, actor, { kind, x: ctx.village.x, y: ctx.village.y, note: situation });
+    const call = await createIncidentCall(db, actor, { kind, x: ctx.village.x, y: ctx.village.y, note: situation, eventAt: i.threatUntil });
     await db.incident.update({ where: { id }, data: { helpRequestedAt: new Date(), callId: call.id } });
     return { callId: call.id };
   }

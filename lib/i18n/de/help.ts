@@ -13,6 +13,7 @@ const de: Record<keyof typeof en, string> = {
   "help.loginHint": "Du bist nicht angemeldet. Die Links führen erst zur Anmeldung und danach direkt zur Seite.",
   "help.login": "Anmelden",
   "help.toApp": "Zum Tool",
+  "help.pdf": "Übersicht als PDF",
   "help.video": "Kurzvideo: wo du klickst",
   "help.videoNote": "Aufgenommen mit Testdaten.",
   "help.all": "Alle Themen",

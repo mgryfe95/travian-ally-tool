@@ -231,3 +231,7 @@ Commits: siehe PR.
 Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`
 Was & Warum: **Ein Weg vom Incident zum Call.** Je Call-Typ legt ein Admin im Schedule fest, ab welcher Rolle er direkt aus einem Incident gesendet werden darf (`Setting incidentCall:<typ>`; ohne Freigabe nur mit `schedule.manage`). Auf der Incident-Seite gibt es einen Knopf: mit Freigabe „Hilfe-Call senden“ (echter Call am angegriffenen Dorf, Kanal und Direktnachricht laut Vorlage, `Incident.callId`), sonst wie bisher eine kurze Deff-Call-Nachricht. **Hilfe:** Bereichs-Kacheln als Buttons (Klick zeigt nur diesen Bereich, „Alle Themen“ wieder alle, Anker `#sec-…`); Einstieg als Weg A (Einladung) / Weg B (Konto + Nachweis); Datenfluss-Skizze in OCR-Scans und KI-Vorschläge (Truppen → Admins/Moderatoren; Ressourcen, Gebäude, Truppen → KI; A Account-Strategie, B1 Dorftyp, B2 Dorf-Strategie; Incident zu A und B → Hilfe-Call).
 Commits: siehe PR.
+
+## 2026-10-29 · travian-ally-tool/help/overview-pdf
+Was & Warum: (1) Fehler „Bis:“ leer im Call aus einem Incident behoben: `createIncidentCall` bekommt `eventAt = threatUntil`; `renderCall` lässt Zeilen weg, deren Platzhalter alle leer sind (nur die Beschriftung bliebe). (2) 5-seitige Kurzübersicht mit Screenshots und Grafiken als PDF auf Englisch und Deutsch, öffentlich unter `/help/pdf` (`?lang=de|en`, sonst UI-Sprache), Link oben auf der Hilfeseite. Tests: Unit (renderCall), DB (Incident-Call mit Zeit), e2e (/help/pdf ohne Login). Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.
+Commits: siehe PR.

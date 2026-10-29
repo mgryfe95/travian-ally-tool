@@ -108,3 +108,5 @@ Offen:
 
 ## 2026-10-29 · Hilfe
 - Hilfevideos zeigen Testdaten: Inaktivensuche ohne Treffer, OCR mit Hinweis „API-Key fehlt“. Für schönere Videos auf einer Staging-Instanz mit echten Daten neu aufnehmen.
+- PDF-Übersicht (`public/help/overview.*.pdf`) zeigt Testdaten-Screenshots; die HTML-Quelle liegt nur im Session-Scratchpad. Bei größeren UI-Änderungen neu erzeugen (ggf. Quelle unter `docs/` ablegen).
+- Standard-Call-Vorlagen sind deutsch („Bis:“, „Bitte Truppen schicken“), auch für englische Nutzer – ggf. Vorlagen je Sprache.
