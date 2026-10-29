@@ -9,6 +9,7 @@ import villages from "./villages";
 import screenshots from "./screenshots";
 import overview from "./overview";
 import incidents from "./incidents";
+import help from "./help";
 import errors from "./errors";
 
-export const en = { ...common, ...nav, ...auth, ...admin, ...chat, ...messenger, ...schedule, ...villages, ...screenshots, ...overview, ...incidents, ...errors, };
+export const en = { ...common, ...nav, ...auth, ...admin, ...chat, ...messenger, ...schedule, ...villages, ...screenshots, ...overview, ...incidents, ...help, ...errors, };

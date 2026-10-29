@@ -11,3 +11,4 @@ deploy.log
 deploy.result
 .deploy-run.sh
 backups/
+test-results-help

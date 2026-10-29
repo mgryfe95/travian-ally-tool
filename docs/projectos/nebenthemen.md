@@ -105,3 +105,7 @@ Offen:
 - Hetzner-Preise (1 TB inkl., 8,70 €/TB-Monat) sind aus Sekundärquellen – beim ersten Prüfen mit der offiziellen Preisliste abgleichen.
 - Kampfbericht-Erkennung: neue `info`-Zeile im Prompt ist ungetestet gegen echte Berichte – erste echte Uploads prüfen und ggf. als Kern-Beispiel bestätigen.
 - „Wann“ beim Incident wird als Berliner Zeit gelesen (wie im Schedule), nicht als Spielzeit.
+
+## 2026-10-29 · Hilfe
+- Hilfevideos zeigen Testdaten: Inaktivensuche ohne Treffer, OCR mit Hinweis „API-Key fehlt“. Für schönere Videos auf einer Staging-Instanz mit echten Daten neu aufnehmen.
+- Hilfe deckt (wie gewünscht) nur Chat, OCR, Inaktivensuche, Admin ab – KI-Vorschläge, Incidents und Dorfseite könnten eigene Bereiche bekommen.

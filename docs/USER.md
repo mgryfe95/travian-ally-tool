@@ -108,3 +108,6 @@ Profilbereich → **Mein Konto**: zeigt die eigene Adresse und ob sie bestätigt
 
 ## Incidents (Angriffe melden)
 Menü **Incidents**: Kampfbericht hochladen (oder von Hand melden), Folgefragen beantworten, Verluste optional von den Truppen abziehen. Danach: „Lage bewerten“ (ein zusätzlicher KI-Lauf), „Hilfe im Deff-Call anfragen“, „Incident abschließen“. Für 3 Tage (1 Tag, wenn keine weiteren Angriffe erwartet werden) bevorzugen die KI-Vorschläge Verteidigung. Admins sehen alle offenen Incidents; das Recht „Alle Incidents einsehen“ lässt sich auch anderen Rollen geben.
+
+## Hilfe
+`/help` ist ohne Anmeldung erreichbar (auch über den Link „Hilfe“ im Profilbereich und auf der Anmeldeseite): Chat, OCR-Scans, Inaktivensuche und Admin-Funktionen, je Funktion zum Aufklappen, mit Kurzvideo je Bereich. Links ins Tool funktionieren nach der Anmeldung; ohne Anmeldung führen sie erst zum Login. Einen Punkt direkt verlinken: `/help#admin-invite`.

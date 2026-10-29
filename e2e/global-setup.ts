@@ -10,7 +10,7 @@ export default async function globalSetup() {
   execSync("npx prisma migrate deploy", { stdio: "pipe", env: { ...process.env, DATABASE_URL: url } });
   const db = new PrismaClient({ datasources: { db: { url } } });
   await db.$executeRawUnsafe(
-    'TRUNCATE "User","Invite","PlayerLink","AuditLog","AllianceClassification","Setting","Player","Village","Alliance","Snapshot","PlayerDailyStat","Event","RolePermission","Channel","Message","Tag","Taskforce","Attachment","ChannelRead","VillageProfile","VillageState","Screenshot","GameDataVersion" RESTART IDENTITY CASCADE',
+    'TRUNCATE "User","Invite","PlayerLink","AuditLog","AllianceClassification","Setting","Player","Village","Alliance","Snapshot","PlayerDailyStat","Event","RolePermission","Channel","Message","Tag","Taskforce","Attachment","ChannelRead","VillageProfile","VillageState","Screenshot","GameDataVersion","Incident","MemoryDoc","AdviceRun","Recommendation","AiUsage" RESTART IDENTITY CASCADE',
   );
   await seedPermissions(db);
   await seedChat(db);

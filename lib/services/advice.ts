@@ -74,14 +74,14 @@ export async function runAdvice(db: PrismaClient, actor: Actor, locale: string, 
     try {
       result = await getAdvisor()!.advise(g.situation, { locale, focusIncident: incidentId, onUsage: (model, usage) => recordUsage(db, { userId: actor.id, feature: trigger === "incident" ? "incident" : "advice", model, usage }) });
     } catch (e) {
-      await db.adviceRun.create({ data: { userId: actor.id, trigger, incidentId: incidentId ?? null, inputHash: g.hash, status: "error", errorKey: e instanceof AppError ? e.key : "err.advice.failed" } });
+      await db.adviceRun.create({ data: { userId: actor.id, createdAt: now, trigger, incidentId: incidentId ?? null, inputHash: g.hash, status: "error", errorKey: e instanceof AppError ? e.key : "err.advice.failed" } });
       throw e instanceof AdviceError ? e : new AdviceError("err.advice.failed");
     }
     const run = await db.$transaction(async (tx) => {
       await tx.recommendation.updateMany({ where: { userId: actor.id, status: "open" }, data: { status: "replaced" } });
       return tx.adviceRun.create({
         data: {
-          userId: actor.id, trigger, incidentId: incidentId ?? null, inputHash: g.hash!, status: "ok", summary: result.summary,
+          userId: actor.id, createdAt: now, trigger, incidentId: incidentId ?? null, inputHash: g.hash!, status: "ok", summary: result.summary,
           recommendations: { create: result.recommendations.map((r) => ({ userId: actor.id, villageId: r.villageId !== null && own.has(r.villageId) ? r.villageId : null, type: r.type, priority: r.priority, title: r.title, reason: r.reason })) },
         },
       });

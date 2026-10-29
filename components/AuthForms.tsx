@@ -29,9 +29,10 @@ function useSubmit(url: string, build: (f: FormData) => unknown, redirectTo: str
 
 const col = { display: "flex", flexDirection: "column", gap: 12 } as const;
 
-export function LoginForm({ guestHref = "/register" }: { guestHref?: string }) {
+/** `next`: interner Pfad, auf den nach dem Login weitergeleitet wird (vom Server mit `safeNext` geprüft). */
+export function LoginForm({ guestHref = "/register", next = "/" }: { guestHref?: string; next?: string }) {
   const t = useT();
-  const { onSubmit, error, busy } = useSubmit("/api/auth/sign-in/email", (f) => ({ email: f.get("email"), password: f.get("password") }), "/");
+  const { onSubmit, error, busy } = useSubmit("/api/auth/sign-in/email", (f) => ({ email: f.get("email"), password: f.get("password") }), next);
   return (
     <form onSubmit={onSubmit} style={col}>
       <div><label className="lbl" htmlFor="le">{t("auth.email")}</label><input id="le" name="email" className="field" type="email" required autoComplete="email" /></div>

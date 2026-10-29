@@ -41,6 +41,7 @@ export function MobileNav({ items, name, role }: { items: NavItem[]; name: strin
           <Link href="/mentions" className="nav">{t("chat.mentions.link")}</Link>
           <Link href="/files" className="nav">{t("nav.myFiles")}</Link>
           <Link href="/privacy" className="nav">{t("privacy.link")}</Link>
+          <Link href="/help" className="nav">{t("help.link")}</Link>
           <div style={{ padding: "6px 12px" }}><LanguageSelect /></div>
           <div className="sep" />
           <div style={{ padding: "6px 12px" }}><LogoutButton /></div>

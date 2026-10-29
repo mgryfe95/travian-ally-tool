@@ -130,3 +130,7 @@ Better Auth `emailVerification` (sendOnSignUp, 24 h, Auto-Login nach Bestätigun
 - Zusätzlich filtert jede Abfrage selbst, geklammert und vor `LIMIT`: `WHERE ("ownerId" = $1 OR "scope" = 'global') AND tsv @@ q`.
 - Globale Einträge (Wissen) nur über einen Wartungspfad ohne Nutzer-Scope (Superuser) anlegen – bisher keine.
 - `orQuery` baut aus Begriffen eine `websearch_to_tsquery`-ODER-Suche ohne Sonderzeichen.
+
+## Hilfeseite
+`app/help/page.tsx` (außerhalb der Route-Gruppen, kein Login), Inhalt `lib/help.ts` (Bereiche, Punkte, Quicklinks) + `lib/i18n/*/help.ts` (`help.<id mit _>.t/.b`; Zeilen mit „• “ = Liste, Leerzeile = Absatz). Interaktiv: `components/HelpBrowser.tsx`. Login-Rücksprung: `/login?next=` → `safeNext` erlaubt nur interne Pfade.
+Videos: erst `npm run e2e` (setzt Testdaten zurück), dann `npm run help:videos` (`playwright.help.config.ts`, `e2e-help/record.spec.ts`, schreibt `public/help/<bereich>.webm`), danach verkleinern: `ffmpeg -i x.webm -c:v libvpx-vp9 -crf 40 -b:v 0 -an y.webm`. Im Cloud-Container braucht die Aufnahme ein Browser-Verzeichnis mit `ffmpeg-1013/ffmpeg-linux` → System-ffmpeg (`PLAYWRIGHT_BROWSERS_PATH`).

@@ -159,3 +159,14 @@ a.mono { text-decoration: underline dotted; text-underline-offset: 3px; }
 .spinner.sm { width: 14px; height: 14px; border-width: 2px; border-color: var(--steel-line); border-top-color: var(--gold-hi); }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+
+/* Öffentliche Hilfeseite */
+.helpwrap { min-height: 100vh; background: var(--bg); }
+.helphead { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 24px; background: var(--side); color: var(--side-text); }
+.helphead select { background: var(--steel); color: var(--side-text); border: 1px solid var(--steel-line); border-radius: 8px; min-height: 36px; padding: 0 8px; }
+.helpmain { max-width: 980px; margin: 0 auto; padding: 24px 16px 64px; display: flex; flex-direction: column; gap: 14px; }
+.helptabs { display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+.helpitem { border-top: 1px solid var(--line2); padding: 10px 2px; }
+.helpitem summary { cursor: pointer; font-weight: 600; min-height: 32px; display: flex; align-items: center; gap: 8px; }
+.helpitem summary::marker { color: var(--gold); }
+.helpitem[open] summary { color: var(--navy); }
