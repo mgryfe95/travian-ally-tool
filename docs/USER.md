@@ -114,3 +114,6 @@ Menü **Incidents**: Kampfbericht hochladen (oder von Hand melden), Folgefragen 
 
 ## Call-Vorlagen auf Englisch
 Im Kalender (Vorlagen) hat jede Vorlage zusätzlich ein Feld „Englischer Text“. Mitglieder mit Sprache Englisch bekommen diese Fassung (Direktnachrichten, Mails); die Nachricht im Kanal erscheint in der Sprache dessen, der den Call sendet. Leer = deutscher Text für alle. Englische Platzhalter: {type} {title} {player} {village} {coords} {time} {note}.
+
+## Truppen in anderen Dörfern
+Auf der Dorfseite unter „Truppen“: Anzahl, optional Einheit, Zieldorf (x|y) und Notiz eintragen → „Hinzufügen“. Bleibt bis „Entfernen“. Truppen zählen immer nur im Heimatdorf – fremde Unterstützung in deinem Dorf wird nur angezeigt, nicht mitgezählt. „Truppen in Dörfern“-Screenshots werden derzeit nicht übernommen; bitte „Eigene Truppen“ oder den Versammlungsplatz hochladen. Screenshots lassen sich auch per Knopf „Aus Zwischenablage einfügen“ im Upload-Feld hochladen.

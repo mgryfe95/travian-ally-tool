@@ -20,6 +20,8 @@ export const READING_KINDS = [
   "UNKNOWN",
 ] as const;
 export type ReadingKind = (typeof READING_KINDS)[number];
+/** Wird erkannt (damit es nicht als „Eigene Truppen“ verlesen wird), aber nicht übernommen, nicht angeboten und nicht als Lern-Beispiel gespeichert. */
+export const UNSUPPORTED_KINDS: readonly ReadingKind[] = ["VILLAGE_TROOPS_PRESENT"];
 
 const n = z.number().nullable();
 const topBar = z.object({ wood: n, clay: n, iron: n, crop: n, freeCrop: n, warehouse: n, granary: n });

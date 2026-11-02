@@ -892,3 +892,22 @@ model MemoryDoc {
   @@unique([sourceType, sourceId])
   @@index([ownerId])
 }
+
+/// Manuell angegebene eigene Truppen, die in einem anderen Dorf stehen (z. B. als Unterstützung). Unabhängig von Screenshots.
+model TroopPlacement {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  /// Heimatdorf (eigenes Dorf)
+  villageId Int
+  /// Zieldorf
+  x         Int
+  y         Int
+  /// Einheit (Name oder „Einheit N“); leer = gemischt/ohne Angabe
+  unit      String   @default("")
+  count     Int
+  note      String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([villageId])
+  @@index([userId])
+}

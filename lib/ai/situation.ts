@@ -1,3 +1,4 @@
+import { listTroopPlacements } from "../services/troopPlacements";
 import { createHash } from "node:crypto";
 import type { PrismaClient } from "@prisma/client";
 import { GOAL_HINT, isGoal } from "./goals";
@@ -23,6 +24,8 @@ export type SituationVillage = {
   fields: { type: string; levels: number[] }[];
   buildings: { name: string; level: number; maxed: boolean; nextCost: string; benefitNow: string; benefitNext: string }[];
   troops: { unit: string; home: number; away: number; supportElsewhere: number }[];
+  /** vom Spieler angegeben: eigene Truppen dieses Dorfes, die in einem anderen Dorf stehen */
+  troopsPlacedElsewhere: { unit: string; count: number; target: string; note: string }[];
   troopUpkeepPerHour: number | null;
   queue: unknown;
 };
@@ -57,6 +60,7 @@ export async function buildSituation(db: PrismaClient, userId: string, now = new
   const slotByName = new Map(units.flatMap((u) => [[u.nameEn.toLowerCase(), u.slot] as const, ...(u.nameDe ? [[u.nameDe.toLowerCase(), u.slot] as const] : [])]));
   const upkeepDb = new Map(units.flatMap((u) => (u.upkeep != null ? [[u.slot, u.upkeep] as const] : [])));
 
+  const placed = await listTroopPlacements(db, villages.map((v) => v.id));
   const out: SituationVillage[] = [];
   for (const v of villages) {
     const s = v.state;
@@ -78,6 +82,7 @@ export async function buildSituation(db: PrismaClient, userId: string, now = new
       fields: [...byType].map(([type, levels]) => ({ type, levels: levels.sort((a, b) => a - b) })),
       buildings: buildingsRaw.map((b, i) => { const x = info.get(i); return { name: b.name!, level: b.level, maxed: x?.maxed ?? false, nextCost: x?.nextCost ?? "?", benefitNow: x?.benefit ?? "?", benefitNext: x?.benefitAfter ?? "?" }; }),
       troops: troops.map((t) => ({ unit: t.unit, home: t.inVillage, away: t.away, supportElsewhere: t.support })),
+      troopsPlacedElsewhere: placed.filter((x) => x.villageId === v.id).map((x) => ({ unit: x.unit || "mixed", count: x.count, target: `${x.target ?? "?"} (${x.x}|${x.y})`, note: x.note })),
       troopUpkeepPerHour: upkeep && upkeep.unknown === 0 ? upkeep.total : null,
       queue: obj<{ construction?: unknown }>(s?.queues).construction ?? null,
     });

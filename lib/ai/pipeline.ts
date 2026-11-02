@@ -3,7 +3,7 @@ import { aiClient, NotImplementedError } from "./client";
 import { applyReading } from "./apply";
 import { recordUsage } from "./usage";
 import type { Example } from "./claude";
-import { readingSchema, type Reading } from "./reading";
+import { readingSchema, type Reading, UNSUPPORTED_KINDS } from "./reading";
 import { agreementOf, assess, type Assessment, type Issue } from "./validate";
 import { env } from "../env";
 import { ownVillages } from "../services/villages";
@@ -30,13 +30,22 @@ async function knownVillages(db: PrismaClient, userId: string) {
   return (await ownVillages(db, userId)).map((v) => ({ id: v.id, name: v.name, x: v.x, y: v.y }));
 }
 
+/** Entfernt Lern-Beispiele nicht unterstützter Arten (beim Serverstart) samt nicht mehr gebrauchter Bilder. */
+export async function dropUnsupportedExamples(db: PrismaClient): Promise<number> {
+  const rows = await db.visionExample.findMany({ where: { kind: { in: [...UNSUPPORTED_KINDS] } }, select: { id: true, storageKey: true } });
+  if (!rows.length) return 0;
+  await db.visionExample.deleteMany({ where: { id: { in: rows.map((r) => r.id) } } });
+  await releaseScreenshotFiles(db, rows.map((r) => r.storageKey));
+  return rows.length;
+}
+
 /** Lern-Beispiele: je Art das jüngste bestätigte Beispiel (Bild + richtige Lesung), höchstens MAX_EXAMPLES. */
 export async function loadExamples(db: PrismaClient): Promise<Example[]> {
   const rows = await db.visionExample.findMany({ orderBy: { createdAt: "desc" }, take: 200 });
   const seen = new Set<string>();
   const out: Example[] = [];
   for (const r of rows) {
-    if (seen.has(r.kind) || out.length >= MAX_EXAMPLES) continue;
+    if (seen.has(r.kind) || out.length >= MAX_EXAMPLES || UNSUPPORTED_KINDS.includes(r.kind as never)) continue;
     const gold = readingSchema.safeParse(r.gold);
     if (!gold.success) continue;
     try {
@@ -114,10 +123,11 @@ export class VisionPipeline {
     const known = await knownVillages(this.db, userId);
     const a = assess(reading.data, known);
     if (reading.data.kind === "UNKNOWN") return withReason("failed", "err.vision.kindUnknown");
+    if (UNSUPPORTED_KINDS.includes(reading.data.kind)) return withReason("failed", "err.vision.kindUnsupported");
     const chosen = villageId !== undefined && known.some((k) => k.id === villageId) ? villageId : undefined;
     const applied = await applyReading(this.db, userId, shot.id, reading.data, known, chosen ?? shot.villageId ?? undefined, new Date(), chosen !== undefined);
     // Nur Arten, die in den Dorfzustand fließen, müssen ein Dorf treffen
-    const writes = !["VILLAGE_TROOPS_PRESENT", "BATTLE_REPORT"].includes(reading.data.kind);
+    const writes = reading.data.kind !== "BATTLE_REPORT";
     if (writes && applied.length === 0) return withReason("failed", "err.vision.noVillageMatch");
     await this.db.screenshot.update({
       where: { id: shot.id },

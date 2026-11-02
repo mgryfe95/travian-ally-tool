@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { reasonText, VisionPipeline } from "@/lib/ai/pipeline";
-import { READING_KINDS } from "@/lib/ai/reading";
+import { READING_KINDS, UNSUPPORTED_KINDS } from "@/lib/ai/reading";
 import { processUpload } from "@/lib/chat/attachments";
 import { compressScreenshot } from "@/lib/screenshots";
 import { uploadLimiter } from "@/lib/chat/limits";
@@ -32,7 +32,7 @@ export function POST(req: Request) {
     if (villageId !== undefined && !(await getOwnVillage(db, user.id, villageId))) return NextResponse.json({ error: t("screenshots.err.notYourVillage") }, { status: 403 });
 
     const kindRaw = String(form.get("kind") ?? "");
-    const expectedKind = (READING_KINDS as readonly string[]).includes(kindRaw) && kindRaw !== "UNKNOWN" ? kindRaw : null;
+    const expectedKind = (READING_KINDS as readonly string[]).includes(kindRaw) && kindRaw !== "UNKNOWN" && !(UNSUPPORTED_KINDS as readonly string[]).includes(kindRaw) ? kindRaw : null;
     const maxImageBytes = env().UPLOAD_MAX_IMAGE_MB * 1_048_576;
     const p = await processUpload({ name: file.name, data: Buffer.from(await file.arrayBuffer()) }, { maxImageBytes, maxFileBytes: maxImageBytes });
     if (p.kind !== "image") return NextResponse.json({ error: t("screenshots.err.notImage") }, { status: 415 });

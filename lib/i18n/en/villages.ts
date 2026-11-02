@@ -77,5 +77,15 @@ const en = {
   "villages.troops.upkeepShort": "{n} crop/h",
   "villages.troops.foreign": "Foreign troops in this village",
   "villages.troops.deployed": "Own troops in other villages",
+  "villages.troops.place.title": "Own troops in other villages (entered by you)",
+  "villages.troops.place.count": "Number",
+  "villages.troops.place.unit": "Unit (empty = mixed)",
+  "villages.troops.place.coord": "Target village (x|y)",
+  "villages.troops.place.note": "Note (optional)",
+  "villages.troops.place.add": "Add",
+  "villages.troops.place.remove": "Remove",
+  "villages.troops.place.removeLabel": "Remove entry with {n} troops",
+  "villages.troops.place.mixed": "troops",
+  "villages.troops.place.hint": "E.g. 1000 troops of this village standing as support in another village. Stays until you remove it – screenshots do not change it. Visible to you, admins/moderators (troop overview) and your AI suggestions.",
 } as const;
 export default en;

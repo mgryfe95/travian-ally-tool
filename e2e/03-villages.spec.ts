@@ -51,6 +51,25 @@ test("Meine Dörfer: Übersicht, KI-Instruktionen, Erinnerungen, Upload, Zugriff
   await page.getByLabel(/Manuell eintragen/).fill("Axtkämpfer; 3.410; 600; 0\nKatapult; 120");
   await page.getByRole("button", { name: "Truppen speichern" }).click();
   await expect(page.getByRole("row", { name: /Axtkämpfer 3\.410 600/ })).toBeVisible();
+
+  // Eigene Truppen in einem anderen Dorf manuell angeben und wieder entfernen
+  const place = page.locator("#trp-place");
+  await place.getByLabel("Anzahl").fill("1000");
+  await place.getByLabel("Zieldorf (x|y)").fill("(1|2)");
+  await place.getByLabel("Notiz (optional)").fill("Deff");
+  await place.getByRole("button", { name: "Hinzufügen" }).click();
+  await expect(place.getByText(/1\.000 Truppen → .*· Deff/)).toBeVisible();
+  await place.getByRole("button", { name: "Eintrag mit 1.000 Truppen entfernen" }).click();
+  await expect(place.getByText(/1\.000 Truppen →/)).toHaveCount(0);
+
+  // Bild aus der Zwischenablage per Knopf im Upload-Feld
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.evaluate(async (b64) => {
+    const blob = await (await fetch(`data:image/png;base64,${b64}`)).blob();
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+  }, png.toString("base64"));
+  await page.locator("#up-troops").getByRole("button", { name: "📋 Aus Zwischenablage einfügen" }).click();
+  await expect(page.locator("#up-troops").getByText(/Gespeichert\. Screenshot-Erkennung/)).toBeVisible();
   await expect(page.getByRole("link", { name: "Truppen", exact: true })).toHaveCount(0); // Member sieht den Menüpunkt nicht
   expect((await page.goto("/troops"))?.status()).toBe(200);
   await expect(page.getByText("Kein Zugriff")).toBeVisible();

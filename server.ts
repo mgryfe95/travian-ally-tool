@@ -11,6 +11,7 @@ import { channelRoom, setIo, userRoom } from "./lib/realtime";
 import { seedPermissions } from "./lib/services/admin";
 import { chatCtx, seedChat } from "./lib/services/chat";
 import { dispatchDueCalls, seedSchedule } from "./lib/services/schedule";
+import { dropUnsupportedExamples } from "./lib/ai/pipeline";
 
 const dev = process.env.NODE_ENV !== "production";
 const port = Number(process.env.PORT ?? 3000);
@@ -23,6 +24,7 @@ await app.prepare();
 await seedPermissions(db);
 await seedChat(db);
 await seedSchedule(db);
+await dropUnsupportedExamples(db).catch((e) => console.error("[vision] Aufräumen der Lern-Beispiele fehlgeschlagen", e));
 const httpServer = createServer((req, res) => void handle(req, res));
 const io = new SocketServer(httpServer, { path: "/socket.io" });
 setIo(io);

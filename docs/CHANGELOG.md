@@ -239,3 +239,7 @@ Commits: siehe PR.
 ## 2026-10-29 · travian-ally-tool/schedule/templates-en
 Was & Warum: Call-Vorlagen auch auf Englisch. Neues Feld „Englischer Text“ je Vorlage (`CallTemplate.bodyEn`, im Call `templateEn`); Kanal-Nachricht in der Sprache des Absenders, Direktnachrichten und Rundmails je Empfängersprache, Vorschau im Kalender in der UI-Sprache. Standardvorlagen haben englische Texte (Attack / Defence call „Until:“ / Attack day / Other); Migration ergänzt sie bei unveränderten bestehenden Vorlagen. Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.
 Commits: siehe PR.
+
+## 2026-11-02 · travian-ally-tool/troops/placements + screenshots/clipboard
+Was & Warum: (1) „Truppen in Dörfern“ vorerst raus (Wunsch Nutzer): nicht mehr in Upload/Prüfung wählbar, Bestätigen liefert Hinweis, Lern-Beispiele dieser Art werden beim Serverstart entfernt (`dropUnsupportedExamples`); die Art wird weiter erkannt, damit sie nicht als „Eigene Truppen“ verlesen wird (`UNSUPPORTED_KINDS`). (2) Dorfseite: eigene Truppen in anderen Dörfern manuell angeben/entfernen (`TroopPlacement`), sichtbar in Truppenübersicht und KI-Lagebild; KI-Regel: Truppen zählen nur im Heimatdorf. (3) Upload-Feld: Knopf „Aus Zwischenablage einfügen“. (4) OCR-Prüfung: Zeilen per × entfernen. Test-Isolation in `vision.db.test.ts` (Einheitennamen). Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.
+Commits: siehe PR.

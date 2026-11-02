@@ -111,3 +111,4 @@ Offen:
 - PDF-Übersicht (`public/help/overview.*.pdf`) zeigt Testdaten-Screenshots; die HTML-Quelle liegt nur im Session-Scratchpad. Bei größeren UI-Änderungen neu erzeugen (ggf. Quelle unter `docs/` ablegen).
 - ~~Standard-Call-Vorlagen nur deutsch~~ → erledigt 2026-10-29 (englischer Text je Vorlage).
 - Eine Kanal-Nachricht hat nur eine Sprache (die des Absenders); gemischte Allianzen sehen ggf. die andere Sprache.
+- Truppen in Dörfern (Screenshot) später ggf. als „Truppen im Dorf inkl. Unterstützung“ getrennt speichern (Variante 1 vom 2026-11-02, vom Nutzer zurückgestellt).

@@ -3,13 +3,15 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { ForbiddenError } from "@/lib/permissions";
 import { seedPermissions } from "@/lib/services/admin";
 import { saveTroops, troopsOverview } from "@/lib/services/troops";
+import { addTroopPlacement, deleteTroopPlacement, listTroopPlacements } from "@/lib/services/troopPlacements";
+import { TroopsError } from "@/lib/troops";
 
 const db = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL! } } });
 const t0 = new Date("2026-10-14T10:00:00Z");
 const base = { tribe: 1, population: 10, villageCount: 1, status: "active", noGrowthDays: 0, firstSeen: t0 };
 
 beforeEach(async () => {
-  await db.$executeRaw`TRUNCATE "User","RolePermission","AuditLog","Setting","Player","Village","PlayerLink","VillageState","AllianceClassification" RESTART IDENTITY CASCADE`;
+  await db.$executeRaw`TRUNCATE "User","RolePermission","AuditLog","Setting","Player","Village","PlayerLink","VillageState","AllianceClassification","TroopPlacement" RESTART IDENTITY CASCADE`;
   await seedPermissions(db);
   await db.setting.create({ data: { key: "allianceId", value: "36" } });
   await db.allianceClassification.create({ data: { allianceId: 7, relation: "ALLIED" } });
@@ -72,5 +74,22 @@ describe("Eingabe", () => {
     expect(s.resourcesAt).toEqual(t0);
     expect(s.resources).toEqual({ stock: 1 });
     expect(s.troopsAt).toEqual(t0);
+  });
+});
+
+describe("Manuell: eigene Truppen in anderen Dörfern", () => {
+  it("anlegen (Ziel aus Kartendaten), prüfen, in der Truppenübersicht sichtbar, nur eigene löschen", async () => {
+    const p = await addTroopPlacement(db, "u1", 10, { coord: "(2|2)", count: "1.000", unit: "", note: "Deff" });
+    expect(p).toMatchObject({ x: 2, y: 2, count: 1000, unit: "", note: "Deff" });
+    expect(await listTroopPlacements(db, [10])).toEqual([expect.objectContaining({ target: "B1", player: "Beta", count: 1000 })]);
+    await expect(addTroopPlacement(db, "u1", 10, { coord: "0|0", count: 5 })).rejects.toBeInstanceOf(TroopsError); // eigenes Dorf
+    await expect(addTroopPlacement(db, "u1", 10, { coord: "x", count: 5 })).rejects.toBeInstanceOf(TroopsError);
+    await expect(addTroopPlacement(db, "u1", 10, { coord: "2|2", count: 0 })).rejects.toBeInstanceOf(TroopsError);
+    await expect(addTroopPlacement(db, "u2", 10, { coord: "2|2", count: 5 })).rejects.toBeInstanceOf(ForbiddenError); // fremdes Dorf
+    const o = await troopsOverview(db, mod, t0);
+    expect(o.members[0]?.villages.find((v) => v.villageId === 10)?.placements).toHaveLength(1);
+    await expect(deleteTroopPlacement(db, "u2", p.id)).rejects.toBeInstanceOf(ForbiddenError);
+    await deleteTroopPlacement(db, "u1", p.id);
+    expect(await listTroopPlacements(db, [10])).toEqual([]);
   });
 });

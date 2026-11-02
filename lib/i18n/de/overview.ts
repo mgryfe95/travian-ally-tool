@@ -185,6 +185,7 @@ const de: Record<keyof typeof en, string> = {
   "overview.troops.colAge": "Stand",
   "overview.troops.noResults": "Keine Treffer.",
   "overview.troops.noDataShort": "keine Daten",
+  "overview.troops.placed": "Anderswo (Angabe):",
   "overview.gamedata.title": "Spieldaten",
   "overview.gamedata.subtitle": "Referenzdaten für KI-Empfehlungen und Dorf-Dashboards",
   "overview.gamedata.version": "Datenstand: {source} · {date} · Server-Speed {speed}×",

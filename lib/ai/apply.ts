@@ -109,7 +109,7 @@ export function planApply(r: Reading, known: KnownVillage[], hintVillageId?: num
       for (const row of r.rows) q(rowId(row), r.kind.slice(8).toLowerCase(), { cells: row.cells, texts: row.texts });
       break;
     default:
-      break; // VILLAGE_TROOPS_PRESENT, BATTLE_REPORT: erst gespeichert, noch nicht in den Dorfzustand übernommen
+      break; // BATTLE_REPORT: nur gespeichert (Incident); VILLAGE_TROOPS_PRESENT: nicht unterstützt (UNSUPPORTED_KINDS)
   }
   return out;
 }

@@ -59,7 +59,7 @@ const en = {
   "help.chat_dm.t": "Direct messages",
   "help.chat_dm.b": "Under “Messages” you write privately to single players – with attachments and formatting. The number in the menu shows unread messages. Direct messages are visible only to the people in them.",
   "help.ocr_kinds.t": "Which screenshots work?",
-  "help.ocr_kinds.b": "• Resource fields (18 fields with levels)\n• Village centre (buildings with levels)\n• Rally point (troops in the village)\n• Village statistics: troops, troops in villages, resources, production, training, smithy, hospital, culture points\n• Battle report\n\nDesktop and mobile, any game language. What matters is that the whole area is visible.",
+  "help.ocr_kinds.b": "• Resource fields (18 fields with levels)\n• Village centre (buildings with levels)\n• Rally point (troops in the village)\n• Village statistics: troops (own troops), resources, production, training, smithy, hospital, culture points\n• Battle report\n\nDesktop and mobile, any game language. What matters is that the whole area is visible.",
   "help.ocr_upload.t": "Uploading",
   "help.ocr_upload.b": "On the overview or in a village: pick a box, choose the type (with an example of the part that is needed) or let it detect automatically. Choose a file, drop it in or paste with Ctrl+V.\n\nInside a village the village is already set – best use the box of the area that is outdated (marked red).",
   "help.ocr_review.t": "Checking and confirming",

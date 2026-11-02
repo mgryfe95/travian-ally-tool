@@ -79,5 +79,15 @@ const de: Record<keyof typeof en, string> = {
   "villages.troops.upkeepShort": "{n} Getreide/h",
   "villages.troops.foreign": "Fremde Truppen in diesem Dorf",
   "villages.troops.deployed": "Eigene Truppen in anderen Dörfern",
+  "villages.troops.place.title": "Eigene Truppen in anderen Dörfern (von dir angegeben)",
+  "villages.troops.place.count": "Anzahl",
+  "villages.troops.place.unit": "Einheit (leer = gemischt)",
+  "villages.troops.place.coord": "Zieldorf (x|y)",
+  "villages.troops.place.note": "Notiz (optional)",
+  "villages.troops.place.add": "Hinzufügen",
+  "villages.troops.place.remove": "Entfernen",
+  "villages.troops.place.removeLabel": "Eintrag mit {n} Truppen entfernen",
+  "villages.troops.place.mixed": "Truppen",
+  "villages.troops.place.hint": "Z. B. 1000 Truppen dieses Dorfes stehen als Unterstützung in einem anderen Dorf. Bleibt, bis du es entfernst – Screenshots ändern es nicht. Sichtbar für dich, Admins/Moderatoren (Truppenübersicht) und deine KI-Vorschläge.",
 };
 export default de;

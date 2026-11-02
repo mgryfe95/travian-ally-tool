@@ -21,7 +21,8 @@ import { BuildingsEditor } from "@/components/BuildingsEditor";
 import { buildingInfos, loadBuildingNameSets } from "@/lib/gamedata/names";
 import { troopUpkeep } from "@/lib/gamedata/upkeep";
 import type { TroopDetail } from "@/lib/ai/apply";
-import { saveBuildingsAction, saveTroopsAction, saveVillageInstructionsAction } from "../actions";
+import { addTroopPlacementAction, deleteTroopPlacementAction, saveBuildingsAction, saveTroopsAction, saveVillageInstructionsAction } from "../actions";
+import { listTroopPlacements } from "@/lib/services/troopPlacements";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ const obj = <T,>(v: unknown): T => ((v && typeof v === "object" && !Array.isArra
 const RES_ROWS = [["wood", "villages.res.wood"], ["clay", "villages.res.clay"], ["iron", "villages.res.iron"], ["crop", "villages.res.crop"]] as const;
 
 const AREA_KINDS: Record<StateArea, string[]> = {
-  troops: ["RALLY_POINT", "VILLAGE_TROOPS", "VILLAGE_TROOPS_PRESENT"],
+  troops: ["RALLY_POINT", "VILLAGE_TROOPS"],
   buildings: ["VILLAGE_VIEW", "RESOURCE_VIEW"],
   resources: ["RESOURCE_VIEW", "VILLAGE_VIEW", "VILLAGE_RESOURCES", "VILLAGE_PRODUCTION"],
 };
@@ -75,6 +76,7 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
   const upkeepDb = new Map(unitRows.flatMap((u) => (u.upkeep != null ? [[u.slot, u.upkeep] as const] : [])));
   const ownUpkeep = troopUpkeep(owner?.tribe, troops.map((tr) => ({ unit: tr.unit, count: tr.inVillage + tr.away + tr.support })), slotByName, upkeepDb);
   const detail = obj<Partial<TroopDetail>>(s?.troopDetail);
+  const placements = await listTroopPlacements(db, [id]);
   const groupLine = (g: TroopDetail["foreign"][number]) => `${g.player ? `${g.player} · ` : ""}${g.name ?? "?"}${g.x !== null && g.y !== null ? ` (${g.x}|${g.y})` : ""}: ${g.units.map((u) => `${fmt(u.count, locale)} ${unitLabel(unitLabels, u.unit, locale, t)}`).join(", ")}${g.upkeep ? ` · ${t("villages.troops.upkeepShort", { n: fmt(g.upkeep, locale) })}` : ""}`;
   const queue = arr<QueueItem>(obj<{ construction?: unknown }>(s?.queues).construction);
 
@@ -167,6 +169,30 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
             <div style={{ marginTop: 8 }}><b style={{ fontSize: 13 }}>{t("villages.troops.deployed")}</b>
               <ul className="sub" style={{ fontSize: 12, margin: "4px 0 0", paddingLeft: 18 }}>{detail.deployed!.map((g, i) => <li key={i}>{groupLine(g)}</li>)}</ul></div>
           )}
+          <div id="trp-place" style={{ marginTop: 12 }}>
+            <b style={{ fontSize: 13 }}>{t("villages.troops.place.title")}</b>
+            {placements.length > 0 && (
+              <ul className="sub" style={{ fontSize: 12, margin: "4px 0 0", paddingLeft: 18 }}>{placements.map((p) => (
+                <li key={p.id}>
+                  <form action={deleteTroopPlacementAction} className="row" style={{ gap: 8, alignItems: "baseline" }}>
+                    <input type="hidden" name="villageId" value={id} /><input type="hidden" name="placementId" value={p.id} />
+                    <span>{fmt(p.count, locale)} {p.unit ? unitLabel(unitLabels, p.unit, locale, t) : t("villages.troops.place.mixed")} → {p.player ? `${p.player} · ` : ""}{p.target ?? "?"} <CoordLink x={p.x} y={p.y} />{p.note ? ` · ${p.note}` : ""}</span>
+                    <button className="btn ghost sm" aria-label={t("villages.troops.place.removeLabel", { n: fmt(p.count, locale) })}>{t("villages.troops.place.remove")}</button>
+                  </form>
+                </li>
+              ))}</ul>
+            )}
+            <form action={addTroopPlacementAction} className="row" style={{ gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+              <input type="hidden" name="villageId" value={id} />
+              <input name="count" required inputMode="numeric" className="field" placeholder={t("villages.troops.place.count")} aria-label={t("villages.troops.place.count")} style={{ width: 100, minHeight: 34 }} />
+              <input name="unit" list="trp-units" className="field" placeholder={t("villages.troops.place.unit")} aria-label={t("villages.troops.place.unit")} style={{ width: 150, minHeight: 34 }} />
+              <input name="coord" required className="field mono" placeholder="x|y" aria-label={t("villages.troops.place.coord")} style={{ width: 90, minHeight: 34 }} />
+              <input name="note" maxLength={200} className="field" placeholder={t("villages.troops.place.note")} aria-label={t("villages.troops.place.note")} style={{ flex: "1 1 120px", minHeight: 34 }} />
+              <button className="btn ghost sm">{t("villages.troops.place.add")}</button>
+              <datalist id="trp-units">{[...unitRows.map((u) => (locale === "de" ? (u.nameDe ?? u.nameEn) : u.nameEn)), t("common.hero")].map((n) => <option key={n} value={n} />)}</datalist>
+            </form>
+            <p className="sub" style={{ fontSize: 12, marginTop: 4 }}>{t("villages.troops.place.hint")}</p>
+          </div>
           <form action={saveTroopsAction} style={{ marginTop: 12 }}>
             <input type="hidden" name="villageId" value={id} />
             <label htmlFor="troops-text" className="lbl">{t("villages.troops.manual")}</label>

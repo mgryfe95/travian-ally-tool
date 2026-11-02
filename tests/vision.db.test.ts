@@ -4,7 +4,7 @@ import { PrismaClient } from "@prisma/client";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { applyReading, inheritNames, planApply } from "@/lib/ai/apply";
 import { setAiClient, StubAiClient } from "@/lib/ai/client";
-import { VisionPipeline } from "@/lib/ai/pipeline";
+import { dropUnsupportedExamples, loadExamples, VisionPipeline } from "@/lib/ai/pipeline";
 import { readingSchema, type Reading } from "@/lib/ai/reading";
 import { deleteExample, deleteScreenshotFiles, ExampleError, releaseScreenshotFiles, updateExample } from "@/lib/screenshots";
 import { screenshotStorage, storage } from "@/lib/storage";
@@ -32,6 +32,7 @@ afterAll(async () => db.$disconnect());
 beforeEach(async () => {
   await db.screenshot.deleteMany();
   await db.visionExample.deleteMany();
+  await db.unitName.deleteMany(); // sonst benennt ein Rest aus dem Einheitennamen-Test „Einheit N“ um
   await db.villageState.deleteMany({ where: { villageId: { in: known.map((k) => k.id) } } });
 });
 
@@ -134,6 +135,21 @@ describe("Bild nach Auswertung freigeben", () => {
     await expect(screenshotStorage().get("shots/rel/a.webp")).rejects.toBeTruthy();
     expect((await screenshotStorage().get("shots/rel/b.webp")).length).toBe(1);
     expect(await releaseScreenshotFiles(db, ["shots/rel/a.webp"])).toBe(0);
+  });
+});
+
+describe("Truppen in Dörfern (nicht unterstützt)", () => {
+  it("Lern-Beispiele werden entfernt und nie verwendet; Bestätigen wird abgelehnt", async () => {
+    await screenshotStorage().put("shots/tp/a.webp", Buffer.from("x"));
+    const shot = await db.screenshot.create({ data: { userId: "tp", storageKey: "shots/tp/a.webp", sizeBytes: 5, status: "parsed" } });
+    await db.visionExample.create({ data: { kind: "VILLAGE_TROOPS_PRESENT", storageKey: "shots/tp/a.webp", gold: gold("stats-troops-present-desktop-de") as object, createdBy: "tp" } });
+    expect(await loadExamples(db)).toEqual([]);
+    expect(await dropUnsupportedExamples(db)).toBe(1);
+    expect(await db.visionExample.count()).toBe(0);
+    expect((await db.screenshot.findUnique({ where: { id: shot.id } }))?.removedAt).not.toBeNull();
+    const s2 = await db.screenshot.create({ data: { userId: "tp", storageKey: "shots/tp/b.webp", sizeBytes: 5, status: "needs_review", parsed: { reading: gold("stats-troops-present-desktop-de") } as object } });
+    expect(await new VisionPipeline(db).confirm(s2.id, "tp")).toMatchObject({ status: "failed", reasonKey: "err.vision.kindUnsupported" });
+    expect(await db.visionExample.count()).toBe(0);
   });
 });
 

@@ -16,7 +16,7 @@ const load = (f: string) => JSON.parse(readFileSync(join(dir, f), "utf8")) as Re
 
 describe("Gold-Beispiele", () => {
   it("gibt es", () => expect(golds.length).toBeGreaterThanOrEqual(10));
-  for (const f of golds) {
+  for (const f of golds.filter((g) => !g.startsWith("stats-troops-present"))) {
     it(`${f}: gültiges Schema und keine harten Fehler`, () => {
       const r = readingSchema.parse(load(f));
       const a = assess(r, known);
@@ -27,6 +27,10 @@ describe("Gold-Beispiele", () => {
 });
 
 describe("Prüfungen", () => {
+  it("Truppen in Dörfern: erkannt, aber nicht unterstützt (harter Fehler)", () => {
+    const a = assess(readingSchema.parse(load("stats-troops-present-desktop-de.gold.json")), known);
+    expect(a.issues.some((i) => i.level === "hard" && i.key === "err.check.unsupportedKind")).toBe(true);
+  });
   const res = () => load("stats-resources-mobile-en.gold.json");
   it("Eigene Truppen: Summenzeile stimmt (inkl. Held)", () => {
     const r = load("stats-troops-own-desktop-de.gold.json");

@@ -61,7 +61,7 @@ const de: Record<keyof typeof en, string> = {
   "help.chat_dm.t": "Direktnachrichten",
   "help.chat_dm.b": "Unter „Nachrichten“ schreibst du einzelnen Spielern privat – mit Anhängen und Formatierung. Die Zahl im Menü zeigt ungelesene Nachrichten. Direktnachrichten sind nur für die Beteiligten sichtbar.",
   "help.ocr_kinds.t": "Welche Screenshots gehen?",
-  "help.ocr_kinds.b": "• Rohstofffelder (18 Felder mit Stufen)\n• Dorfzentrum (Gebäude mit Stufen)\n• Versammlungsplatz (Truppen im Dorf)\n• Dorfstatistik: Truppen, Truppen in Dörfern, Rohstoffe, Produktion, Ausbildung, Schmiede, Hospital, Kulturpunkte\n• Kampfbericht\n\nDesktop und Handy, jede Spielsprache. Wichtig ist, dass der ganze Bereich zu sehen ist.",
+  "help.ocr_kinds.b": "• Rohstofffelder (18 Felder mit Stufen)\n• Dorfzentrum (Gebäude mit Stufen)\n• Versammlungsplatz (Truppen im Dorf)\n• Dorfstatistik: Truppen (eigene), Rohstoffe, Produktion, Ausbildung, Schmiede, Hospital, Kulturpunkte\n• Kampfbericht\n\nDesktop und Handy, jede Spielsprache. Wichtig ist, dass der ganze Bereich zu sehen ist.",
   "help.ocr_upload.t": "Hochladen",
   "help.ocr_upload.b": "Auf der Übersicht oder in einem Dorf: Box wählen, Art auswählen (mit Beispielbild, welcher Ausschnitt gebraucht wird) oder „Automatisch erkennen“ lassen. Datei wählen, hineinziehen oder mit Strg+V einfügen.\n\nIm Dorf ist das Dorf schon vorgegeben – nimm am besten die Box des Bereichs, der veraltet ist (rot markiert).",
   "help.ocr_review.t": "Prüfen und bestätigen",

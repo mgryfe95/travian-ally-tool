@@ -141,3 +141,6 @@ Videos: erst `npm run e2e` (setzt Testdaten zurück), dann `npm run help:videos`
 
 ## Call-Vorlagen zweisprachig
 `CallTemplate.body` (Haupttext) + `bodyEn` (englisch, leer = Haupttext); beim Anlegen kopiert in `AllianceCall.template`/`templateEn`. `renderCall(c, url, locale)` nimmt bei `en` die englische Fassung. Kanal-Nachricht: Sprache des Absenders; Direktnachrichten und Rundmails: Sprache des Empfängers. Migration `20261029120000_call_template_en` ergänzt die englischen Texte der Standardvorlagen nur, wenn deren Text unverändert ist.
+
+## Truppen: Heimatdorf-Regel und manuelle Angaben
+Jede Einheit zählt nur in ihrem Heimatdorf (`VillageState.troops`: inVillage/away/support). Fremde Unterstützung steht nur in `troopDetail.foreign` und geht in keine Summe ein; die Einheiten-Box der Rohstofffeld-Ansicht (`unit:`-Zeilen) wird nicht übernommen. Manuelle Angaben „eigene Truppen in Dorf X“: `TroopPlacement` (`lib/services/troopPlacements.ts`), unabhängig von Screenshots, Info zum Standort (nicht zusätzlich gezählt). Nicht unterstützte Screenshot-Arten: `UNSUPPORTED_KINDS` in `lib/ai/reading.ts` (erkennen, nicht übernehmen, keine Lern-Beispiele).

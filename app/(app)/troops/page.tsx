@@ -84,7 +84,8 @@ function MemberRows({ m, stale, t, locale, ul }: { m: Awaited<ReturnType<typeof 
       {m.villages.map((v) => (
         <tr key={v.villageId}>
           <td style={{ paddingLeft: 28 }}>{v.name}</td><td className="mono"><CoordLink x={v.x} y={v.y} /></td>
-          <td className="mono" style={{ fontSize: 13 }}>{v.troops.length ? v.troops.map((u) => `${ul(u.unit)} ${fmt(u.inVillage, locale)}${u.away ? ` (+${fmt(u.away, locale)})` : ""}`).join(" · ") : <span className="sub">{t("overview.troops.noDataShort")}</span>}</td>
+          <td className="mono" style={{ fontSize: 13 }}>{v.troops.length ? v.troops.map((u) => `${ul(u.unit)} ${fmt(u.inVillage, locale)}${u.away ? ` (+${fmt(u.away, locale)})` : ""}`).join(" · ") : <span className="sub">{t("overview.troops.noDataShort")}</span>}
+            {v.placements.length > 0 && <div className="sub" style={{ fontSize: 12 }}>{t("overview.troops.placed")} {v.placements.map((p) => `${fmt(p.count, locale)} ${p.unit ? ul(p.unit) : t("villages.troops.place.mixed")} → ${p.target ?? "?"} (${p.x}|${p.y})`).join(" · ")}</div>}</td>
           <td className={stale(v.ageDays) ? "stale" : ""}>{ageText(t, v.ageDays)}</td>
         </tr>
       ))}

@@ -1,3 +1,4 @@
+import { listTroopPlacements, type Placement } from "./troopPlacements";
 import type { PrismaClient } from "@prisma/client";
 import { loadGroupPlayers } from "../alliance-group";
 import { ForbiddenError, hasPermission } from "../permissions";
@@ -17,7 +18,7 @@ export async function saveTroops(db: PrismaClient, userId: string, villageId: nu
   });
 }
 
-export type VillageTroops = { villageId: number; name: string; x: number; y: number; troops: TroopEntry[]; troopsAt: Date | null; ageDays: number | null };
+export type VillageTroops = { villageId: number; name: string; x: number; y: number; troops: TroopEntry[]; troopsAt: Date | null; ageDays: number | null; placements: Placement[] };
 export type MemberTroops = { playerId: number; playerName: string; accounts: string[]; villages: VillageTroops[]; totals: UnitTotal[]; oldestAgeDays: number | null };
 export type TroopsOverview = { members: MemberTroops[]; totals: UnitTotal[]; membersWithoutAccount: number; membersWithoutData: number };
 
@@ -31,6 +32,7 @@ export async function troopsOverview(db: PrismaClient, actor: Actor, now = new D
   const links = await db.playerLink.findMany({ where: { status: "verified", travianPlayerId: { in: players.map((p) => p.id) } }, include: { user: { select: { name: true, banned: true } } } });
   const withAccount = new Set(links.map((l) => l.travianPlayerId));
   const villages = await db.village.findMany({ where: { playerId: { in: [...withAccount] } }, orderBy: [{ population: "desc" }, { id: "asc" }] });
+  const placements = await listTroopPlacements(db, villages.map((v) => v.id));
   const states = new Map((await db.villageState.findMany({ where: { villageId: { in: villages.map((v) => v.id) } } })).map((s) => [s.villageId, s]));
 
   const members: MemberTroops[] = players
@@ -38,7 +40,7 @@ export async function troopsOverview(db: PrismaClient, actor: Actor, now = new D
     .map((p) => {
       const vs: VillageTroops[] = villages.filter((v) => v.playerId === p.id).map((v) => {
         const s = states.get(v.id);
-        return { villageId: v.id, name: v.name, x: v.x, y: v.y, troops: readTroops(s?.troops), troopsAt: s?.troopsAt ?? null, ageDays: ageInDays(s?.troopsAt ?? null, now) };
+        return { villageId: v.id, name: v.name, x: v.x, y: v.y, troops: readTroops(s?.troops), troopsAt: s?.troopsAt ?? null, ageDays: ageInDays(s?.troopsAt ?? null, now), placements: placements.filter((p) => p.villageId === v.id) };
       });
       const ages = vs.map((v) => v.ageDays).filter((a): a is number => a !== null);
       return {

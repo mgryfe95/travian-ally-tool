@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { READING_KINDS, type Reading } from "@/lib/ai/reading";
+import { READING_KINDS, UNSUPPORTED_KINDS, type Reading } from "@/lib/ai/reading";
 import { useT } from "@/lib/i18n/client";
 import { BuildingsTable, RES_TYPE_KEYS } from "./BuildingsTable";
 import { ShotMarkers, type Marker } from "./ShotMarkers";
@@ -16,6 +16,8 @@ export function ScreenshotReview({ id, reading, issues, villages, defaultVillage
 }) {
   const router = useRouter();
   const t = useT();
+  // erhöht sich beim Löschen einer Zeile, damit die ungesteuerten Eingabefelder neu aufgebaut werden
+  const [rowGen, setRowGen] = useState(0);
   const [data, setData] = useState<Reading>(() => reading as Reading);
   const [text, setText] = useState("");
   const [expert, setExpert] = useState(false);
@@ -158,7 +160,7 @@ export function ScreenshotReview({ id, reading, issues, villages, defaultVillage
       <label className="sub" style={{ display: "flex", gap: 6, alignItems: "center", margin: "6px 0" }}>
         {t("screenshots.review.kind")}
         <select value={data.kind} onChange={(e) => upd({ kind: e.target.value as Reading["kind"] })} className="field" style={{ width: "auto", minHeight: 32 }}>
-          {READING_KINDS.map((k) => <option key={k} value={k}>{kindLabels[k] ?? k}</option>)}
+          {READING_KINDS.filter((k) => k === data.kind || !UNSUPPORTED_KINDS.includes(k)).map((k) => <option key={k} value={k}>{kindLabels[k] ?? k}</option>)}
         </select>
       </label>
 
@@ -188,12 +190,13 @@ export function ScreenshotReview({ id, reading, issues, villages, defaultVillage
               <b>{t("screenshots.review.rows")}</b>
               <div className="scroll">
                 <table style={{ minWidth: 520 }}>
-                  <thead><tr><th>{t("screenshots.review.rowName")}</th><th style={{ width: 110 }}>{t("screenshots.review.rowCoord")}</th><th>{t("screenshots.review.rowCells")}</th></tr></thead>
+                  <thead><tr><th>{t("screenshots.review.rowName")}</th><th style={{ width: 110 }}>{t("screenshots.review.rowCoord")}</th><th>{t("screenshots.review.rowCells")}</th><th style={{ width: 44 }} /></tr></thead>
                   <tbody>{data.rows.map((r, i) => (
-                    <tr key={i}>
+                    <tr key={`${rowGen}-${i}`}>
                       <td><input className="field" style={{ minHeight: 34 }} aria-label={t("screenshots.review.rowName")} value={r.name ?? ""} onChange={(e) => upd({ rows: data.rows.map((x, k) => (k === i ? { ...x, name: e.target.value || null } : x)) })} /></td>
                       <td><input className="field mono" style={{ minHeight: 34 }} aria-label={t("screenshots.review.rowCoord")} defaultValue={r.x !== null && r.y !== null ? `${r.x}|${r.y}` : ""} onBlur={(e) => { const m = /^\s*\(?\s*(-?\d+)\s*[|,;]\s*(-?\d+)\s*\)?\s*$/.exec(e.target.value); upd({ rows: data.rows.map((x, k) => (k === i ? { ...x, x: m ? Number(m[1]) : null, y: m ? Number(m[2]) : null } : x)) }); }} /></td>
                       <td><input className="field mono" style={{ minHeight: 34 }} aria-label={t("screenshots.review.rowCells")} defaultValue={cellsToText(r.cells)} onBlur={(e) => upd({ rows: data.rows.map((x, k) => (k === i ? { ...x, cells: textToCells(e.target.value) } : x)) })} /></td>
+                      <td className="r"><button type="button" className="btn ghost sm" aria-label={t("screenshots.review.rowRemove", { name: r.name ?? String(i + 1) })} title={t("table.remove")} onClick={() => { setRowGen((g) => g + 1); upd({ rows: data.rows.filter((_, k) => k !== i) }); }}>×</button></td>
                     </tr>))}</tbody>
                 </table>
               </div>

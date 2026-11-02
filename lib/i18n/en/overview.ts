@@ -183,6 +183,7 @@ const en = {
   "overview.troops.colAge": "Updated",
   "overview.troops.noResults": "No results.",
   "overview.troops.noDataShort": "no data",
+  "overview.troops.placed": "Elsewhere (entered):",
   "overview.gamedata.title": "Game data",
   "overview.gamedata.subtitle": "Reference data for AI recommendations and village dashboards",
   "overview.gamedata.version": "Data version: {source} · {date} · server speed {speed}×",

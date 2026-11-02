@@ -1,5 +1,5 @@
 import { translate, type MessageKey, type Params } from "../i18n";
-import { EXPECTED_CELLS, type Reading, type ReadingKind } from "./reading";
+import { EXPECTED_CELLS, UNSUPPORTED_KINDS, type Reading, type ReadingKind } from "./reading";
 
 /** `message` ist englisch (Logs/Tests); `key`/`params` erlauben der UI die Anzeige in der Nutzersprache (`translate(locale, key, params)`). */
 export type Issue = { level: "hard" | "soft"; message: string; key?: MessageKey; params?: Params };
@@ -21,6 +21,7 @@ export function assess(r: Reading, known: KnownVillage[] = [], agreement = 1): A
   const matched: Record<string, number> = {};
 
   if (r.kind === "UNKNOWN") hard("err.check.unknownKind");
+  if (UNSUPPORTED_KINDS.includes(r.kind)) hard("err.check.unsupportedKind");
   for (const row of r.rows) {
     if (row.x === null && row.y === null && row.name && !row.name.startsWith("summary:") && STATS_KINDS.includes(r.kind)) {
       // Desktop-Statistiktabellen nennen nur den Dorfnamen → über die eigenen Dörfer zuordnen

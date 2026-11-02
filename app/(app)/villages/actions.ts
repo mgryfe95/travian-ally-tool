@@ -8,6 +8,7 @@ import { ForbiddenError } from "@/lib/permissions";
 import { saveAccountInstructions, saveBuildings, saveVillageInstructions, VillageError } from "@/lib/services/villages";
 import { parseTroopsText, TroopsError } from "@/lib/troops";
 import { saveTroops } from "@/lib/services/troops";
+import { addTroopPlacement, deleteTroopPlacement } from "@/lib/services/troopPlacements";
 import { requirePermission, requireUser } from "@/lib/session";
 
 async function run(back: string, anchor: string, fn: () => Promise<void>): Promise<never> {
@@ -48,4 +49,17 @@ export async function saveBuildingsAction(f: FormData) {
     }
     await saveBuildings(db, (await requireUser()).id, id, list as never);
   });
+}
+
+/** Eigene Truppen in einem anderen Dorf manuell angeben / entfernen. */
+export async function addTroopPlacementAction(f: FormData) {
+  const id = Number(f.get("villageId"));
+  return run(`/villages/${id}`, "trp", async () => void (await addTroopPlacement(db, (await requireUser()).id, id, {
+    coord: String(f.get("coord") ?? ""), unit: String(f.get("unit") ?? ""), count: String(f.get("count") ?? ""), note: String(f.get("note") ?? ""),
+  })));
+}
+
+export async function deleteTroopPlacementAction(f: FormData) {
+  const id = Number(f.get("villageId"));
+  return run(`/villages/${id}`, "trp", async () => deleteTroopPlacement(db, (await requireUser()).id, Number(f.get("placementId"))));
 }
