@@ -13,6 +13,8 @@ const schema = z.object({
   TRAVIAN_ALLIANCE_ID: z.string().default(""),
   /** Zusätzlicher Abruf-Takt (cron); leer = aus. Standard: nur täglich zur `MAP_RELEASE_TIME`. */
   IMPORT_CRON: z.string().default(""),
+  /** Halbjährlicher Spieldaten-Abgleich (Diff-Bericht, kein Import), z. B. "15 4 1 1,7 *"; leer = aus – erst nach Erlaubnis von Travian Games einschalten */
+  GAMEDATA_REFRESH_CRON: z.string().default(""),
   INACTIVE_DAYS: z.coerce.number().int().positive().default(3),
   /** Code, der zum Registrieren eines SYSTEMADMIN_EMAILS-Kontos nötig ist (Default: AUTH_SECRET). Verhindert, dass Fremde die Admin-Adresse vorab belegen. */
   SYSTEMADMIN_SETUP_CODE: z.preprocess(emptyToUndefined, z.string().min(8).optional()),
@@ -48,6 +50,8 @@ const schema = z.object({
   UPLOAD_MAX_FILES: z.coerce.number().int().positive().default(10),
   /** Obergrenze eigener Direktnachrichten je Nutzer; ältere werden täglich gelöscht (0 = unbegrenzt). */
   DM_MAX_PER_USER: z.coerce.number().int().min(0).default(10000),
+  /** Direktnachrichten älter als so viele Tage löschen (0 = aus) */
+  DM_RETENTION_DAYS: z.coerce.number().int().min(0).default(0),
   /** Screenshots werden nach so vielen Tagen samt Datei gelöscht (außer als Lern-Beispiel genutzte). 0 = nie. */
   SCREENSHOT_RETENTION_DAYS: z.coerce.number().int().min(0).default(30),
   /** Spielversion der Welt (Spieldaten-Import nur für genau diese Version). */

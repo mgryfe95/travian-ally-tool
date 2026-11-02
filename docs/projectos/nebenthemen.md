@@ -112,3 +112,8 @@ Offen:
 - ~~Standard-Call-Vorlagen nur deutsch~~ → erledigt 2026-10-29 (englischer Text je Vorlage).
 - Eine Kanal-Nachricht hat nur eine Sprache (die des Absenders); gemischte Allianzen sehen ggf. die andere Sprache.
 - Truppen in Dörfern (Screenshot) später ggf. als „Truppen im Dorf inkl. Unterstützung“ getrennt speichern (Variante 1 vom 2026-11-02, vom Nutzer zurückgestellt).
+
+## 2026-11-02 · Backlog-Review
+- Erledigt bzw. schon vorhanden: Produktionsberechnung (entfällt, Werte aus Screenshots), Truppen-Spieldaten (auf dem Server importiert), Messenger-Markdown/-Anhänge, Task-Force-Gründer übertragen, Rolle für Bündnispartner (= Gast).
+- Offen zur Entscheidung (Vorlage `entscheidungsvorlage-2026-11-03.md`): Backups nach S3, PTR, Call-Typ-Freigaben, Videos/PDF mit Echtdaten, Hetzner-Preise, Session-Report, Discord-Push, DM-Aufbewahrungsfrist.
+- Upload-Warteschlange (Erkennung asynchron) weiter offen; Kampfberichte werden nur für Incidents genutzt (gewollt).

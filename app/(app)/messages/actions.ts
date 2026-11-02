@@ -6,7 +6,7 @@ import { getT } from "@/lib/i18n/server";
 import { localizeError } from "@/lib/i18n/errors";
 import { ForbiddenError } from "@/lib/permissions";
 import { ChatError } from "@/lib/services/chat";
-import { getOrCreateThread, sendBroadcast, type Audience } from "@/lib/services/messenger";
+import { getOrCreateThread, sendBroadcast, setBlocked, type Audience } from "@/lib/services/messenger";
 import { requireUser } from "@/lib/session";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "");
@@ -37,4 +37,10 @@ export async function sendBroadcastAction(f: FormData) {
     const r = await sendBroadcast(db, await requireUser(), { subject: str(f, "subject"), body: str(f, "body"), audience });
     return `/messages?t=bc&sent=${r.recipients}`;
   });
+}
+
+/** Direktnachrichten von dieser Person blockieren / wieder zulassen. */
+export async function setBlockedAction(f: FormData) {
+  const back = `/messages?c=${Number(f.get("threadId"))}`;
+  return run(back, async () => void (await setBlocked(db, await requireUser(), str(f, "userId"), f.get("block") === "1")));
 }

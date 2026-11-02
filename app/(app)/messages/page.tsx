@@ -7,9 +7,9 @@ import { fmtDate } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
 import { hasPermission } from "@/lib/permissions";
 import { loadMatrix } from "@/lib/services/context";
-import { listInbox, listSent, listThreads, markBroadcastRead, readThread } from "@/lib/services/messenger";
+import { listInbox, listSent, listThreads, markBroadcastRead, readThread, isBlocked } from "@/lib/services/messenger";
 import { requirePermission } from "@/lib/session";
-import { openThreadAction, sendBroadcastAction } from "./actions";
+import { openThreadAction, sendBroadcastAction, setBlockedAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +44,15 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
         <section className="card" style={{ display: "flex", flexDirection: "column", minHeight: 360 }} aria-label={t("messenger.conversation")}>
           {current ? (
             <>
-              <h2 style={{ marginBottom: 10 }}>{current.other.name}</h2>
+              <div className="row between" style={{ marginBottom: 10, alignItems: "baseline" }}>
+                <h2>{current.other.name}</h2>
+                <form action={setBlockedAction}>
+                  <input type="hidden" name="threadId" value={sp.c} /><input type="hidden" name="userId" value={current.other.id} />
+                  {(await isBlocked(db, user.id, current.other.id))
+                    ? <><span className="sub" style={{ fontSize: 12, marginRight: 8 }}>{t("messenger.block.isBlocked")}</span><button className="btn ghost sm" name="block" value="0">{t("messenger.block.unblock")}</button></>
+                    : <button className="btn ghost sm" name="block" value="1" title={t("messenger.block.hint")}>{t("messenger.block.block")}</button>}
+                </form>
+              </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1, overflow: "auto", maxHeight: "55vh", marginBottom: 12 }} aria-live="polite">
                 {current.messages.length === 0 && <p className="sub">{t("messenger.noMessages")}</p>}
                 {current.messages.map((m) => (

@@ -3,7 +3,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { ForbiddenError, type Role } from "@/lib/permissions";
 import { seedPermissions } from "@/lib/services/admin";
 import { ChatError } from "@/lib/services/chat";
-import { capDirectMessages, getOrCreateThread, listInbox, listSent, listThreads, markBroadcastRead, pairKey, readThread, sendBroadcast, sendDm, unreadCounts } from "@/lib/services/messenger";
+import { capDirectMessages, getOrCreateThread, listInbox, listSent, listThreads, markBroadcastRead, pairKey, pruneOldDirectMessages, readThread, sendBroadcast, sendDm, setBlocked, unreadCounts } from "@/lib/services/messenger";
 
 const db = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL! } } });
 const who = (id: string, role: Role) => ({ id, role });
@@ -14,7 +14,7 @@ const mod = who("mod", "MODERATOR");
 const f = async (p: Promise<unknown>) => p.then(() => null, (e: unknown) => e);
 
 beforeEach(async () => {
-  await db.$executeRaw`TRUNCATE "User","RolePermission","AuditLog","Taskforce","DmThread","DmRead","Broadcast","Attachment" RESTART IDENTITY CASCADE`;
+  await db.$executeRaw`TRUNCATE "User","RolePermission","AuditLog","Taskforce","DmThread","DmRead","Broadcast","Attachment","DmBlock" RESTART IDENTITY CASCADE`;
   await seedPermissions(db);
   for (const [id, role] of [["m1", "MEMBER"], ["m2", "MEMBER"], ["m3", "MEMBER"], ["g1", "GUEST"], ["mod", "MODERATOR"], ["adm", "ADMIN"]] as const) await db.user.create({ data: { id, name: id, email: `${id}@x.de`, role } });
 });
@@ -96,3 +96,26 @@ describe("Direktnachrichten: Anhänge und Obergrenze", () => {
   });
 });
 
+
+describe("Blockieren und Aufbewahrungsfrist", () => {
+  it("Blockierte Person kann keine Direktnachrichten schicken; Entsperren hebt es auf; man selbst kann weiter schreiben", async () => {
+    const t = await getOrCreateThread(db, m1, "m2");
+    await setBlocked(db, m2, "m1", true);
+    expect(await f(sendDm(db, m1, t.id, "Hallo?"))).toBeInstanceOf(ChatError);
+    expect(await f(getOrCreateThread(db, m1, "m2"))).toBeInstanceOf(ChatError);
+    await sendDm(db, m2, t.id, "Ich darf");
+    await setBlocked(db, m2, "m1", false);
+    await sendDm(db, m1, t.id, "Wieder da");
+    expect((await readThread(db, "m2", t.id)).messages.map((m) => m.body)).toEqual(["Ich darf", "Wieder da"]);
+    expect(await f(setBlocked(db, m1, "m1", true))).toBeInstanceOf(ChatError);
+  });
+  it("löscht Direktnachrichten älter als die Frist (0 = aus)", async () => {
+    const t = await getOrCreateThread(db, m1, "m2");
+    const old = await sendDm(db, m1, t.id, "alt");
+    await db.dmMessage.update({ where: { id: old.id }, data: { createdAt: new Date(Date.now() - 40 * 86_400_000) } });
+    await sendDm(db, m1, t.id, "neu");
+    expect(await pruneOldDirectMessages(db, 0)).toBe(0);
+    expect(await pruneOldDirectMessages(db, 30)).toBe(1);
+    expect((await readThread(db, "m1", t.id)).messages.map((m) => m.body)).toEqual(["neu"]);
+  });
+});

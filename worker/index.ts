@@ -1,7 +1,7 @@
 import cron from "node-cron";
 import { db } from "../lib/db";
 import { env } from "../lib/env";
-import { capDirectMessages } from "../lib/services/messenger";
+import { capDirectMessages, pruneOldDirectMessages } from "../lib/services/messenger";
 import { fetchMapSql, importMapSql, pruneVillageSnapshots } from "../lib/import/importer";
 import { getInactiveDays } from "../lib/settings";
 import { purgeOldScreenshots } from "../lib/screenshots";
@@ -9,6 +9,7 @@ import { checkClaims } from "../lib/services/verification";
 import { cleanupOrphanAttachments } from "../lib/chat/cleanup";
 import { recordImportOutcome } from "../lib/services/world";
 import { releaseCrons } from "../lib/map-release";
+import { refreshGameData } from "../lib/gamedata/refresh";
 
 const cfg = env();
 let running = false;
@@ -44,6 +45,8 @@ for (const expr of releaseCrons(cfg.MAP_RELEASE_TIME)) cron.schedule(expr, () =>
 // Verwaiste Chat-Uploads (ohne Nachricht, älter als 24 h) stündlich aufräumen.
 cron.schedule("20 3 * * *", () => void purgeOldScreenshots(db, cfg.SCREENSHOT_RETENTION_DAYS).then((n) => n && console.log("[worker] alte Screenshots gelöscht:", n)).catch((e) => console.error("[worker] purge failed", e)));
 cron.schedule("30 3 * * *", () => void capDirectMessages(db).then((n) => n && console.log("[worker] alte Direktnachrichten über dem Limit gelöscht:", n)).catch((e) => console.error("[worker] dm cap failed", e)));
+cron.schedule("35 3 * * *", () => void pruneOldDirectMessages(db).then((n) => n && console.log("[worker] Direktnachrichten nach Aufbewahrungsfrist gelöscht:", n)).catch((e) => console.error("[worker] dm retention failed", e)));
 cron.schedule("40 * * * *", () => void cleanupOrphanAttachments(db).then((n) => n && console.log("[worker] verwaiste Uploads gelöscht:", n)).catch((e) => console.error("[worker] cleanup failed", e)));
+if (cfg.GAMEDATA_REFRESH_CRON) cron.schedule(cfg.GAMEDATA_REFRESH_CRON, () => void refreshGameData(db).then((r) => console.log("[worker] Spieldaten-Abgleich:", r.status, r.changed?.length ?? 0, "geändert")).catch((e) => console.error("[worker] gamedata refresh failed", e)));
 void runImport();
 console.log(`[worker] started, daily at ${cfg.MAP_RELEASE_TIME} ${cfg.GAME_TIMEZONE}${cfg.IMPORT_CRON ? `, extra "${cfg.IMPORT_CRON}"` : ""}`);

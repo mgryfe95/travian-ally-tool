@@ -6,6 +6,7 @@ import { ChatError } from "./chat";
 import { DEFAULT_LOCALE, translate, type Locale } from "../i18n";
 import { env } from "../env";
 import { storage } from "../storage";
+import { mailEnabled, sendMail } from "../mail";
 
 export const MAX_DM = 4000;
 export const MAX_SUBJECT = 100;
@@ -26,6 +27,7 @@ export async function getOrCreateThread(db: PrismaClient, actor: Actor, otherId:
   if (otherId === actor.id) throw new ChatError("err.messenger.self");
   const other = await db.user.findFirst({ where: { id: otherId, ...reachable } });
   if (!other) throw new ChatError("err.messenger.recipientUnreachable");
+  if (await isBlocked(db, otherId, actor.id)) throw new ChatError("err.messenger.blocked");
   const key = pairKey(actor.id, otherId);
   const [a, b] = actor.id < otherId ? [actor.id, otherId] : [otherId, actor.id];
   return db.dmThread.upsert({ where: { pairKey: key }, create: { pairKey: key, userA: a, userB: b }, update: {} });
@@ -52,12 +54,44 @@ export async function sendDm(db: PrismaClient, actor: Actor, threadId: number, b
   if (body.length > MAX_DM) throw new ChatError("err.chat.tooLong", { max: MAX_DM });
   const other = await db.user.findFirst({ where: { id: otherId, ...reachable } });
   if (!other) throw new ChatError("err.messenger.recipientUnreachable");
+  if (await isBlocked(db, otherId, actor.id)) throw new ChatError("err.messenger.blocked");
   const m = await db.dmMessage.create({ data: { threadId, authorId: actor.id, body } });
   if (attachmentIds.length) await db.attachment.updateMany({ where: { id: { in: attachmentIds } }, data: { dmMessageId: m.id } });
   await db.dmRead.upsert({ where: { userId_threadId: { userId: actor.id, threadId } }, create: { userId: actor.id, threadId, lastReadMsgId: m.id }, update: { lastReadMsgId: m.id } });
   publishUser(otherId, "messenger:new", { threadId });
   publishUser(actor.id, "messenger:new", { threadId });
+  await notifyByMail(db, other, actor.id, threadId).catch((e) => console.error("[messenger] Mail-Hinweis fehlgeschlagen", e));
   return m;
+}
+
+const MAIL_GAP_MS = 60 * 60_000;
+
+/** Mail-Hinweis (ohne Inhalt) an Empfänger mit `dmMail`, höchstens einmal pro Stunde und Thread. */
+async function notifyByMail(db: PrismaClient, to: { id: string; email: string; dmMail: boolean; locale: string | null }, fromId: string, threadId: number, now = new Date()) {
+  if (!to.dmMail || !mailEnabled()) return;
+  const r = await db.dmRead.findUnique({ where: { userId_threadId: { userId: to.id, threadId } } });
+  if (r?.mailedAt && now.getTime() - r.mailedAt.getTime() < MAIL_GAP_MS) return;
+  await db.dmRead.upsert({ where: { userId_threadId: { userId: to.id, threadId } }, create: { userId: to.id, threadId, mailedAt: now }, update: { mailedAt: now } });
+  const from = (await db.user.findUnique({ where: { id: fromId }, select: { name: true } }))?.name ?? "?";
+  const l: Locale = to.locale === "de" || to.locale === "en" ? to.locale : DEFAULT_LOCALE;
+  await sendMail({ to: to.email, subject: translate(l, "err.messenger.mail.subject", { name: from }), text: translate(l, "err.messenger.mail.text", { name: from, url: `${env().APP_URL.replace(/\/+$/, "")}/messages?c=${threadId}` }) });
+}
+
+// ───────── Blockieren ─────────
+
+export const isBlocked = async (db: PrismaClient, userId: string, blockedId: string) => !!(await db.dmBlock.findUnique({ where: { userId_blockedId: { userId, blockedId } } }));
+
+/** `actor` blockiert/entsperrt `otherId` für Direktnachrichten. */
+export async function setBlocked(db: PrismaClient, actor: Actor, otherId: string, blocked: boolean) {
+  await requirePerm(db, actor, "messenger.use");
+  if (otherId === actor.id) throw new ChatError("err.messenger.self");
+  if (blocked) await db.dmBlock.upsert({ where: { userId_blockedId: { userId: actor.id, blockedId: otherId } }, create: { userId: actor.id, blockedId: otherId }, update: {} });
+  else await db.dmBlock.deleteMany({ where: { userId: actor.id, blockedId: otherId } });
+}
+
+/** Mail-Hinweis bei neuen Direktnachrichten ein/aus. */
+export async function setDmMail(db: PrismaClient, userId: string, on: boolean) {
+  await db.user.update({ where: { id: userId }, data: { dmMail: on } });
 }
 
 export type ThreadView = { id: number; other: { id: string; name: string }; last: { body: string; at: Date; mine: boolean } | null; unread: number };
@@ -177,6 +211,15 @@ export async function unreadCounts(db: PrismaClient, userId: string): Promise<{ 
   const [threads, broadcast] = await Promise.all([listThreads(db, userId), db.broadcastRecipient.count({ where: { userId, readAt: null } })]);
   const dm = threads.reduce((s, t) => s + t.unread, 0);
   return { dm, broadcast, total: dm + broadcast };
+}
+
+/** Aufbewahrungsfrist: Direktnachrichten älter als `days` Tage samt Anhängen löschen (0 = aus). */
+export async function pruneOldDirectMessages(db: PrismaClient, days = env().DM_RETENTION_DAYS, now = new Date()): Promise<number> {
+  if (days <= 0) return 0;
+  const old = { createdAt: { lt: new Date(now.getTime() - days * 86_400_000) } };
+  const atts = await db.attachment.findMany({ where: { dmMessage: old } });
+  for (const a of atts) for (const key of [a.storageKey, a.thumbKey, a.previewKey]) if (key) await storage().delete(key);
+  return (await db.dmMessage.deleteMany({ where: old })).count;
 }
 
 /**

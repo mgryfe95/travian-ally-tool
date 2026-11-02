@@ -6,6 +6,9 @@ import type { Locale, MessageKey, T } from "@/lib/i18n";
 import { EFFECTS, EFFECT_IDS, effectLabelKey, effectValue, formatDelta, formatEffect, presentEffects, rowsToEffects } from "@/lib/gamedata/effects";
 import { smithyValue, TRAIN_FACTOR } from "@/lib/gamedata/units";
 import { requirePermission } from "@/lib/session";
+import { lastRefresh } from "@/lib/gamedata/refresh";
+import { hasPermission } from "@/lib/permissions";
+import { loadMatrix } from "@/lib/services/context";
 
 export const dynamic = "force-dynamic";
 
@@ -13,8 +16,10 @@ const TABS = [["buildings", "overview.gamedata.tabBuildings"], ["effects", "over
 
 export default async function GameDataPage({ searchParams }: { searchParams: Promise<{ tab?: string; tribe?: string; b?: string; fx?: string; u?: string }> }) {
   const { t, locale } = await getT();
-  await requirePermission("map.view");
+  const user = await requirePermission("map.view");
   const sp = await searchParams;
+  // Bericht des halbjährlichen Abgleichs nur für Spieldaten-Verwalter
+  const refresh = hasPermission(user.role, "gamedata.edit", await loadMatrix(db)) ? await lastRefresh(db) : null;
   const tab = TABS.some(([id]) => id === sp.tab) ? (sp.tab as string) : "buildings";
   const version = await db.gameDataVersion.findFirst({ orderBy: { id: "desc" } });
   return (
@@ -25,6 +30,12 @@ export default async function GameDataPage({ searchParams }: { searchParams: Pro
           {version ? t("overview.gamedata.version", { source: shortSource(version.source), date: fmtDate(version.importedAt, locale, { dateStyle: "short" }), speed: version.serverSpeed }) : t("overview.gamedata.noVersion")}
         </div>
       </header>
+      {refresh && (
+        <p className={`card ${refresh.status === "changed" ? "warn" : "soft"}`} role="status" style={{ fontSize: 13 }}>
+          {t(`overview.gamedata.refresh.${refresh.status}` as MessageKey, { date: fmtDate(new Date(refresh.at), locale, { dateStyle: "short" }), n: (refresh.changed?.length ?? 0) + (refresh.added?.length ?? 0) + (refresh.removed?.length ?? 0), error: refresh.error ?? "" })}
+          {refresh.status === "changed" && <><br /><span className="mono sub" style={{ fontSize: 12 }}>{[...(refresh.changed ?? []).map((k) => `~${k}`), ...(refresh.added ?? []).map((k) => `+${k}`), ...(refresh.removed ?? []).map((k) => `−${k}`)].slice(0, 30).join(" ")}</span><br /><span className="sub" style={{ fontSize: 12 }}>{t("overview.gamedata.refresh.apply", { file: refresh.file ?? "" })}</span></>}
+        </p>
+      )}
       <div role="tablist" aria-label={t("overview.gamedata.tabsLabel")} className="tabs">
         {TABS.map(([id, label]) => <Link key={id} role="tab" aria-selected={id === tab} className={`tab ${id === tab ? "on" : ""}`} href={`/gamedata?tab=${id}`}>{t(label)}</Link>)}
       </div>

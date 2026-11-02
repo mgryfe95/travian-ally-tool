@@ -5,6 +5,8 @@ import { auth } from "@/lib/auth";
 import { mailEnabled } from "@/lib/mail";
 import { createLimiter } from "@/lib/ratelimit";
 import { requireUser } from "@/lib/session";
+import { db } from "@/lib/db";
+import { setDmMail } from "@/lib/services/messenger";
 
 const resetLimiter = createLimiter(3, 15 * 60_000);
 
@@ -15,4 +17,11 @@ export async function requestOwnResetAction() {
   if (!resetLimiter.check(user.id)) redirect("/account?reset=limit");
   await auth.api.requestPasswordReset({ body: { email: user.email, redirectTo: "/reset-password" } });
   redirect("/account?reset=sent");
+}
+
+/** Mail-Hinweis bei neuen Direktnachrichten ein/aus. */
+export async function setDmMailAction(f: FormData) {
+  const user = await requireUser();
+  await setDmMail(db, user.id, f.get("on") === "1");
+  redirect("/account?saved=1#acc-notify");
 }

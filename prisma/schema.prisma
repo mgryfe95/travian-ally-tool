@@ -150,6 +150,8 @@ model User {
   aiInstructions String       @default("")
   /// UI-Sprache (en | de); leer = Cookie/Browser.
   locale         String?
+  /// Mail-Hinweis bei neuen Direktnachrichten (nur mit SMTP; ohne Inhalt)
+  dmMail         Boolean      @default(false)
   sessions       Session[]
   accounts       Account[]
   links          PlayerLink[]
@@ -733,6 +735,8 @@ model DmRead {
   userId        String
   threadId      Int
   lastReadMsgId Int    @default(0)
+  /// zuletzt per Mail auf neue Nachrichten hingewiesen (höchstens 1× pro Stunde je Thread)
+  mailedAt      DateTime?
 
   @@id([userId, threadId])
 }
@@ -918,4 +922,13 @@ model TroopPlacement {
 
   @@index([villageId])
   @@index([userId])
+}
+
+/// Blockierte Direktnachrichten: `blockedId` kann `userId` keine Direktnachrichten mehr schicken (Calls/Rundnachrichten bleiben).
+model DmBlock {
+  userId    String
+  blockedId String
+  createdAt DateTime @default(now())
+
+  @@id([userId, blockedId])
 }

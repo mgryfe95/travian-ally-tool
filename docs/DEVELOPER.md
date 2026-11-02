@@ -147,3 +147,10 @@ Jede Einheit zählt nur in ihrem Heimatdorf (`VillageState.troops`: inVillage/aw
 
 ## Admin-Navigation und Datenstand
 `adminNav(can)` liefert die Einträge für Seitenleiste und Reiter (eine Quelle). Zeitstempel: `resourcesAt` = Rohstoffe inkl. Rohstofffelder, `buildingsAt` = nur Dorfzentrum/manuelle Gebäude, `troopsAt` = Truppen. `fieldsMaxed(fields, extra)`: 18 Felder ≥ 10 und `extra.isCapital` nicht wahr → Rohstoff-Erinnerung entfällt.
+
+## Kalender, System-Call, Messenger, Spieldaten-Abgleich (02.11.)
+- Calls: `createCall` erlaubt ohne `schedule.manage` die per Setting `incidentCall:<typ>` freigegebenen Typen (Kanal laut Vorlage); `requireControl` = Verwalter oder Ersteller. `repeat`/`repeatUntil`: nach dem Senden legt `scheduleNext` den nächsten Termin an. `remindMin`: `sendReminders` (läuft mit `dispatchDueCalls`) postet einmal „⏰ in X Min.“.
+- `ALERT` = System-Call „Angriff melden“, gesendet von `createIncident` über `sendIncidentAlert`, wenn `alertWorthy(answers)`; `Incident.alertCallId`. Belagerung = Plätze 7–9 (`hasSiege`).
+- Messenger: `DmBlock` (Empfänger blockiert Absender), `User.dmMail` + `DmRead.mailedAt` (Mail-Hinweis ≤ 1×/h je Thread, ohne Inhalt), `pruneOldDirectMessages` (Worker 03:35, `DM_RETENTION_DAYS`).
+- `lib/gamedata/refresh.ts`: robots.txt → Startseite → main.js; Hash gleich = „unchanged“, sonst Datei nach `storage/gamedata/kb-<hash>.js`, Diff gegen `kb-latest.json`, Bericht im Setting `gamedata:refresh`. Kein Import.
+- Chat-Löschen leert `Message.body`.

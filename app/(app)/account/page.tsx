@@ -1,7 +1,8 @@
 import { getT } from "@/lib/i18n/server";
 import { mailEnabled } from "@/lib/mail";
 import { requireUser } from "@/lib/session";
-import { requestOwnResetAction } from "./actions";
+import { requestOwnResetAction, setDmMailAction } from "./actions";
+import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const { t } = await getT();
   const { reset } = await searchParams;
   const mail = mailEnabled();
+  const dmMail = (await db.user.findUnique({ where: { id: user.id }, select: { dmMail: true } }))?.dmMail ?? false;
   return (
     <>
       <header>
@@ -33,6 +35,18 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         )}
         {reset === "sent" && <p className="sub" role="status" style={{ marginTop: 10 }}>{t("account.resetSent", { email: user.email })}</p>}
         {reset === "limit" && <p className="errtext" role="alert" style={{ marginTop: 10 }}>{t("err.tooManyAttempts")}</p>}
+      </section>
+      <section className="card" aria-labelledby="acc-notify-h" id="acc-notify">
+        <h2 id="acc-notify-h">{t("account.notify.title")}</h2>
+        {mail ? (
+          <form action={setDmMailAction} className="row" style={{ gap: 10, marginTop: 8, alignItems: "center" }}>
+            <span>{dmMail ? t("account.notify.on") : t("account.notify.off")}</span>
+            {dmMail
+              ? <button className="btn ghost sm" name="on" value="0">{t("account.notify.disable")}</button>
+              : <button className="btn sm" name="on" value="1">{t("account.notify.enable")}</button>}
+          </form>
+        ) : <p className="sub" style={{ marginTop: 6 }}>{t("account.notify.noMail")}</p>}
+        <p className="sub" style={{ fontSize: 12, marginTop: 6 }}>{t("account.notify.hint")}</p>
       </section>
     </>
   );

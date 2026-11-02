@@ -120,3 +120,12 @@ Auf der Dorfseite unter „Truppen“: Anzahl, optional Einheit, Zieldorf (x|y) 
 
 ## Erinnerungen
 Sind alle Rohstofffelder eines Dorfes auf Stufe 10, fragt das Tool dort nicht mehr nach neuen Rohstoff-Screenshots (Ausnahme Hauptstadt, dort geht es weiter). Admin: Seitenleiste und die Reiter oben im Admin-Bereich enthalten dieselben Punkte, inkl. Schedule und Truppen.
+
+## Kalender und Calls (neu)
+Der Kalender ist für alle sichtbar. Unter „Wer darf welchen Call-Typ senden?“ legen Admins je Typ fest, ab welcher Rolle er gesendet werden darf – im Kalender und direkt aus einem Incident. Mitglieder können eigene Calls bearbeiten und absagen. Neu: Wiederholung (täglich/wöchentlich, optional bis Datum) und Erinnerung im Kanal 15/30/60/120 Minuten vor dem Termin. Der System-Call „Angriff melden“ geht automatisch in den Deff-Call, wenn ein Incident weitere Angriffe erwarten lässt und gerade Angriffe laufen oder der letzte Angriff Rammen/Katapulte oder Senatoren/Häuptlinge hatte.
+
+## Direktnachrichten
+„Blockieren“ oben in der Unterhaltung: diese Person kann dir keine Direktnachrichten mehr schicken. Unter „Mein Konto“ → Benachrichtigungen: Mail bei neuen Direktnachrichten (höchstens 1× pro Stunde, ohne Text). Admins: Aufbewahrungsfrist über `DM_RETENTION_DAYS` in `.env`.
+
+## Spieldaten-Abgleich
+Optional halbjährlich (`GAMEDATA_REFRESH_CRON`, standardmäßig aus – erst nach Erlaubnis von Travian Games). Ergebnis steht auf der Spieldaten-Seite (nur für Spieldaten-Verwalter); übernommen wird erst nach Prüfung mit dem dort angezeigten Befehl.
