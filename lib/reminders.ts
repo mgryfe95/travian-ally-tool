@@ -10,7 +10,18 @@ export type VillageFreshness = {
   troopsAt: Date | null;
   resourcesAt: Date | null;
   buildingsAt: Date | null;
+  /** Rohstofffelder fertig ausgebaut (siehe `fieldsMaxed`) → keine Erinnerung für Rohstoffe */
+  resourcesDone?: boolean;
 };
+
+const MAX_FIELD_LEVEL = 10;
+const isCapital = (extra: unknown) => { const c = (extra as { isCapital?: unknown } | null)?.isCapital; return c === true || String(c).toUpperCase() === "TRUE"; };
+
+/** Alle 18 Rohstofffelder auf Stufe 10 und das Dorf ist keine Hauptstadt (nur dort geht es über 10 hinaus) → nichts mehr zu aktualisieren. */
+export function fieldsMaxed(fields: unknown, extra: unknown): boolean {
+  if (isCapital(extra) || !Array.isArray(fields) || fields.length < 18) return false;
+  return fields.every((f) => typeof (f as { level?: unknown })?.level === "number" && (f as { level: number }).level >= MAX_FIELD_LEVEL);
+}
 
 export type Reminder = { villageId: number; villageName: string; area: StateArea; ageDays: number | null };
 
@@ -34,6 +45,7 @@ export function staleReminders(villages: VillageFreshness[], thresholdDays: numb
   const out: Reminder[] = [];
   for (const v of villages) {
     for (const [area, at] of [["troops", v.troopsAt], ["resources", v.resourcesAt], ["buildings", v.buildingsAt]] as const) {
+      if (area === "resources" && v.resourcesDone) continue;
       const age = ageInDays(at, now);
       if (age === null || age >= thresholdDays) out.push({ villageId: v.villageId, villageName: v.villageName, area, ageDays: age });
     }

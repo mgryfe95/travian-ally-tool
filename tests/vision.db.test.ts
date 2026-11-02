@@ -138,6 +138,16 @@ describe("Bild nach Auswertung freigeben", () => {
   });
 });
 
+describe("Zeitstempel je Bereich", () => {
+  it("Rohstofffeld-Ansicht aktualisiert Rohstoffe, nicht Gebäude", async () => {
+    const r = gold("fields-desktop-de-1");
+    await applyReading(db, "vis-user", 7, r, known, 9001, new Date("2026-11-02T10:00:00Z"), true);
+    const s = await db.villageState.findUniqueOrThrow({ where: { villageId: 9001 } });
+    expect(s.resourcesAt?.toISOString()).toBe("2026-11-02T10:00:00.000Z");
+    expect(s.buildingsAt).toBeNull();
+  });
+});
+
 describe("Truppen in Dörfern (nicht unterstützt)", () => {
   it("Lern-Beispiele werden entfernt und nie verwendet; Bestätigen wird abgelehnt", async () => {
     await screenshotStorage().put("shots/tp/a.webp", Buffer.from("x"));

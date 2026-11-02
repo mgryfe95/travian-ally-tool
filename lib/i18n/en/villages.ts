@@ -77,6 +77,7 @@ const en = {
   "villages.troops.upkeepShort": "{n} crop/h",
   "villages.troops.foreign": "Foreign troops in this village",
   "villages.troops.deployed": "Own troops in other villages",
+  "villages.upload.fieldsMaxed": "all fields at level 10 – no update needed",
   "villages.troops.place.title": "Own troops in other villages (entered by you)",
   "villages.troops.place.count": "Number",
   "villages.troops.place.unit": "Unit (empty = mixed)",

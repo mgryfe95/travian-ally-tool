@@ -79,6 +79,7 @@ const de: Record<keyof typeof en, string> = {
   "villages.troops.upkeepShort": "{n} Getreide/h",
   "villages.troops.foreign": "Fremde Truppen in diesem Dorf",
   "villages.troops.deployed": "Eigene Truppen in anderen Dörfern",
+  "villages.upload.fieldsMaxed": "alle Felder auf Stufe 10 – kein Update nötig",
   "villages.troops.place.title": "Eigene Truppen in anderen Dörfern (von dir angegeben)",
   "villages.troops.place.count": "Anzahl",
   "villages.troops.place.unit": "Einheit (leer = gemischt)",

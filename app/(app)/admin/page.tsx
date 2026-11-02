@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { db } from "@/lib/db";
 import { getT } from "@/lib/i18n/server";
-import { ADMIN_TABS } from "@/lib/adminTabs";
+import { ADMIN_TABS, adminNav } from "@/lib/adminTabs";
+import { AdminTabs } from "@/components/AdminTabs";
 import { hasPermission } from "@/lib/permissions";
 import { loadMatrix } from "@/lib/services/context";
 import { requirePermission } from "@/lib/session";
@@ -28,13 +28,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         <div className="sub">{t("admin.page.eyebrow")}</div>
         <h1>{t("admin.page.title")}</h1>
       </header>
-      <div role="tablist" aria-label={t("admin.page.tabsLabel")} className="tabs">
-        {allowed.map((x) => (
-          <Link key={x.id} role="tab" aria-selected={x.id === current?.id} className={`tab ${x.id === current?.id ? "on" : ""}`} href={`/admin?tab=${x.id}`}>
-            {t(x.label)}
-          </Link>
-        ))}
-      </div>
+      <AdminTabs items={adminNav((p) => hasPermission(user.role, p, matrix))} current={current?.id} t={t} />
       {error && <p className="errtext" role="alert">{error}</p>}
       {current?.id === "members" && <MembersTab actor={user} />}
       {current?.id === "rights" && <RightsTab />}

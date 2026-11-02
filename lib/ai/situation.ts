@@ -4,7 +4,7 @@ import type { PrismaClient } from "@prisma/client";
 import { GOAL_HINT, isGoal } from "./goals";
 import { buildingInfos } from "../gamedata/names";
 import { troopUpkeep } from "../gamedata/upkeep";
-import { ageInDays } from "../reminders";
+import { ageInDays, fieldsMaxed } from "../reminders";
 import { readTroops } from "../troops";
 import { activeIncidents, incidentContext } from "../services/incidents";
 import { orQuery, searchMemory } from "../services/memory";
@@ -25,6 +25,8 @@ export type SituationVillage = {
   buildings: { name: string; level: number; maxed: boolean; nextCost: string; benefitNow: string; benefitNext: string }[];
   troops: { unit: string; home: number; away: number; supportElsewhere: number }[];
   /** vom Spieler angegeben: eigene Truppen dieses Dorfes, die in einem anderen Dorf stehen */
+  /** alle Rohstofffelder auf 10, keine Hauptstadt: keine Feld-Ausbauten und kein Rohstoff-Update mehr nötig */
+  resourceFieldsMaxed: boolean;
   troopsPlacedElsewhere: { unit: string; count: number; target: string; note: string }[];
   troopUpkeepPerHour: number | null;
   queue: unknown;
@@ -79,6 +81,7 @@ export async function buildSituation(db: PrismaClient, userId: string, now = new
       instructions: p?.aiInstructions ?? "",
       dataAgeDays: { troops: ageInDays(s?.troopsAt ?? null, now), resources: ageInDays(s?.resourcesAt ?? null, now), buildings: ageInDays(s?.buildingsAt ?? null, now) },
       resources: s?.resources ? { stock: res.stock, capacity: res.capacity, productionPerHour: res.production } : null,
+      resourceFieldsMaxed: fieldsMaxed(s?.fields, v.extra),
       fields: [...byType].map(([type, levels]) => ({ type, levels: levels.sort((a, b) => a - b) })),
       buildings: buildingsRaw.map((b, i) => { const x = info.get(i); return { name: b.name!, level: b.level, maxed: x?.maxed ?? false, nextCost: x?.nextCost ?? "?", benefitNow: x?.benefit ?? "?", benefitNext: x?.benefitAfter ?? "?" }; }),
       troops: troops.map((t) => ({ unit: t.unit, home: t.inVillage, away: t.away, supportElsewhere: t.support })),

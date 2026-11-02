@@ -243,3 +243,7 @@ Commits: siehe PR.
 ## 2026-11-02 · travian-ally-tool/troops/placements + screenshots/clipboard
 Was & Warum: (1) „Truppen in Dörfern“ vorerst raus (Wunsch Nutzer): nicht mehr in Upload/Prüfung wählbar, Bestätigen liefert Hinweis, Lern-Beispiele dieser Art werden beim Serverstart entfernt (`dropUnsupportedExamples`); die Art wird weiter erkannt, damit sie nicht als „Eigene Truppen“ verlesen wird (`UNSUPPORTED_KINDS`). (2) Dorfseite: eigene Truppen in anderen Dörfern manuell angeben/entfernen (`TroopPlacement`), sichtbar in Truppenübersicht und KI-Lagebild; KI-Regel: Truppen zählen nur im Heimatdorf. (3) Upload-Feld: Knopf „Aus Zwischenablage einfügen“. (4) OCR-Prüfung: Zeilen per × entfernen. Test-Isolation in `vision.db.test.ts` (Einheitennamen). Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.
 Commits: siehe PR.
+
+## 2026-11-02 · travian-ally-tool/admin-nav + reminders + fix/buildings-at
+Was & Warum: (1) Admin-Menü: Seitenleiste und Reiter oben zeigen dieselben Einträge (`adminNav` in `lib/adminTabs.ts`, Komponente `AdminTabs`), Schedule und Truppen haben die Reiter ebenfalls. (2) Rohstofffelder alle auf 10 (keine Hauptstadt) → keine Erinnerung „Rohstoffe aktualisieren“ (`fieldsMaxed`), Hinweis auf der Dorfseite, KI-Lagebild `resourceFieldsMaxed`. (3) Fehler: Rohstofffeld-Screenshots setzten `buildingsAt` → jetzt `resourcesAt`; Migration `20261102110000_fix_buildings_at` korrigiert vorhandene Daten. Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.
+Commits: siehe PR.

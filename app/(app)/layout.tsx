@@ -13,7 +13,7 @@ import { fmtDate } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
 import { hasPermission, type Permission } from "@/lib/permissions";
 import { serverLabel, ownAllianceTag } from "@/lib/serverinfo";
-import { ADMIN_TABS } from "@/lib/adminTabs";
+import { ADMIN_PERMS, adminNav } from "@/lib/adminTabs";
 import { chatCtx, listChannels } from "@/lib/services/chat";
 import { loadMatrix } from "@/lib/services/context";
 import { unreadCounts } from "@/lib/services/messenger";
@@ -22,7 +22,6 @@ import { getWorldStatus } from "@/lib/services/world";
 import { requireUser } from "@/lib/session";
 
 const ROLE_LABEL: Record<string, MessageKey> = { ADMIN: "common.role.admin", MODERATOR: "common.role.moderator", MEMBER: "common.role.member", GUEST: "common.role.guest" };
-const ADMIN_PERMS: Permission[] = ["members.invite", "members.approve", "roles.assign", "permissions.edit", "alliances.classify"];
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const user = await requireUser();
@@ -51,8 +50,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   items.push({ href: "/screenshots", label: t("nav.screenshots") });
   if (can("incidents.report") || can("incidents.view")) items.push({ href: "/incidents", label: t("nav.incidents") });
   if (isAdmin) {
-    const tabs = ADMIN_TABS.filter((x) => x.perms.some(can)).map((x) => ({ href: `/admin?tab=${x.id}`, label: t(x.label) }));
-    items.push({ href: "/admin", label: t("nav.admin"), sepBefore: true, children: [...tabs, ...extras] });
+    items.push({ href: "/admin", label: t("nav.admin"), sepBefore: true, children: adminNav(can).map((x) => ({ href: x.href, label: t(x.label) })) });
   }
   items.push({ href: "/gamedata", label: t("nav.gameData"), sepBefore: !isAdmin });
   const tag = await ownAllianceTag(db);

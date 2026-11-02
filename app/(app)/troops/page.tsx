@@ -8,6 +8,10 @@ import { loadUnitLabels, unitLabel } from "@/lib/unit-labels";
 import { troopsOverview } from "@/lib/services/troops";
 import { getStaleDays } from "@/lib/services/villages";
 import { requirePermission } from "@/lib/session";
+import { AdminTabs } from "@/components/AdminTabs";
+import { ADMIN_PERMS, adminNav } from "@/lib/adminTabs";
+import { hasPermission } from "@/lib/permissions";
+import { loadMatrix } from "@/lib/services/context";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +22,8 @@ export default async function TroopsPage({ searchParams }: { searchParams: Promi
   const { t, locale } = await getT();
   const user = await requirePermission("troops.view");
   const sp = await searchParams;
-  const [o, staleDays, labels] = await Promise.all([troopsOverview(db, user), getStaleDays(db), loadUnitLabels(db)]);
+  const [o, staleDays, labels, matrix] = await Promise.all([troopsOverview(db, user), getStaleDays(db), loadUnitLabels(db), loadMatrix(db)]);
+  const can = (p: Parameters<typeof hasPermission>[1]) => hasPermission(user.role, p, matrix);
   const ul = (u: string) => unitLabel(labels, u, locale, t);
   const q = sp.q?.trim().toLowerCase();
   const members = o.members.filter((m) => (!q || m.playerName.toLowerCase().includes(q)) && (sp.stale !== "1" || m.oldestAgeDays === null || m.oldestAgeDays >= staleDays));
@@ -33,6 +38,7 @@ export default async function TroopsPage({ searchParams }: { searchParams: Promi
           {t("overview.troops.intro")}
         </p>
       </header>
+      {ADMIN_PERMS.some(can) && <AdminTabs items={adminNav(can)} current="troops" t={t} />}
 
       <section className="card" aria-labelledby="sum">
         <div className="row between" style={{ alignItems: "baseline" }}>

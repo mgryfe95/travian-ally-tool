@@ -10,7 +10,7 @@ import { db } from "@/lib/db";
 import { fmt } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
 import type { MessageKey, T } from "@/lib/i18n";
-import { ageInDays, staleReminders } from "@/lib/reminders";
+import { ageInDays, fieldsMaxed, staleReminders } from "@/lib/reminders";
 import { getStaleDays, ownVillages } from "@/lib/services/villages";
 import { requireUser } from "@/lib/session";
 import { saveAccountInstructionsAction } from "./villages/actions";
@@ -37,7 +37,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
   const me = await db.user.findUnique({ where: { id: user.id }, select: { aiInstructions: true } });
   const staleDays = await getStaleDays(db);
   const now = new Date();
-  const reminders = staleReminders(villages.map((v) => ({ villageId: v.id, villageName: v.name, troopsAt: v.state?.troopsAt ?? null, resourcesAt: v.state?.resourcesAt ?? null, buildingsAt: v.state?.buildingsAt ?? null })), staleDays, now);
+  const reminders = staleReminders(villages.map((v) => ({ villageId: v.id, villageName: v.name, troopsAt: v.state?.troopsAt ?? null, resourcesAt: v.state?.resourcesAt ?? null, buildingsAt: v.state?.buildingsAt ?? null, resourcesDone: fieldsMaxed(v.state?.fields, v.extra) })), staleDays, now);
   const stale = (at: Date | null) => { const a = ageInDays(at, now); return a === null || a >= staleDays; };
 
   if (villages.length === 0) {
@@ -114,7 +114,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
                   <td><Link href={`/villages/${v.id}`} style={{ fontWeight: 600 }}>{v.name}</Link></td>
                   <td className="mono"><CoordLink x={v.x} y={v.y} /></td><td className="mono">{fmt(v.population, locale)}</td><td className="mono sub">–</td>
                   <td className={stale(v.state?.troopsAt ?? null) ? "stale" : ""}>{ageText(t, ageInDays(v.state?.troopsAt ?? null, now))}</td>
-                  <td className={stale(v.state?.resourcesAt ?? null) ? "stale" : ""}>{ageText(t, ageInDays(v.state?.resourcesAt ?? null, now))}</td>
+                  <td className={stale(v.state?.resourcesAt ?? null) && !fieldsMaxed(v.state?.fields, v.extra) ? "stale" : ""}>{ageText(t, ageInDays(v.state?.resourcesAt ?? null, now))}</td>
                   <td className={stale(v.state?.buildingsAt ?? null) ? "stale" : ""}>{ageText(t, ageInDays(v.state?.buildingsAt ?? null, now))}</td>
                   <td><Link href={`/villages/${v.id}`}>{t("overview.villages.open")}</Link></td>
                 </tr>

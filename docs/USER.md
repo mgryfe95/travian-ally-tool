@@ -117,3 +117,6 @@ Im Kalender (Vorlagen) hat jede Vorlage zusätzlich ein Feld „Englischer Text�
 
 ## Truppen in anderen Dörfern
 Auf der Dorfseite unter „Truppen“: Anzahl, optional Einheit, Zieldorf (x|y) und Notiz eintragen → „Hinzufügen“. Bleibt bis „Entfernen“. Truppen zählen immer nur im Heimatdorf – fremde Unterstützung in deinem Dorf wird nur angezeigt, nicht mitgezählt. „Truppen in Dörfern“-Screenshots werden derzeit nicht übernommen; bitte „Eigene Truppen“ oder den Versammlungsplatz hochladen. Screenshots lassen sich auch per Knopf „Aus Zwischenablage einfügen“ im Upload-Feld hochladen.
+
+## Erinnerungen
+Sind alle Rohstofffelder eines Dorfes auf Stufe 10, fragt das Tool dort nicht mehr nach neuen Rohstoff-Screenshots (Ausnahme Hauptstadt, dort geht es weiter). Admin: Seitenleiste und die Reiter oben im Admin-Bereich enthalten dieselben Punkte, inkl. Schedule und Truppen.

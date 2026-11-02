@@ -144,3 +144,6 @@ Videos: erst `npm run e2e` (setzt Testdaten zurück), dann `npm run help:videos`
 
 ## Truppen: Heimatdorf-Regel und manuelle Angaben
 Jede Einheit zählt nur in ihrem Heimatdorf (`VillageState.troops`: inVillage/away/support). Fremde Unterstützung steht nur in `troopDetail.foreign` und geht in keine Summe ein; die Einheiten-Box der Rohstofffeld-Ansicht (`unit:`-Zeilen) wird nicht übernommen. Manuelle Angaben „eigene Truppen in Dorf X“: `TroopPlacement` (`lib/services/troopPlacements.ts`), unabhängig von Screenshots, Info zum Standort (nicht zusätzlich gezählt). Nicht unterstützte Screenshot-Arten: `UNSUPPORTED_KINDS` in `lib/ai/reading.ts` (erkennen, nicht übernehmen, keine Lern-Beispiele).
+
+## Admin-Navigation und Datenstand
+`adminNav(can)` liefert die Einträge für Seitenleiste und Reiter (eine Quelle). Zeitstempel: `resourcesAt` = Rohstoffe inkl. Rohstofffelder, `buildingsAt` = nur Dorfzentrum/manuelle Gebäude, `troopsAt` = Truppen. `fieldsMaxed(fields, extra)`: 18 Felder ≥ 10 und `extra.isCapital` nicht wahr → Rohstoff-Erinnerung entfällt.

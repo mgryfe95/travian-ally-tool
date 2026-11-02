@@ -8,6 +8,8 @@ import { hasPermission } from "@/lib/permissions";
 import { loadMatrix } from "@/lib/services/context";
 import { CALL_KINDS, PLACEHOLDERS, dateToBerlinLocal, incidentCallRoles, listKinds, renderCall } from "@/lib/services/schedule";
 import { requirePermission } from "@/lib/session";
+import { AdminTabs } from "@/components/AdminTabs";
+import { ADMIN_PERMS, adminNav } from "@/lib/adminTabs";
 import { cancelCallAction, createCallAction, deleteCallAction, deleteKindAction, deleteTemplateAction, saveIncidentRolesAction, saveKindAction, saveTemplateAction, sendCallAction, updateCallAction } from "../admin/actions";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +27,9 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
   const statusLabel = (s: string) => (STATUS[s] ? t(STATUS[s]) : s);
   const user = await requirePermission("schedule.view");
   const { error, ok } = await searchParams;
-  const manage = hasPermission(user.role, "schedule.manage", await loadMatrix(db));
+  const matrix = await loadMatrix(db);
+  const can = (p: Parameters<typeof hasPermission>[1]) => hasPermission(user.role, p, matrix);
+  const manage = can("schedule.manage");
   const [calls, templates, channels] = await Promise.all([
     db.allianceCall.findMany({ orderBy: [{ at: "asc" }, { id: "desc" }], take: 80 }),
     db.callTemplate.findMany({ orderBy: [{ sortOrder: "asc" }, { id: "asc" }] }),
@@ -45,6 +49,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
         <h1>{t("schedule.title")}</h1>
         <p className="sub" style={{ marginTop: 4 }}>{t("schedule.intro")}</p>
       </header>
+      {ADMIN_PERMS.some(can) && <AdminTabs items={adminNav(can)} current="schedule" t={t} />}
       {error && <p className="errtext" role="alert" style={{ border: "1px solid var(--bad, #a33a2b)", borderRadius: 10, padding: "10px 14px", fontWeight: 700 }}>⚠ {error}</p>}
       {ok && !error && <p role="status" style={{ border: "1px solid #5e7f3a", background: "#dde8c9", color: "#3c5a1e", borderRadius: 10, padding: "10px 14px", fontWeight: 700 }}>✔ {t(`schedule.ok.${ok}` as MessageKey)}</p>}
 

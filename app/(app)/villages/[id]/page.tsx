@@ -12,7 +12,7 @@ import { db } from "@/lib/db";
 import { fmt, fmtDate } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
 import type { MessageKey } from "@/lib/i18n";
-import { ageInDays, type StateArea } from "@/lib/reminders";
+import { ageInDays, fieldsMaxed, type StateArea } from "@/lib/reminders";
 import { getOwnVillage, getStaleDays, getVillageGoal, getVillageInstructions, ownVillages } from "@/lib/services/villages";
 import { requireUser } from "@/lib/session";
 import { readTroops, troopsToText } from "@/lib/troops";
@@ -95,11 +95,12 @@ export default async function VillagePage({ params, searchParams }: { params: Pr
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: 14 }}>
           {AREAS.map((a) => {
             const age = ageInDays(s?.[a.at] ?? null, now);
-            const old = age === null || age >= staleDays;
+            const done = a.area === "resources" && fieldsMaxed(s?.fields, village.extra);
+            const old = !done && (age === null || age >= staleDays);
             return (
               <div key={a.area} id={`up-${a.area}`} className={`card ${old ? "warn" : ""}`}>
                 <div className="row between"><div style={{ fontWeight: 600, fontSize: 15 }}>{t(a.title)}</div><span className={old ? "stale" : "sub"} style={{ fontSize: 12 }}>{ageLabel(age)}</span></div>
-                <div className="sub" style={{ margin: "6px 0 12px" }}>{t(a.desc)}</div>
+                <div className="sub" style={{ margin: "6px 0 12px" }}>{t(a.desc)}{done && <> · <b>{t("villages.upload.fieldsMaxed")}</b></>}</div>
                 <UploadBox id={`file-${a.area}`} villageId={id} label={t(a.action)} kinds={AREA_KINDS[a.area]} />
               </div>
             );

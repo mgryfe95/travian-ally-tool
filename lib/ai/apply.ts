@@ -138,7 +138,7 @@ export async function applyReading(db: PrismaClient, userId: string, screenshotI
     }
     if (p.fields) {
       data.fields = p.fields as Prisma.InputJsonValue;
-      data.buildingsAt = now;
+      data.resourcesAt = now; // Rohstofffelder gehören zum Bereich „Rohstoffe“ (nicht „Gebäude“)
       areas.push("fields");
     }
     if (p.buildings) {

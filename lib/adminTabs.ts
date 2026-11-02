@@ -11,3 +11,17 @@ export const ADMIN_TABS: { id: string; label: MessageKey; perms: Permission[] }[
   { id: "audit", label: "admin.tab.audit", perms: ["roles.assign", "permissions.edit"] },
   { id: "costs", label: "admin.tab.costs", perms: ["settings.edit"] },
 ];
+
+/** Wer einen Admin-Bereich hat (sonst bleiben Schedule/Truppen eigene Menüpunkte). */
+export const ADMIN_PERMS: Permission[] = ["members.invite", "members.approve", "roles.assign", "permissions.edit", "alliances.classify"];
+
+export type AdminNavItem = { id: string; href: string; label: MessageKey };
+
+/** Eine Liste für beide Menüs: Untermenü „Admin“ in der Seitenleiste und Reiter oben im Admin-Bereich (inkl. Schedule und Truppen). */
+export function adminNav(can: (p: Permission) => boolean): AdminNavItem[] {
+  return [
+    ...ADMIN_TABS.filter((x) => x.perms.some(can)).map((x) => ({ id: x.id, href: `/admin?tab=${x.id}`, label: x.label })),
+    ...(can("schedule.view") ? [{ id: "schedule", href: "/schedule", label: "nav.schedule" as MessageKey }] : []),
+    ...(can("troops.view") ? [{ id: "troops", href: "/troops", label: "nav.troops" as MessageKey }] : []),
+  ];
+}
