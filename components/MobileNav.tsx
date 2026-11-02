@@ -1,0 +1,52 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { LogoutButton } from "@/components/AuthForms";
+import { LanguageSelect } from "@/components/LanguageSelect";
+import { LogoMark } from "@/components/Logo";
+import { NavList, type NavItem } from "@/components/SideNav";
+import { useT } from "@/lib/i18n/client";
+
+/** Mobile Kopfzeile: Burger-Menü (Hauptnavigation, standardmäßig zu) links, Profil-Menü (Konto, Sprache, Abmelden) rechts. */
+export function MobileNav({ items, name, role }: { items: NavItem[]; name: string; role: string }) {
+  const t = useT();
+  const path = usePathname();
+  const [menu, setMenu] = useState(false);
+  const [profile, setProfile] = useState(false);
+  useEffect(() => {
+    setMenu(false);
+    setProfile(false);
+  }, [path]);
+  return (
+    <header className="mobilehead">
+      <button type="button" className="iconbtn" aria-label={t("nav.menu")} aria-expanded={menu} aria-controls="mobile-menu" onClick={() => { setMenu((v) => !v); setProfile(false); }}>
+        <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+      </button>
+      <Link href="/" className="logo" style={{ padding: 0 }} aria-label="Humans"><LogoMark size={52} /></Link>
+      <button type="button" className="avatarbtn" aria-label={t("nav.account")} aria-expanded={profile} aria-controls="profile-menu" onClick={() => { setProfile((v) => !v); setMenu(false); }}>
+        {name[0]?.toUpperCase() ?? "?"}
+      </button>
+      {menu && (
+        <nav id="mobile-menu" className="dropdown menu" aria-label={t("nav.mainMobile")} onClick={(e) => { if ((e.target as HTMLElement).closest("a")) setMenu(false); }}>
+          <NavList items={items} />
+        </nav>
+      )}
+      {profile && (
+        <div id="profile-menu" className="dropdown profile">
+          <div style={{ padding: "6px 12px" }}><div style={{ fontWeight: 700 }}>{name}</div><div className="sub">{role}</div></div>
+          <div className="sep" />
+          <Link href="/account" className="nav">{t("account.link")}</Link>
+          <Link href="/mentions" className="nav">{t("chat.mentions.link")}</Link>
+          <Link href="/files" className="nav">{t("nav.myFiles")}</Link>
+          <Link href="/privacy" className="nav">{t("privacy.link")}</Link>
+          <Link href="/help" className="nav">{t("help.link")}</Link>
+          <div style={{ padding: "6px 12px" }}><LanguageSelect /></div>
+          <div className="sep" />
+          <div style={{ padding: "6px 12px" }}><LogoutButton /></div>
+        </div>
+      )}
+    </header>
+  );
+}

@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Travian Ally Tool – Screenflow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#15130f; --side:#191612; --surface:#1e1b16; --raised:#26221b; --line:#352f24; --line2:#2a261f;
+  --text:#ece6d8; --text2:#cfc6b2; --muted:#a8a08e;
+  --accent:#d9a441; --accent-ink:#1a1407; --link:#e0b458; --link-h:#f2cd7e;
+  --warn:#f0a27f; --warn-bg:#221a13; --warn-line:#6b4a2f; --info:#8cc4de;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;line-height:1.45}
+a{color:var(--link);text-decoration:none}a:hover{color:var(--link-h)}
+button,input,select,textarea{font:inherit}
+.mono{font-family:'IBM Plex Mono',monospace}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* Screenflow-Leiste (nicht Teil der App) */
+.flowbar{position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 12px;background:#0d0c0a;border-bottom:1px solid #3a3226}
+.flowbar .t{font-weight:600;color:var(--link);margin-right:8px;font-size:13px}
+.flowbar a{font-size:12px;padding:5px 9px;border-radius:6px;color:var(--text2);border:1px solid transparent}
+.flowbar a.cur{border-color:var(--accent);color:var(--link-h)}
+.flowbar label{margin-left:auto;font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;cursor:pointer}
+.ccnote{display:none;border:1px dashed #5fa8c9;background:#13222a;color:#cfe8f3;border-radius:8px;padding:8px 10px;font-size:12.5px;margin:6px 0}
+.ccnote b{color:#8cd3f2}
+body.notes .ccnote{display:block}
+
+/* App */
+.shell{display:flex;flex-wrap:wrap;min-height:calc(100vh - 44px)}
+.side{flex:1 1 220px;max-width:260px;background:var(--side);border-right:1px solid #2c271f;padding:20px 14px;display:flex;flex-direction:column;gap:4px}
+.logo{font-family:'Cinzel',serif;font-size:19px;color:var(--link);padding:4px 12px 2px}
+.srv{font-size:12px;color:var(--muted);padding:0 12px 18px}
+.nav{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:var(--text2);min-height:24px}
+.nav:hover{background:var(--raised);color:var(--text)}
+.nav.on{background:#2e281d;color:var(--link-h)}
+.sep{height:1px;background:#2c271f;margin:12px 0}
+.me{margin-top:auto;padding:12px;border-radius:10px;background:#211d17;font-size:13px}
+.main{flex:999 1 560px;min-width:0;padding:28px clamp(16px,3vw,40px);display:flex;flex-direction:column;gap:22px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px}
+.card.flush{padding:8px 8px 4px}
+.card.hi{border-color:#5a4c2e}
+.card.warn{border-color:var(--warn-line);background:var(--warn-bg)}
+h1{margin:2px 0 0;font-size:28px;font-weight:600}
+h2{margin:0;font-size:16px;font-weight:600}
+.sub{color:var(--muted);font-size:13px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 16px;border-radius:8px;border:0;background:var(--accent);color:var(--accent-ink);font-weight:600;cursor:pointer}
+.btn.sm{min-height:36px;padding:0 12px;font-size:13px}
+.btn.ghost{background:transparent;color:var(--link);border:1px solid #5a4c2e}
+.field{min-height:40px;width:100%;background:var(--bg);color:var(--text);border:1px solid #403829;border-radius:8px;padding:0 10px}
+textarea.field{padding:10px;min-height:auto}
+.lbl{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:22px}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.between{justify-content:space-between}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-weight:500;color:var(--muted);font-size:12px;letter-spacing:.04em;text-transform:uppercase;padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:10px;border-bottom:1px solid var(--line2);vertical-align:middle}
+.r{text-align:right}
+.stale{color:var(--warn);font-weight:600}
+.pill{font-size:12px;font-weight:600;padding:2px 8px;border-radius:10px;display:inline-block}
+.p-ok{background:#24402a;color:#bfe6c4}.p-wait{background:#4a3a14;color:#f6d98c}.p-none{background:#2a261f;color:var(--text2);font-weight:400}
+.t-dringend{background:#5a2a1f;color:#ffc7b3}.t-angriff{background:#4a3a14;color:#f6d98c}.t-info{background:#1d3a48;color:#b9e1f2}.t-erledigt{background:#24402a;color:#bfe6c4}
+.chip{font-size:12px;padding:1px 8px;border-radius:10px;background:#2a261f;color:var(--text2)}
+.seg{display:inline-flex;flex-wrap:wrap;gap:6px}
+.opt{min-height:40px;padding:0 14px;border-radius:8px;border:1px solid #403829;background:var(--bg);color:var(--text);cursor:pointer}
+.opt.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid #2c271f}
+.tab{min-height:44px;padding:0 14px;border:0;background:transparent;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent}
+.tab.on{color:var(--link-h);font-weight:600;border-bottom-color:var(--accent)}
+.drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:150px;border:1.5px dashed #5a4c2e;border-radius:10px;text-align:center;padding:16px;cursor:pointer;background:#1a1712}
+.bar{height:8px;border-radius:4px;background:#2a261f;margin-top:5px;overflow:hidden}.bar>i{display:block;height:100%;border-radius:4px}
+.listbtn{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:36px;padding:0 10px;margin:1px 0;border:0;border-radius:7px;cursor:pointer;text-align:left;background:transparent;color:var(--text2)}
+.listbtn.on{background:#2e281d;color:var(--link-h);font-weight:600}
+.badge{font-size:11px;min-width:20px;padding:1px 6px;border-radius:10px;background:var(--accent);color:var(--accent-ink);text-align:center}
+.sect{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:14px 10px 6px;display:flex;justify-content:space-between;align-items:center}
+.avatar{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--accent-ink)}
+/* Flow-Übersicht */
+.flowgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:14px}
+.fcard{display:block;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;color:var(--text)}
+.fcard:hover{border-color:var(--accent);color:var(--text)}
+.fcard .n{font-family:'IBM Plex Mono',monospace;color:var(--link);font-size:12px}
+.arrow{color:var(--muted);font-size:13px}
+/* Auth-Screens */
+.center{min-height:calc(100vh - 44px);display:flex;align-items:center;justify-content:center;padding:24px}
+.authbox{width:min(100%,440px)}
+/* Phone */
+.phone{width:390px;max-width:100%;height:844px;margin:24px auto;border:1px solid #3a3226;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;background:var(--bg);font-size:15px}
+</style>
+</head>
+<body>
+<div class="flowbar" id="flowbar"></div>
+<div id="app"></div>
+
+<script>
+/* ===== Mock-Daten ===== */
+const OWN = [
+  { id:'nordwacht', name:'Nordwacht', x:-12, y:34, role:'Hauptdorf · Off', pop:742, prod:'1.120 / 1.080 / 1.150 / 640', troops:'vor 3 Tagen', troopsStale:true, res:'heute', resStale:false, build:'heute', buildStale:false },
+  { id:'eichenhain', name:'Eichenhain', x:-8, y:39, role:'Versorger', pop:511, prod:'640 / 610 / 590 / 1.380', troops:'gestern', troopsStale:false, res:'vor 4 Tagen', resStale:true, build:'gestern', buildStale:false },
+  { id:'felsgrund', name:'Felsgrund', x:-17, y:29, role:'Versorger', pop:388, prod:'480 / 520 / 470 / 960', troops:'heute', troopsStale:false, res:'heute', resStale:false, build:'vor 6 Tagen', buildStale:true },
+  { id:'sumpfrand', name:'Sumpfrand', x:-21, y:41, role:'Neugründung', pop:96, prod:'120 / 120 / 120 / 160', troops:'heute', troopsStale:false, res:'heute', resStale:false, build:'heute', buildStale:false }
+];
+const INACTIVE = [
+  { village:'Neues Dorf', x:-4, y:31, player:'grimwald', ally:'—', tribe:'Römer', pop:212, delta:'±0', days:9 },
+  { village:'Heimat', x:-19, y:44, player:'Nebelkrähe', ally:'WOLF', tribe:'Gallier', pop:340, delta:'±0', days:5 },
+  { village:'Dorf 01', x:-25, y:22, player:'xXkeksXx', ally:'—', tribe:'Germanen', pop:98, delta:'−12', days:12 },
+  { village:'Mühlbach', x:2, y:40, player:'Sandor', ally:'SUN', tribe:'Ägypter', pop:377, delta:'±0', days:4 },
+  { village:'Rabenfels', x:-30, y:37, player:'Ilka', ally:'—', tribe:'Hunnen', pop:155, delta:'±0', days:7 },
+  { village:'Kalkgrube', x:-10, y:52, player:'Bertram', ally:'SUN', tribe:'Römer', pop:289, delta:'−4', days:3 },
+  { village:'Ostwall', x:6, y:27, player:'Lysandra', ally:'—', tribe:'Spartaner', pop:63, delta:'±0', days:15 },
+  { village:'Grauhang', x:-36, y:30, player:'tomtom', ally:'WOLF', tribe:'Germanen', pop:301, delta:'±0', days:6 }
+];
+const ALLY_CHANNELS = ['Deff-Call','Deff-Reports','Off-Call','Off-Reports','Ressources','Settlement','Sitter','Mixed topics'];
+const TASKFORCES = [{ name:'TF Südfront', members:6 }, { name:'TF WW-Vorbereitung', members:11 }];
+const MESSAGES = [
+  { author:'Wendelin', role:'Moderator', time:'10:41', channel:'Deff-Call', tag:'Dringend', text:'Angriff auf Eichenhain in 2:14 h, ca. 3 Wellen. Wer kann Deff schicken nach', coord:'(-8|39)' },
+  { author:'Ragna', role:'Member', time:'10:44', channel:'Deff-Call', tag:'', text:'Schicke 800 Phalanx, Ankunft 11:58. Ziel', coord:'(-8|39)', attach:{ type:'image', name:'deff-bericht.png', size:'412 KB' } },
+  { author:'Thoralf', role:'Member', time:'10:52', channel:'Off-Call', tag:'Angriff', text:'Hammer aus Nordwacht steht. Fake-Welle auf Ziel', coord:'(-31|18)' },
+  { author:'Iven', role:'Admin', time:'11:03', channel:'Ressources', tag:'Info', text:'Brauche 20k Getreide für Party in Sumpfrand, Ziel', coord:'(-21|41)', attach:{ type:'pdf', name:'plan-ww.pdf', size:'1,2 MB' } },
+  { author:'Ragna', role:'Member', time:'11:10', channel:'Mixed topics', tag:'', text:'Neue Inaktive nahe Felsgrund, siehe Liste. Startpunkt', coord:'(-25|22)' }
+];
+const TF_MESSAGES = [
+  { author:'Iven', role:'Lead', time:'09:15', channel:'', tag:'Info', text:'Sammelpunkt für die Südfront ist', coord:'(-14|12)' },
+  { author:'Thoralf', role:'Member', time:'09:40', channel:'', tag:'', text:'Bin dabei, 2 Katawellen ab 22 Uhr auf', coord:'(-20|5)' }
+];
+const AV = ['#d9a441','#8cc4de','#c99be0','#9fd39a'];
+
+/* ===== Zustand ===== */
+const S = { origin:0, chat:'Alle', adminTab:0, gdTab:0, gdBuilding:1, gdTribe:1 };
+
+/* ===== Helfer ===== */
+const fmt = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+const note = t => `<div class="ccnote"><b>CC:</b> ${t}</div>`;
+const tagPill = t => t ? `<span class="pill t-${t.toLowerCase()}">${t}</span>` : '';
+function sideNav(active, user){
+  const it = (id,label,href) => `<a class="nav ${active===id?'on':''}" href="#${href||id}">${label}</a>`;
+  return `<nav class="side" aria-label="Hauptnavigation">
+    <div class="logo">Ally Tool</div><div class="srv">ts12 · Europe · [NEXUS]</div>
+    ${it('main','Übersicht')}${it('village','Meine Dörfer')}${it('inactives','Inaktive')}${it('chat','Chat')}${it('tf','Task-Forces','chat')}
+    <div class="sep"></div>${it('admin','Admin')}${it('gamedata','Spieldaten')}
+    <div class="me"><div style="font-weight:600">${user?user[0]:'Thoralf'}</div><div class="sub">${user?user[1]:'Member · Germanen'}</div></div>
+  </nav>`;
+}
+const shell = (active, inner, user) => `<div class="shell">${sideNav(active,user)}<main class="main">${inner}</main></div>`;
+
+/* ===== Screens ===== */
+const SCREENS = [
+  { id:'flow', label:'0 · Flow' },
+  { id:'login', label:'1 · Login' },
+  { id:'invite', label:'2 · Einladung' },
+  { id:'claim', label:'3 · Gast-Verifizierung' },
+  { id:'main', label:'4 · Übersicht' },
+  { id:'village', label:'5 · Dorf-Dashboard' },
+  { id:'inactives', label:'6 · Inaktive' },
+  { id:'chat', label:'7 · Chat' },
+  { id:'chatmobile', label:'8 · Chat Mobile' },
+  { id:'admin', label:'9 · Admin' },
+  { id:'gamedata', label:'10 · Spieldaten' }
+];
+
+function vFlow(){
+  const c = (id,n,t,d) => `<a class="fcard" href="#${id}"><div class="n">${n}</div><div style="font-weight:600;font-size:15px;margin:2px 0 4px">${t}</div><div class="sub">${d}</div></a>`;
+  return `<div style="max-width:1200px;margin:0 auto;padding:28px clamp(16px,3vw,40px);display:flex;flex-direction:column;gap:22px">
+    <header><div class="sub">Travian Ally Tool · Screenflow für Claude Code</div><h1>Screenflow</h1>
+    <p class="sub" style="max-width:760px">Alle Screens sind klickbar verbunden. Oben rechts „Hinweise für CC“ einschalten, um Implementierungshinweise je Screen zu sehen. Daten sind Beispieldaten. Maßgeblich für Logik und Datenmodell ist <span class="mono">CC_AUFTRAG_MVP.md</span>.</p></header>
+    <section><h2 style="margin-bottom:10px">A · Einstieg & Verifizierung</h2>
+      <div class="flowgrid">${c('login','1','Login','E-Mail + Passwort')}${c('invite','2','Einladung einlösen','Link aus Ingame-Nachricht → Registrierung → automatisch verifiziert (Member)')}${c('claim','3','Gast-Verifizierung','Ohne Einladung: Spieler beanspruchen → Dorf-Code → Prüfung beim nächsten map.sql-Import')}</div>
+      <p class="arrow">Login / Einladung / Gast-Verifizierung → Übersicht</p></section>
+    <section><h2 style="margin-bottom:10px">B · Meine Dörfer</h2>
+      <div class="flowgrid">${c('main','4','Übersicht','Account-KI-Instruktionen, fällige Aktualisierungen, KI-Tipps, Dörferstatistik-Upload, Dorfliste')}${c('village','5','Dorf-Dashboard','Uploads (Versammlungsplatz, Dorfansicht, Ressourcen), Dorf-KI-Instruktionen, Tipps, Ist-Zustand')}${c('inactives','6','Inaktive','Entfernungsmesser ab eigenem Dorf, Filter, Sortierung nach Distanz')}</div>
+      <p class="arrow">Übersicht → Hinweis/Dorfliste → Dorf-Dashboard · Übersicht ↔ Inaktive · Dorf-Dashboard → Spieldaten (Kostenquelle)</p></section>
+    <section><h2 style="margin-bottom:10px">C · Kommunikation</h2>
+      <div class="flowgrid">${c('chat','7','Chat Desktop','Sammelraum „Alle“, 8 Allianz-Kanäle, Task-Forces, Tags, Anhänge mit Vorschau')}${c('chatmobile','8','Chat Mobile','Kanalwahl, Nachrichten, Composer, Tab-Bar')}</div>
+      <p class="arrow">Koordinaten in Nachrichten → Inaktive/Karte</p></section>
+    <section><h2 style="margin-bottom:10px">D · Verwaltung</h2>
+      <div class="flowgrid">${c('admin','9','Admin','Mitglieder & Einladungen, Rechte-Matrix, Kanäle & Tags')}${c('gamedata','10','Spieldaten','Gebäude je Stufe, Truppen je Volk, Völker')}</div>
+      <p class="arrow">Admin → „Einladung erzeugen“ → IGM-Text kopieren → (Spieler) → Einladung einlösen</p></section>
+  </div>`;
+}
+
+function vLogin(){
+  return `<div class="center"><div class="authbox card">
+    <div class="logo" style="padding:0 0 4px">Ally Tool</div><div class="sub" style="margin-bottom:18px">ts12 · Europe · [NEXUS]</div>
+    <h1 style="font-size:22px;margin-bottom:16px">Anmelden</h1>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div><label class="lbl" for="le">E-Mail</label><input id="le" class="field" type="email" autocomplete="email"></div>
+      <div><label class="lbl" for="lp">Passwort</label><input id="lp" class="field" type="password" autocomplete="current-password"></div>
+      <a class="btn" href="#main">Anmelden</a>
+      <div class="row between"><a href="#login" style="font-size:13px">Passwort vergessen?</a><a href="#claim" style="font-size:13px">Ohne Einladung registrieren</a></div>
+    </div>
+    ${note('Better Auth (E-Mail + Passwort). Rate-Limit auf Login. Kein öffentlicher Registrierungsweg außer Einladung oder Gast (→ Screen 3).')}
+  </div></div>`;
+}
+
+function vInvite(){
+  return `<div class="center"><div class="authbox card">
+    <div class="logo" style="padding:0 0 4px">Ally Tool</div>
+    <h1 style="font-size:22px;margin:10px 0 6px">Willkommen, Sigrun</h1>
+    <p class="sub" style="margin:0 0 16px">Du wurdest in die Allianz <b style="color:var(--text)">[NEXUS]</b> auf ts12 eingeladen. Dein Account wird automatisch mit dem Travian-Spieler <b style="color:var(--text)">Sigrun</b> verknüpft.</p>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div><label class="lbl" for="ie">E-Mail</label><input id="ie" class="field" type="email" autocomplete="email"></div>
+      <div><label class="lbl" for="ip">Passwort</label><input id="ip" class="field" type="password" autocomplete="new-password"></div>
+      <div><label class="lbl" for="ip2">Passwort wiederholen</label><input id="ip2" class="field" type="password" autocomplete="new-password"></div>
+      <a class="btn" href="#main">Account erstellen</a>
+      <div class="sub" style="font-size:12px">Link gültig bis 21.10.2026 · nur einmal verwendbar</div>
+    </div>
+    ${note('Route <span class="mono">/invite/:token</span>. Token nur gehasht gespeichert, Ablauf 7 Tage, Einmalnutzung. Nach Registrierung: PlayerLink <span class="mono">verified, method=invite</span>, Rolle MEMBER. Ungültig/abgelaufen → klare Fehlermeldung + Hinweis „Admin um neuen Link bitten“.')}
+  </div></div>`;
+}
+
+function vClaim(){
+  return `<div class="center"><div class="authbox card" style="width:min(100%,520px)">
+    <h1 style="font-size:22px;margin-bottom:6px">Travian-Spieler verknüpfen</h1>
+    <p class="sub" style="margin:0 0 16px">Du bist als Gast angemeldet. Wähle deinen Spieler aus der Allianz und bestätige ihn mit einem Code.</p>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div><label class="lbl" for="cp">Spielername</label><input id="cp" class="field" value="Ragna"></div>
+      <div class="card" style="background:#191612">
+        <div style="font-weight:600;margin-bottom:6px">So geht's</div>
+        <ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;color:var(--text2)">
+          <li>Benenne eines deiner Dörfer um in <span class="mono" style="color:var(--link-h);font-size:16px">ALLY-7K2Q</span></li>
+          <li>Warte auf den nächsten Kartenabgleich (spätestens morgen früh).</li>
+          <li>Dein Account wird automatisch freigeschaltet – danach kannst du das Dorf zurückbenennen.</li>
+        </ol>
+      </div>
+      <div class="row"><span class="pill p-wait">Wartet auf Kartenabgleich</span><span class="sub">nächster Import ca. 02:15</span></div>
+      <div class="sub" style="font-size:13px">Alternativ kann ein Moderator dich manuell bestätigen.</div>
+      <a class="btn ghost" href="#chatmobile">Als Gast weiter (eingeschränkt)</a>
+    </div>
+    ${note('Nur Spieler der eigenen Allianz wählbar. Code eindeutig, pro Claim neu. Beim Import: Dorfname == Code bei einem Dorf dieses Spielers → PlayerLink <span class="mono">verified, method=village_rename</span>, Rolle GUEST→MEMBER. Gast sieht nur Kanäle mit minReadRole=GUEST.')}
+  </div></div>`;
+}
+
+function vMain(){
+  const due = [
+    ['die Truppen','Nordwacht','3 Tagen','Versammlungsplatz hochladen'],
+    ['die Ressourcen','Eichenhain','4 Tagen','Ressourcenfelder hochladen'],
+    ['die Dorfansicht','Felsgrund','6 Tagen','Dorfansicht hochladen']
+  ].map(d => `<div class="row between" style="padding:10px 12px;border-radius:8px;background:#1b1611">
+      <div>Du hast <strong>${d[0]}</strong> von <a href="#village">${d[1]}</a> zuletzt vor <strong class="mono">${d[2]}</strong> aktualisiert.</div>
+      <a class="btn ghost sm" href="#village">${d[3]}</a></div>`).join('');
+  const rows = OWN.map(v => `<tr>
+      <td><a href="#village" style="font-weight:600">${v.name}</a><div class="sub" style="font-size:12px">${v.role}</div></td>
+      <td class="mono">(${v.x}|${v.y})</td><td class="mono">${v.pop}</td><td class="mono" style="font-size:13px">${v.prod}</td>
+      <td class="${v.troopsStale?'stale':''}">${v.troops}</td><td class="${v.resStale?'stale':''}">${v.res}</td><td class="${v.buildStale?'stale':''}">${v.build}</td>
+      <td><a href="#village">Öffnen</a></td></tr>`).join('');
+  return shell('main', `
+    <header class="row between" style="align-items:flex-end">
+      <div><div class="sub">Übersicht</div><h1>Deine 4 Dörfer</h1></div>
+      <div class="row"><a class="btn ghost" href="#strategie">KI-Instruktionen</a><a class="btn" href="#upload">Dörferstatistik hochladen</a></div>
+    </header>
+    <section id="strategie" class="card hi" aria-labelledby="st">
+      <div class="row between" style="align-items:baseline"><h2 id="st">KI-Instruktionen für deinen Account</h2><span class="sub" style="font-size:12px">gilt für alle Dörfer · Dorf-Instruktionen ergänzen sie je Dorf</span></div>
+      <label for="strat" class="sub" style="display:block;margin:6px 0">Deine dorfübergreifende Strategie – fließt in jede Empfehlung auf dieser Seite und in allen Dorf-Dashboards ein.</label>
+      <textarea id="strat" rows="3" class="field">Off-Account. Nordwacht ist das Hammerdorf (Axtkämpfer + Teutonen Reiter), Eichenhain und Felsgrund versorgen mit Getreide. Bis Woche 8 zwei weitere Dörfer gründen.</textarea>
+      <div class="row" style="margin-top:10px"><button type="button" class="btn">Speichern</button><a class="btn ghost" href="#village">Dorf-Instruktionen bearbeiten</a></div>
+      ${note('<span class="mono">User.aiInstructions</span>. Änderung invalidiert den Tipp-Cache (Account + alle Dörfer).')}
+    </section>
+    <section class="card warn" aria-labelledby="due">
+      <h2 id="due" style="color:var(--warn);margin-bottom:12px">Aktualisierungen fällig</h2>
+      <div style="display:flex;flex-direction:column;gap:8px">${due}</div>
+      ${note('Aus <span class="mono">VillageState.troopsAt/resourcesAt/buildingsAt</span>; Schwelle konfigurierbar (Default 2 Tage). Button springt in den passenden Upload des Dorfes. Leerzustand: „Alles aktuell“.')}
+    </section>
+    <div class="grid2">
+      <section class="card" aria-labelledby="tips">
+        <h2 id="tips">KI-Empfehlungen für deinen Account</h2>
+        <div class="sub" style="margin:4px 0 14px">Basis: deine Account-Instruktionen, Stand der Screenshots vom 13.10.</div>
+        <ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:12px">
+          <li><strong>Eichenhain: Kornspeicher auf 12</strong> – der Speicher läuft in 6 h voll.</li>
+          <li><strong>Nordwacht: Kaserne vor Stall</strong> – für deinen Hammer fehlen Axtkämpfer; die Kaserne ist der Engpass.</li>
+          <li><strong>Neues Dorf vorbereiten</strong> – Residenz in Felsgrund auf 10 bringt den zweiten Siedler-Slot.</li>
+        </ol>
+        ${note('<span class="mono">POST /api/advisor/account</span>, Ergebnis gecacht bis neuer Ist-Zustand. Phase 1: Stub mit Leerzustand.')}
+      </section>
+      <section id="upload" class="card" aria-labelledby="up">
+        <h2 id="up">Dörferstatistik hochladen</h2>
+        <div class="sub" style="margin:4px 0 14px">Ein Screenshot aktualisiert Ressourcen, Truppen und Bauschleifen aller Dörfer auf einmal.</div>
+        <label for="statfile" class="drop">
+          <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#e0b458" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+          <span style="font-weight:600">Screenshot hierher ziehen oder auswählen</span>
+          <span class="sub">Desktop oder Mobile wird automatisch erkannt</span>
+        </label>
+        <input id="statfile" type="file" accept="image/*" class="sr">
+        ${note('Kein Geräte-Schalter. Pipeline klassifiziert Art + Gerät (Claude Vision), extrahiert per Schema, validiert gegen Spieldaten. Niedrige Konfidenz → Prüfdialog mit erkannten Werten zum Bestätigen/Korrigieren.')}
+      </section>
+    </div>
+    <section class="card flush" aria-labelledby="vil">
+      <h2 id="vil" style="margin:12px 12px 8px">Dörfer</h2>
+      <div class="scroll"><table style="min-width:820px"><thead><tr><th>Dorf</th><th>Koordinaten</th><th>Einwohner</th><th>Produktion / h</th><th>Truppen</th><th>Ressourcen</th><th>Gebäude</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div style="padding:0 12px 8px">${note('Dörfer aus map.sql (verifizierter Spieler). Spalten Truppen/Ressourcen/Gebäude = Alter des jeweiligen Ist-Zustands; veraltet = Warnfarbe.')}</div>
+    </section>`);
+}
+
+function vVillage(){
+  const up = [
+    ['Truppen','Screenshot vom Versammlungsplatz (Tab „Truppen“)','Versammlungsplatz hochladen','vor 3 Tagen',true],
+    ['Dorfansicht','Gebäude und Stufen im Dorfzentrum','Dorfansicht hochladen','heute',false],
+    ['Ressourcen','Ressourcenfelder inkl. Lager und Produktion','Ressourcen hochladen','heute',false]
+  ].map(u => `<div class="card ${u[4]?'warn':''}">
+      <div class="row between"><div style="font-weight:600;font-size:15px">${u[0]}</div><span class="${u[4]?'stale':'sub'}" style="font-size:12px">${u[3]}</span></div>
+      <div class="sub" style="margin:6px 0 14px">${u[1]}</div><button type="button" class="btn" style="width:100%">${u[2]}</button></div>`).join('');
+  const tips = [
+    ['1','Kaserne 9 → 10','Axtkämpfer-Produktion ist der Engpass für dein Hammer-Ziel; Stufe 10 verkürzt die Ausbildungszeit.','[Kosten aus DB]\nBauzeit [aus DB]'],
+    ['2','Kornspeicher 11 → 12','Bei aktueller Getreideproduktion ist der Speicher in ca. 6 h voll.','[Kosten aus DB]\nBauzeit [aus DB]'],
+    ['3','Versteck bleibt bei 5','Für ein Off-Dorf ohne Fremdangriffe in Reichweite bringt ein höheres Versteck aktuell wenig.','—']
+  ].map(t => `<div style="display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:12px;align-items:start;padding:12px;border-radius:9px;background:#191612">
+      <div class="mono" style="width:28px;height:28px;border-radius:7px;background:#2e281d;color:var(--link-h);display:flex;align-items:center;justify-content:center">${t[0]}</div>
+      <div><div style="font-weight:600">${t[1]}</div><div style="color:var(--text2);font-size:13px">${t[2]}</div></div>
+      <div class="mono sub" style="font-size:12px;text-align:right;white-space:pre-line">${t[3]}</div></div>`).join('');
+  const res = [['Holz','18.420 / 26.400','1.120',70,'#b98a4e'],['Lehm','21.050 / 26.400','1.080',80,'#c4734f'],['Eisen','9.870 / 26.400','1.150',37,'#8fa0ad'],['Getreide','19.300 / 20.000','640',96,'#d9b441']]
+    .map(r => `<div><div class="row between" style="font-size:13px"><span>${r[0]}</span><span class="mono">${r[1]} <span class="sub">· ${r[2]}/h</span></span></div><div class="bar"><i style="width:${r[3]}%;background:${r[4]}"></i></div></div>`).join('');
+  const fields = [['Holzfäller ×4','10 · 10 · 9 · 9'],['Lehmgrube ×4','10 · 9 · 9 · 9'],['Eisenmine ×4','10 · 10 · 10 · 9'],['Getreide ×6','8 · 8 · 8 · 7 · 7 · 7']]
+    .map(f => `<div style="background:#191612;border-radius:8px;padding:10px"><div class="sub" style="font-size:12px">${f[0]}</div><div class="mono" style="font-size:13px;margin-top:2px">${f[1]}</div></div>`).join('');
+  const troops = [['Keulenschwinger','1.240','0'],['Axtkämpfer','3.410','600'],['Kundschafter','220','20'],['Teutonen Reiter','640','0'],['Ramme','120','0'],['Katapult','0','0']]
+    .map(t => `<tr><td>${t[0]}</td><td class="mono r">${t[1]}</td><td class="mono r">${t[2]}</td><td class="mono r">—</td></tr>`).join('');
+  const blds = [['Hauptgebäude','15','Bauzeit −[x] %','Bauzeit −[y] %'],['Kaserne','9','Ausbildung [x] %','Ausbildung [y] %'],['Stall','10','Ausbildung [x] %','Ausbildung [y] %'],['Rohstofflager','14','Kapazität 26.400','Kapazität [aus DB]'],['Kornspeicher','11','Kapazität 20.000','Kapazität [aus DB]'],['Versteck','5','Schützt [aus DB] je Rohstoff','Schützt [aus DB]'],['Versammlungsplatz','10','—','—'],['Brauerei','0','nur im Hauptdorf','Angriffsbonus [aus DB]']]
+    .map(b => `<tr><td style="font-weight:500">${b[0]}</td><td class="mono">${b[1]}</td><td style="color:var(--text2)">${b[2]}</td><td class="mono" style="font-size:13px">[aus DB]</td><td style="color:var(--text2)">${b[3]}</td></tr>`).join('');
+  return shell('village', `
+    <header class="row between" style="align-items:flex-end">
+      <div><a href="#main" style="font-size:13px">← Alle Dörfer</a>
+        <h1>Nordwacht <span class="mono sub" style="font-size:18px;font-weight:400">(-12|34)</span></h1>
+        <div class="sub">Hauptdorf · 742 Einwohner · Rolle: Off / Hammer</div></div>
+      <div><label for="vsel" class="lbl">Dorf wechseln</label><select id="vsel" class="field" style="width:auto">${OWN.map(v=>`<option>${v.name} (${v.x}|${v.y})</option>`).join('')}</select></div>
+    </header>
+    <section aria-label="Screenshots hochladen">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:14px">${up}</div>
+      <div class="sub" style="margin-top:8px;font-size:12px">Desktop- oder Mobile-Screenshot – das Layout wird beim Hochladen automatisch erkannt.</div>
+      ${note('Ein Upload je Zweck. Erkanntes Dorf (Name/Koordinaten im Bild) ≠ aktuelles Dorf → Rückfrage. Nur betroffene Bereiche des VillageState werden aktualisiert. Upload auch per Drag & Drop und Strg+V.')}
+    </section>
+    <section class="card hi" aria-labelledby="desc">
+      <div class="row between" style="align-items:baseline"><h2 id="desc">KI-Instruktionen für Nordwacht</h2><a href="#main" style="font-size:13px">Account-Instruktionen bearbeiten</a></div>
+      <div style="margin:10px 0;padding:10px 12px;border-radius:8px;background:#191612;font-size:13px;color:var(--text2)"><span class="sub">Vom Account übernommen:</span> Off-Account. Nordwacht ist das Hammerdorf, Eichenhain und Felsgrund versorgen mit Getreide. Bis Woche 8 zwei weitere Dörfer gründen.</div>
+      <label for="vdesc" class="sub" style="display:block;margin-bottom:6px">Was soll dieses Dorf werden? Ergänzt die Account-Instruktionen für alle Empfehlungen zu diesem Dorf.</label>
+      <textarea id="vdesc" rows="3" class="field">Hammerdorf. Ziel: 6.000 Axtkämpfer, 1.500 Teutonen Reiter, 300 Rammen. Keine Deff-Truppen. Turnierplatz ab Stufe 15 Hauptgebäude.</textarea>
+      <div style="margin-top:10px"><button type="button" class="btn">Speichern</button></div>
+      ${note('<span class="mono">VillageProfile.aiInstructions</span>; Account-Text read-only eingeblendet.')}
+    </section>
+    <section class="card hi" aria-labelledby="tips">
+      <h2 id="tips">Nächste Schritte für Nordwacht</h2>
+      <div class="sub" style="margin:4px 0 14px">KI-Empfehlung aus Ist-Zustand, Spieldaten sowie Account- und Dorf-Instruktionen</div>
+      <div style="display:flex;flex-direction:column;gap:10px">${tips}</div>
+      ${note('<span class="mono">POST /api/advisor/village/:id</span> → JSON {rank, action, reason, cost, benefit}. Kosten/Bauzeit kommen aus BuildingLevel (Speed-umgerechnet), nie aus der KI.')}
+    </section>
+    <div class="grid2">
+      <section class="card" aria-labelledby="res">
+        <div class="row between" style="align-items:baseline"><h2 id="res">Rohstoffe</h2><span class="sub" style="font-size:12px">Stand heute 09:42 · Screenshot</span></div>
+        <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">${res}</div>
+        <h3 style="margin:20px 0 8px;font-size:14px">Ressourcenfelder</h3>
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px">${fields}</div>
+      </section>
+      <section class="card" aria-labelledby="trp">
+        <div class="row between" style="align-items:baseline"><h2 id="trp">Truppen</h2><span class="stale" style="font-size:12px">Stand vor 3 Tagen · Versammlungsplatz</span></div>
+        <div class="scroll" style="margin-top:8px"><table><thead><tr><th>Einheit</th><th class="r">Im Dorf</th><th class="r">Unterwegs</th><th class="r">Unterstützung</th></tr></thead><tbody>${troops}</tbody></table></div>
+      </section>
+    </div>
+    <section class="card flush" aria-labelledby="bld">
+      <div class="row between" style="align-items:baseline;margin:12px 12px 8px"><h2 id="bld">Gebäude (Ist-Zustand)</h2><span class="sub" style="font-size:12px">Stand heute · Dorfansicht · Kosten aus <a href="#gamedata">Spieldaten</a></span></div>
+      <div class="scroll"><table style="min-width:720px"><thead><tr><th>Gebäude</th><th>Stufe</th><th>Nutzen aktuell</th><th>Nächste Stufe kostet</th><th>Nutzen danach</th></tr></thead><tbody>${blds}</tbody></table></div>
+    </section>`);
+}
+
+function vInactives(){
+  const W = 401, o = OWN[S.origin];
+  const d = (a,b) => { const k = Math.abs(a-b); return Math.min(k, W-k); };
+  const rows = INACTIVE.map(v => ({ ...v, dist: Math.hypot(d(v.x,o.x), d(v.y,o.y)) })).sort((a,b)=>a.dist-b.dist)
+    .map(v => { const dec = v.delta.startsWith('−');
+      return `<tr><td class="mono" style="color:var(--link-h);font-weight:500">${v.dist.toFixed(1)}</td><td>${v.village}</td><td class="mono">(${v.x}|${v.y})</td><td>${v.player}</td><td style="color:var(--text2)">${v.ally}</td><td style="color:var(--text2)">${v.tribe}</td><td class="mono r">${v.pop}</td><td class="mono r sub">${v.delta}</td>
+      <td><span style="font-size:12px;font-weight:600;color:${dec?'var(--warn)':'var(--info)'}">${dec?'schrumpft':'inaktiv'} · ${v.days} T</span></td></tr>`; }).join('');
+  const origins = OWN.map((v,i) => `<button type="button" class="opt ${i===S.origin?'on':''}" data-act="origin" data-i="${i}">${v.name} <span class="mono" style="opacity:.75;font-size:12px">(${v.x}|${v.y})</span></button>`).join('');
+  return shell('inactives', `
+    <header><div class="sub">Karte · Stand map.sql heute 02:15</div><h1>Inaktive in deiner Nähe</h1></header>
+    <section class="card" aria-labelledby="orig">
+      <h2 id="orig" style="font-size:15px;margin-bottom:10px">Entfernung messen ab</h2>
+      <div class="row" role="group" aria-label="Ausgangsdorf">${origins}
+        <div class="row" style="gap:6px"><label for="cx" class="lbl" style="margin:0">oder Koordinate</label><input id="cx" class="field mono" placeholder="(x|y)" style="width:110px"></div></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));gap:12px;margin-top:16px">
+        <div><label class="lbl" for="fmax">Max. Entfernung</label><input id="fmax" class="field mono" value="25"></div>
+        <div><label class="lbl" for="fpop">Einwohner bis</label><input id="fpop" class="field mono" value="400"></div>
+        <div><label class="lbl" for="fdays">Inaktiv seit mind.</label><select id="fdays" class="field"><option>3 Tagen</option><option>5 Tagen</option><option>7 Tagen</option></select></div>
+        <div><label class="lbl" for="ftribe">Volk</label><select id="ftribe" class="field"><option>Alle</option><option>Römer</option><option>Germanen</option><option>Gallier</option><option>Ägypter</option><option>Hunnen</option><option>Spartaner</option></select></div>
+        <div><label class="lbl" for="fally">Allianz</label><select id="fally" class="field"><option>Alle außer eigene</option><option>Ohne Allianz</option></select></div>
+      </div>
+      ${note('Ursprung = eigene Dörfer des verifizierten Spielers oder freie Koordinate; letzter Ursprung pro Nutzer gemerkt. Distanz mit Kartenwrap (Legends: Karte −200…200, 401 Felder) als eigene getestete Funktion, später für Laufzeiten wiederverwendbar.')}
+    </section>
+    <section class="card flush" aria-labelledby="res">
+      <div class="row between" style="align-items:baseline;margin:12px 12px 8px"><h2 id="res">${INACTIVE.length} Treffer ab ${o.name}</h2><span class="sub" style="font-size:12px">sortiert nach Entfernung · Kartenrand wird umgerechnet</span></div>
+      <div class="scroll"><table style="min-width:820px"><thead><tr><th>Entf.</th><th>Dorf</th><th>Koord.</th><th>Spieler</th><th>Allianz</th><th>Volk</th><th class="r">Einw.</th><th class="r">Δ 7 Tage</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>
+    </section>`);
+}
+
+function attachmentHtml(a){
+  if (!a) return '';
+  if (a.type === 'image') return `<button type="button" data-act="lightbox" style="display:block;margin-top:8px;padding:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:zoom-in;background:#211d17" aria-label="Bild ${a.name} vergrößern">
+      <div style="width:280px;max-width:100%;height:160px;display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(135deg,#221e18 0 12px,#1d1a15 12px 24px);color:var(--muted);font-size:12px">[Bildvorschau 480 px]</div>
+      <div class="sub" style="font-size:12px;padding:6px 10px;text-align:left">${a.name} · ${a.size}</div></button>`;
+  return `<div class="row" style="margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:10px;background:#211d17;max-width:360px">
+      <div style="width:48px;height:60px;border-radius:4px;background:#ece6d8;color:#333;font-size:10px;display:flex;align-items:center;justify-content:center">S. 1</div>
+      <div style="flex:1"><div style="font-weight:500">${a.name}</div><div class="sub" style="font-size:12px">PDF · ${a.size}</div></div><a href="#chat" class="btn ghost sm">Öffnen</a></div>`;
+}
+
+function vChat(){
+  const unread = { 'Alle':7, 'Deff-Call':3, 'Off-Call':2, 'Ressources':1, 'Mixed topics':1 };
+  const ch = (name,label) => `<button type="button" class="listbtn ${S.chat===name?'on':''}" data-act="chat" data-c="${name}"><span>${label}</span>${unread[name]?`<span class="badge mono">${unread[name]}</span>`:''}</button>`;
+  const isAll = S.chat==='Alle', isTf = S.chat.startsWith('TF ');
+  const src = isTf ? TF_MESSAGES : (isAll ? MESSAGES : MESSAGES.filter(m => m.channel===S.chat));
+  const msgs = src.length ? src.map((m,i) => `<article style="display:grid;grid-template-columns:36px minmax(0,1fr);gap:12px">
+      <div class="avatar" aria-hidden="true" style="background:${AV[i%AV.length]}">${m.author[0]}</div>
+      <div><div class="row" style="gap:8px;align-items:baseline"><b>${m.author}</b><span class="sub" style="font-size:12px">${m.role}</span><span class="mono sub" style="font-size:12px">${m.time}</span>${isAll?`<span class="chip"># ${m.channel}</span>`:''}${tagPill(m.tag)}</div>
+      <div style="margin-top:2px;color:#e2dccd">${m.text} <a href="#inactives" class="mono">${m.coord}</a></div>${attachmentHtml(m.attach)}</div></article>`).join('')
+    : `<div class="sub" style="padding:40px 0;text-align:center">Noch keine Nachrichten in diesem Kanal.</div>`;
+  return `<div class="shell">
+    <nav class="side" aria-label="Hauptnavigation" style="max-width:220px;flex-basis:200px">
+      <div class="logo" style="padding-bottom:18px">Ally Tool</div>
+      <a class="nav" href="#main">Übersicht</a><a class="nav" href="#village">Meine Dörfer</a><a class="nav" href="#inactives">Inaktive</a><a class="nav on" href="#chat">Chat</a><a class="nav" href="#admin">Admin</a><a class="nav" href="#gamedata">Spieldaten</a>
+    </nav>
+    <aside aria-label="Kanäle" style="flex:1 1 220px;max-width:250px;background:#1a1713;border-right:1px solid #2c271f;padding:12px 10px">
+      <div class="sect">Allianz</div>${ch('Alle','Alle (Sammelraum)')}${ALLY_CHANNELS.map(c=>ch(c,'# '+c)).join('')}
+      <div class="sect">Task-Forces <button type="button" aria-label="Task-Force anlegen" style="width:28px;height:28px;border-radius:6px;border:1px solid #403829;background:transparent;color:var(--link);cursor:pointer">+</button></div>
+      ${TASKFORCES.map(t=>`<button type="button" class="listbtn ${S.chat===t.name?'on':''}" data-act="chat" data-c="${t.name}"><span>${t.name}</span><span class="sub" style="font-size:12px">${t.members}</span></button>`).join('')}
+      ${note('Task-Forces: eigener Baum, nur für Mitglieder sichtbar (Admin/Systemadmin sehen alle), nicht im Sammelraum.')}
+    </aside>
+    <main style="flex:999 1 480px;min-width:0;display:flex;flex-direction:column">
+      <header class="row between" style="padding:16px 24px;border-bottom:1px solid #2c271f">
+        <div><h1 style="font-size:19px;margin:0">${isAll?'Alle Kanäle':(isTf?S.chat:'# '+S.chat)}</h1>
+          <div class="sub" style="font-size:12px">${isAll?'Sammelraum: Nachrichten aller Allianz-Kanäle, die du lesen darfst (ohne Task-Forces)':(isTf?'Task-Force · nur für Mitglieder sichtbar':'Allianz-Kanal')}</div></div>
+        <div class="row" role="group" aria-label="Nach Tag filtern" style="gap:8px">${['Alle Tags','Dringend','Angriff','Info'].map((t,i)=>`<button type="button" style="min-height:32px;padding:0 12px;border-radius:16px;border:1px solid #403829;background:${i===0?'#2e281d':'transparent'};color:var(--text2);cursor:pointer;font-size:13px">${t}</button>`).join('')}</div>
+      </header>
+      <div style="flex:1 1 auto;padding:16px 24px;display:flex;flex-direction:column;gap:14px">${msgs}
+        ${note('Realtime per Socket.IO (Room je Kanal, Rechteprüfung beim Join). Koordinaten im Text automatisch verlinkt. Anhänge: Bild-Thumbnail → Lightbox; PDF-Karte mit Seite-1-Vorschau; Text als Snippet. Auslieferung nur über authentifizierten Endpoint mit Kanal-Leserecht.')}
+      </div>
+      <div style="border-top:1px solid #2c271f;padding:14px 24px">
+        <div class="row" style="margin-bottom:10px;gap:8px" aria-label="Anhänge vor dem Senden">
+          <div style="position:relative;width:64px;height:64px;border-radius:8px;border:1px solid var(--line);background:repeating-linear-gradient(135deg,#221e18 0 8px,#1d1a15 8px 16px)"><button type="button" aria-label="Anhang entfernen" style="position:absolute;top:-8px;right:-8px;width:24px;height:24px;border-radius:12px;border:0;background:#403829;color:var(--text);cursor:pointer">×</button></div>
+          <span class="sub" style="font-size:12px">screenshot.png · eingefügt mit Strg+V</span>
+        </div>
+        <div class="row" style="align-items:flex-end;gap:8px">
+          ${isAll?`<div><label for="chs" class="lbl">Kanal</label><select id="chs" class="field" style="width:auto"><option>Deff-Call</option><option>Off-Call</option><option>Ressources</option><option>Mixed topics</option></select></div>`:''}
+          <div><label for="tag" class="lbl">Tag</label><select id="tag" class="field" style="width:auto"><option>— kein Tag —</option><option>Dringend</option><option>Angriff</option><option>Info</option><option>Erledigt</option></select></div>
+          <button type="button" class="btn ghost" aria-label="Datei anhängen" style="padding:0 12px"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.5l-8.5 8.5a5 5 0 0 1-7-7L14 5.5a3.3 3.3 0 0 1 4.7 4.7L10.2 18.7a1.7 1.7 0 0 1-2.4-2.4L15 9"/></svg></button>
+          <div style="flex:1 1 260px"><label for="msg" class="lbl">Nachricht</label><input id="msg" class="field" placeholder="Nachricht schreiben – Koordinaten wie (12|-34) werden verlinkt"></div>
+          <button type="button" class="btn">Senden</button>
+        </div>
+        ${note('Im Sammelraum ist die Kanalwahl Pflicht. Tags 0..n (UI Default 1). Upload: Button, Drag & Drop, Strg+V; max. 10 Dateien; Vorschau vor dem Senden mit Entfernen.')}
+      </div>
+    </main>
+  </div>`;
+}
+
+function vChatMobile(){
+  const m = MESSAGES.slice(0,4).map(m => `<article><div class="row" style="gap:6px;align-items:baseline"><b>${m.author}</b><span class="mono sub" style="font-size:12px">${m.time}</span><span class="chip"># ${m.channel}</span>${tagPill(m.tag)}</div><div>${m.text} <a href="#inactives" class="mono">${m.coord}</a></div>${m.attach&&m.attach.type==='image'?`<div style="margin-top:6px;width:200px;height:110px;border-radius:8px;background:repeating-linear-gradient(135deg,#221e18 0 10px,#1d1a15 10px 20px);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">[Bild]</div>`:''}</article>`).join('');
+  return `<div style="padding:8px">${note('Mobile: eine Spalte, Kanalwahl als Select oben, Tab-Bar unten (Übersicht, Dörfer, Inaktive, Chat). Touch-Ziele ≥ 44 px. Anhang-Button links im Composer.')}
+  <div class="phone">
+    <header class="row between" style="padding:14px 16px 10px;border-bottom:1px solid #2c271f">
+      <div><label for="mch" class="lbl" style="margin:0">Kanal</label><select id="mch" style="min-height:44px;background:transparent;color:var(--text);border:0;font-weight:600;font-size:18px;padding:0"><option>Alle (Sammelraum)</option><option># Deff-Call</option><option># Off-Call</option><option>TF Südfront</option></select></div>
+      <button type="button" aria-label="Nach Tag filtern" style="width:44px;height:44px;border-radius:10px;border:1px solid #403829;background:transparent;color:var(--link);cursor:pointer"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16"/><path d="M7 12h10"/><path d="M10 18h4"/></svg></button>
+    </header>
+    <div style="flex:1 1 auto;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:14px">${m}</div>
+    <div class="row" style="padding:10px 12px;border-top:1px solid #2c271f;gap:8px;flex-wrap:nowrap">
+      <button type="button" aria-label="Datei anhängen" style="width:44px;height:44px;flex:0 0 44px;border-radius:10px;border:1px solid #403829;background:transparent;color:var(--link);cursor:pointer">+</button>
+      <label for="mmsg" class="sr">Nachricht</label><input id="mmsg" class="field" placeholder="Nachricht an Deff-Call…" style="min-height:44px;border-radius:10px">
+      <button type="button" aria-label="Senden" style="width:44px;height:44px;flex:0 0 44px;border-radius:10px;border:0;background:var(--accent);color:var(--accent-ink);cursor:pointer">→</button>
+    </div>
+    <nav aria-label="Hauptnavigation" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid #2c271f;background:var(--side);padding:6px 4px 18px">
+      ${[['main','Übersicht'],['village','Dörfer'],['inactives','Inaktive'],['chatmobile','Chat']].map(([h,l])=>`<a href="#${h}" style="min-height:48px;display:flex;align-items:center;justify-content:center;font-size:13px;color:${h==='chatmobile'?'var(--link-h)':'var(--text2)'};font-weight:${h==='chatmobile'?600:400}">${l}</a>`).join('')}
+    </nav>
+  </div></div>`;
+}
+
+function vAdmin(){
+  const tabs = ['Mitglieder & Einladungen','Rechte','Kanäle & Tags'].map((t,i)=>`<button type="button" role="tab" aria-selected="${i===S.adminTab}" class="tab ${i===S.adminTab?'on':''}" data-act="admintab" data-i="${i}">${t}</button>`).join('');
+  let body = '';
+  if (S.adminTab === 0){
+    const M = [
+      ['Maximus','1.904','max@…','Einladung ✓','p-ok','sys'],
+      ['Iven','1.512','iven@…','Einladung ✓','p-ok','Admin'],
+      ['Wendelin','1.220','wendel@…','Einladung ✓','p-ok','Moderator'],
+      ['Thoralf','1.737','thoralf@…','Dorfname ✓','p-ok','Member'],
+      ['Ragna','980','ragna@…','Wartet auf Dorfname ALLY-7K2Q','p-wait','Guest','approve'],
+      ['Bodo','645','—','Link erzeugt, 5 Tage gültig','p-wait','—','copy'],
+      ['Sigrun','433','—','nicht eingeladen','p-none','—','invite']
+    ].map((m,i)=>`<tr><td style="font-weight:500">${m[0]}</td><td class="mono r">${m[1]}</td><td style="color:var(--text2)">${m[2]}</td><td><span class="pill ${m[4]}">${m[3]}</span></td>
+      <td>${m[5]==='sys'?`<span style="color:var(--link-h);font-weight:600">🔒 Systemadmin</span><div class="sub" style="font-size:12px">aus .env – nicht änderbar</div>`:(m[5]==='—'?'<span class="sub">—</span>':`<label for="r${i}" class="sr">Rolle von ${m[0]}</label><select id="r${i}" class="field" style="width:auto;min-height:36px"><option>${m[5]}</option><option>Admin</option><option>Moderator</option><option>Member</option><option>Guest</option></select>`)}</td>
+      <td class="r" style="white-space:nowrap">${m[6]==='invite'?'<button type="button" class="btn sm">Einladung erzeugen</button>':''}${m[6]==='copy'?'<a class="btn ghost sm" href="#invite">IGM-Text kopieren</a>':''}${m[6]==='approve'?'<button type="button" class="btn ghost sm">Manuell bestätigen</button>':''}</td></tr>`).join('');
+    body = `<section class="card flush"><div class="row between" style="margin:12px"><div><h2>Spieler der Allianz [NEXUS] laut map.sql</h2><div class="sub">Einladungslink erzeugen und per Ingame-Nachricht an genau diesen Spieler schicken – nur er kann sie lesen.</div></div><button type="button" class="btn ghost sm">Alle Uneingeladenen: Links erzeugen</button></div>
+      <div class="scroll"><table style="min-width:860px"><thead><tr><th>Spieler</th><th class="r">Einw.</th><th>Account</th><th>Verifizierung</th><th>Rolle</th><th></th></tr></thead><tbody>${M}</tbody></table></div>
+      <div style="padding:0 12px 8px">${note('Liste = Spieler der eigenen Allianz aus letztem Snapshot. „IGM-Text kopieren“ liefert fertigen Text mit Link. Spieler verlässt Allianz → Markierung, keine Auto-Sperre. Alle Rollen-/Verifizierungsänderungen ins AuditLog.')}</div></section>`;
+  } else if (S.adminTab === 1){
+    const P = [['chat.write','In Kanälen schreiben',1,1,1,0],['chat.upload','Dateien im Chat anhängen',1,1,1,0],['chat.moderate','Nachrichten anderer bearbeiten/löschen',1,1,0,0],['tags.manage','Tags anlegen und ändern',1,0,0,0],['taskforce.create','Task-Forces anlegen',1,1,1,0],['members.invite','Einladungslinks erzeugen',1,1,0,0],['members.approve','Verifizierung manuell bestätigen',1,1,0,0],['roles.assign','Rollen vergeben (nie Systemadmin)',1,0,0,0],['permissions.edit','Diese Matrix bearbeiten',1,0,0,0],['gamedata.edit','Spieldaten pflegen',1,0,0,0]]
+      .map(p=>`<tr><td><span class="mono" style="font-size:13px">${p[0]}</span><div class="sub" style="font-size:12px">${p[1]}</div></td><td style="text-align:center"><input type="checkbox" checked disabled aria-label="${p[0]} Systemadmin (gesperrt)" style="width:18px;height:18px"></td>${p.slice(2).map((v,j)=>`<td style="text-align:center"><input type="checkbox" ${v?'checked':''} aria-label="${p[0]} ${['Admin','Moderator','Member','Guest'][j]}" style="width:18px;height:18px;accent-color:#d9a441"></td>`).join('')}</tr>`).join('');
+    body = `<section class="card flush"><div style="margin:12px"><h2>Rechte-Matrix</h2><div class="sub">Systemadmin-Rechte sind gesperrt und können von Admins nicht geändert werden.</div></div>
+      <div class="scroll"><table style="min-width:720px"><thead><tr><th>Recht</th><th style="text-align:center">Systemadmin</th><th style="text-align:center">Admin</th><th style="text-align:center">Moderator</th><th style="text-align:center">Member</th><th style="text-align:center">Guest</th></tr></thead><tbody>${P}</tbody></table></div>
+      <div style="padding:0 12px 8px">${note('Harte Regeln serverseitig + Tests: Admin kann Systemadmin weder ändern noch sperren/löschen, niemanden zum Systemadmin machen, Systemadmin-Rechte nicht ändern (→ 403).')}</div></section>`;
+  } else {
+    body = `<div class="grid2"><section class="card"><div class="row between" style="margin-bottom:10px"><h2>Allianz-Kanäle</h2><button type="button" class="btn ghost sm">Kanal anlegen</button></div>
+      ${ALLY_CHANNELS.map(c=>`<div class="row between" style="padding:9px 4px;border-bottom:1px solid var(--line2)"><span># ${c}</span><span class="sub" style="font-size:12px">lesen: ${c==='Mixed topics'?'Guest':'Member'} · schreiben: Member</span></div>`).join('')}
+      ${note('Kanäle anlegen, umbenennen, sortieren, archivieren; minReadRole/minWriteRole je Kanal.')}</section>
+      <section class="card"><div class="row between" style="margin-bottom:10px"><h2>Tags</h2><button type="button" class="btn ghost sm">Tag anlegen</button></div>
+      <div class="row" style="gap:8px">${['Dringend','Angriff','Info','Erledigt'].map(t=>tagPill(t)).join('')}</div>
+      ${note('Tag = Name + Farbe (Farbpaar mit ausreichendem Kontrast vorgeben). Recht tags.manage.')}</section></div>`;
+  }
+  return shell('admin', `<header><div class="sub">Verwaltung</div><h1>Admin</h1></header><div role="tablist" aria-label="Bereiche" class="tabs">${tabs}</div>${body}`, ['Iven','Admin · Römer']);
+}
+
+function vGameData(){
+  const tabs = ['Gebäude','Truppen','Völker'].map((t,i)=>`<button type="button" role="tab" aria-selected="${i===S.gdTab}" class="tab ${i===S.gdTab?'on':''}" data-act="gdtab" data-i="${i}">${t}</button>`).join('');
+  const BL = [
+    ['Hauptgebäude','alle','Verkürzt die Bauzeit aller Gebäude im Dorf.','Bauzeit'],
+    ['Kornspeicher','alle','Lagert Getreide.','Kapazität'],
+    ['Rohstofflager','alle','Lagert Holz, Lehm und Eisen.','Kapazität'],
+    ['Versteck','alle','Schützt Rohstoffe vor Plünderung (Völkerboni beachten).','Geschützt je Rohstoff'],
+    ['Fallensteller','Gallier','Fängt angreifende Truppen.','Fallen'],
+    ['Kaserne','alle','Bildet Infanterie aus.','Ausbildungszeit'],
+    ['Holzfäller','alle','Produziert Holz.','Produktion / h'],
+    ['Brauerei','Germanen','Angriffsbonus für alle Truppen (nur Hauptdorf).','Angriffsbonus']
+  ];
+  const warnBox = `<div style="font-size:12px;color:#f6d98c">Beispielstruktur – echte Werte kommen ausschließlich aus dem freigegebenen Datenimport</div>`;
+  let body = '';
+  if (S.gdTab === 0){
+    const b = BL[S.gdBuilding];
+    const levels = Array.from({length:10},(_,i)=>`<tr><td class="mono">${i+1}</td><td class="mono r">[H]</td><td class="mono r">[L]</td><td class="mono r">[E]</td><td class="mono r">[G]</td><td class="mono r">[V]</td><td class="mono r">[Zeit]</td><td class="mono" style="color:var(--link-h)">[${b[3]}]</td></tr>`).join('');
+    body = `<div class="row" style="align-items:flex-start;gap:20px">
+      <section class="card" aria-label="Gebäude" style="flex:1 1 220px;max-width:260px;padding:10px">${BL.map((x,i)=>`<button type="button" class="listbtn ${i===S.gdBuilding?'on':''}" data-act="gdb" data-i="${i}"><span>${x[0]}</span><span class="sub" style="font-size:11px">${x[1]}</span></button>`).join('')}</section>
+      <section class="card flush" style="flex:999 1 480px;min-width:0"><div style="margin:12px"><h2 style="font-size:18px">${b[0]}</h2><div class="sub">${b[2]}</div>${warnBox}</div>
+        <div class="scroll"><table style="min-width:720px"><thead><tr><th>Stufe</th><th class="r">Holz</th><th class="r">Lehm</th><th class="r">Eisen</th><th class="r">Getreide</th><th class="r">Versorgung</th><th class="r">Bauzeit</th><th>${b[3]}</th></tr></thead><tbody>${levels}</tbody></table></div>
+        <div style="padding:0 12px 8px">${note('Building + BuildingLevel (effects jsonb). Bauzeit aus Basiswert × Server-Speed, optional HG-Stufe einrechnen. Bereichsauswahl „Stufe a→b“ mit Summen wäre ein Plus.')}</div></section></div>`;
+  } else if (S.gdTab === 1){
+    const tr = ['Römer','Germanen','Gallier','Ägypter','Hunnen','Spartaner'];
+    const units = S.gdTribe===1 ? ['Keulenschwinger','Speerkämpfer','Axtkämpfer','Kundschafter','Paladin','Teutonen Reiter','Ramme','Katapult','Stammesführer','Siedler'] : ['[Einheiten aus DB]'];
+    body = `<section class="card flush"><div class="row" style="margin:12px;gap:8px" role="group" aria-label="Volk">${tr.map((t,i)=>`<button type="button" class="opt ${i===S.gdTribe?'on':''}" style="min-height:36px;border-radius:18px" data-act="gdt" data-i="${i}">${t}</button>`).join('')}</div>
+      <div style="margin:0 12px 8px">${warnBox}</div>
+      <div class="scroll"><table style="min-width:860px"><thead><tr><th>Einheit</th><th class="r">Angriff</th><th class="r">Def Inf.</th><th class="r">Def Kav.</th><th class="r">Tempo</th><th class="r">Tragen</th><th class="r">Kosten H/L/E/G</th><th class="r">Versorgung</th><th>Gebäude</th></tr></thead>
+      <tbody>${units.map(u=>`<tr><td style="font-weight:500">${u}</td>${'<td class="mono r">[…]</td>'.repeat(7)}<td class="sub">[…]</td></tr>`).join('')}</tbody></table></div>
+      <div style="padding:0 12px 8px">${note('Unit je Tribe. Tempo/Zeiten Speed-abhängig berechnen. Grundlage auch für spätere Laufzeitrechner und Truppen-OCR-Validierung (Einheitennamen je Volk).')}</div></section>`;
+  } else {
+    const T = ['Römer','Germanen','Gallier','Ägypter','Hunnen','Spartaner'];
+    body = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px">${T.map(t=>`<section class="card"><h2 style="font-size:17px;margin-bottom:6px">${t}</h2><div class="sub">[Besonderheiten aus DB: traits]</div></section>`).join('')}</div>${note('Tribe.traits (jsonb) – Völkerboni, Spezialgebäude, Versteck-/Plünderregeln; Quelle wie Gebäude/Truppen.')}`;
+  }
+  return shell('gamedata', `<header class="row between" style="align-items:flex-end"><div><div class="sub">Referenzdaten für KI-Empfehlungen und Dorf-Dashboards</div><h1>Spieldaten</h1></div>
+    <div class="sub" style="font-size:12px;text-align:right">Datenstand: [GameDataVersion] · Server-Speed 1× · gepflegt von Admins</div></header>
+    <div role="tablist" aria-label="Datenbanken" class="tabs">${tabs}</div>${body}`, ['Iven','Admin · Römer']);
+}
+
+const VIEWS = { flow:vFlow, login:vLogin, invite:vInvite, claim:vClaim, main:vMain, village:vVillage, inactives:vInactives, chat:vChat, chatmobile:vChatMobile, admin:vAdmin, gamedata:vGameData };
+
+/* ===== Router ===== */
+function current(){ const h = (location.hash||'#flow').slice(1); return VIEWS[h] ? h : (['strategie','upload'].includes(h) ? 'main' : 'flow'); }
+function render(){
+  const cur = current();
+  document.getElementById('flowbar').innerHTML = `<span class="t">Screenflow</span>${SCREENS.map(s=>`<a href="#${s.id}" class="${s.id===cur?'cur':''}">${s.label}</a>`).join('')}
+    <label><input type="checkbox" id="notesToggle" ${document.body.classList.contains('notes')?'checked':''}> Hinweise für CC</label>`;
+  document.getElementById('app').innerHTML = VIEWS[cur]();
+  document.title = 'Travian Ally Tool – ' + (SCREENS.find(s=>s.id===cur)||{}).label;
+  const h = location.hash.slice(1);
+  if (h==='strategie' || h==='upload'){ const el = document.getElementById(h); if (el) el.scrollIntoView(); } else window.scrollTo(0,0);
+}
+window.addEventListener('hashchange', render);
+document.addEventListener('change', e => { if (e.target.id==='notesToggle') document.body.classList.toggle('notes', e.target.checked); });
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const a = b.dataset.act, i = Number(b.dataset.i);
+  if (a==='origin') S.origin = i;
+  else if (a==='chat') S.chat = b.dataset.c;
+  else if (a==='admintab') S.adminTab = i;
+  else if (a==='gdtab') S.gdTab = i;
+  else if (a==='gdb') S.gdBuilding = i;
+  else if (a==='gdt') S.gdTribe = i;
+  else if (a==='lightbox'){ openLightbox(); return; }
+  const y = window.scrollY; render(); window.scrollTo(0,y);
+});
+function openLightbox(){
+  const d = document.createElement('div');
+  d.setAttribute('role','dialog'); d.setAttribute('aria-modal','true'); d.setAttribute('aria-label','Bildansicht');
+  d.style.cssText = 'position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px';
+  d.innerHTML = `<div style="width:min(90vw,960px);height:min(70vh,540px);border-radius:10px;background:repeating-linear-gradient(135deg,#221e18 0 16px,#1d1a15 16px 32px);display:flex;align-items:center;justify-content:center;color:#a8a08e">[Bild in Web-Größe, max. 1920 px · Zoom per Mausrad/Pinch]</div>
+    <div class="row"><button type="button" class="btn ghost" id="lbPrev">‹ Zurück</button><a class="btn ghost" href="#chat">Download</a><button type="button" class="btn ghost" id="lbNext">Weiter ›</button><button type="button" class="btn" id="lbClose">Schließen</button></div>`;
+  document.body.appendChild(d);
+  const close = () => { d.remove(); document.removeEventListener('keydown', onKey); };
+  const onKey = ev => { if (ev.key==='Escape') close(); };
+  d.querySelector('#lbClose').addEventListener('click', close);
+  d.addEventListener('click', ev => { if (ev.target===d) close(); });
+  document.addEventListener('keydown', onKey);
+  d.querySelector('#lbClose').focus();
+}
+render();
+</script>
+</body>
+</html>

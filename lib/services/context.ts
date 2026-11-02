@@ -1,0 +1,52 @@
+import type { PrismaClient } from "@prisma/client";
+import { defaultMatrix, effectiveRole, isEmergencyAdmin, PERMISSIONS, STORED_ROLES, type Matrix, type Permission, type Role, type StoredRole } from "../permissions";
+import { DEFAULT_LOCALE, isLocale, type Locale } from "../i18n";
+
+/** Wer handelt. `role` ist die bereits abgeleitete effektive Rolle (Notzugangs-Adressen aus der ENV sind ADMIN). */
+export type Actor = { id: string; role: Role };
+
+/** Sprache des Nutzers (für persistierte Texte); unbekannt → Englisch. */
+export async function userLocale(db: Pick<PrismaClient, "user">, userId: string): Promise<Locale> {
+  const u = await db.user.findUnique({ where: { id: userId }, select: { locale: true } });
+  return u?.locale && isLocale(u.locale) ? u.locale : DEFAULT_LOCALE;
+}
+
+/** Lädt die Rechte-Matrix; solange die Tabelle leer ist (vor dem Seed), gelten die Defaults. */
+export async function loadMatrix(db: Pick<PrismaClient, "rolePermission">): Promise<Matrix> {
+  const rows = await db.rolePermission.findMany();
+  if (rows.length === 0) return defaultMatrix();
+  const m = Object.fromEntries(STORED_ROLES.map((r) => [r, new Set<Permission>()])) as Record<StoredRole, Set<Permission>>;
+  for (const r of rows) {
+    if ((STORED_ROLES as readonly string[]).includes(r.role) && (PERMISSIONS as readonly string[]).includes(r.permission)) {
+      m[r.role as StoredRole].add(r.permission as Permission);
+    }
+  }
+  return m;
+}
+
+export async function audit(
+  db: Pick<PrismaClient, "auditLog">,
+  actorId: string,
+  action: string,
+  target: string,
+  before?: unknown,
+  after?: unknown,
+) {
+  await db.auditLog.create({
+    data: { actorId, action, target, before: before === undefined ? undefined : (before as object), after: after === undefined ? undefined : (after as object) },
+  });
+}
+
+/** Prisma-Filter: aktive, verifizierte Konten (Mitglieder+ immer; Gäste nur mit verifizierter Spielerzuordnung). */
+export const verifiedUserWhere = { banned: false, OR: [{ role: { not: "GUEST" } }, { links: { some: { status: "verified" } } }] };
+
+/**
+ * Effektive Rolle inkl. Verifizierung: ein Gast ohne verifizierte Zuordnung ist UNVERIFIED (Notzugang-Admins immer ADMIN).
+ * `requireEmail` (nur wenn SMTP konfiguriert ist): ohne bestätigte E-Mail-Adresse ist jedes Konto UNVERIFIED, außer Notzugang.
+ */
+export async function actorRole(db: Pick<PrismaClient, "playerLink">, user: { id: string; email: string; role: string; emailVerified?: boolean }, emergencyEmails: readonly string[], requireEmail = false): Promise<Role> {
+  const role = effectiveRole(user, emergencyEmails);
+  if (requireEmail && user.emailVerified === false && !isEmergencyAdmin(user.email, emergencyEmails)) return "UNVERIFIED";
+  if (role !== "GUEST") return role;
+  return (await db.playerLink.count({ where: { userId: user.id, status: "verified" } })) > 0 ? "GUEST" : "UNVERIFIED";
+}

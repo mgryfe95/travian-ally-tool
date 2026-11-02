@@ -1,0 +1,23 @@
+import { NextResponse } from "next/server";
+import { createLimiter } from "@/lib/ratelimit";
+import { db } from "@/lib/db";
+import { getT } from "@/lib/i18n/server";
+import { handle, tooMany, unauthorized } from "@/lib/http";
+import { sendDm } from "@/lib/services/messenger";
+import { getCurrentUser } from "@/lib/session";
+
+export const runtime = "nodejs";
+const limiter = createLimiter(30, 60_000);
+
+/** Direktnachricht senden. Fachfehler (Recht, leer, Empfänger) kommen über `handle` als 4xx. */
+export function POST(req: Request) {
+  return handle(async () => {
+    const user = await getCurrentUser();
+    if (!user) return unauthorized();
+    if (!limiter.check(`dm:${user.id}`)) return tooMany();
+    const b = (await req.json().catch(() => null)) as { threadId?: number; body?: string; attachmentIds?: number[] } | null;
+    if (!b || !Number.isInteger(b.threadId) || typeof b.body !== "string") return NextResponse.json({ error: (await getT()).t("messenger.api.invalidRequest") }, { status: 400 });
+    const m = await sendDm(db, user, b.threadId as number, b.body, Array.isArray(b.attachmentIds) ? b.attachmentIds.filter(Number.isInteger) : []);
+    return NextResponse.json({ id: m.id }, { status: 201 });
+  });
+}

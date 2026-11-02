@@ -1,0 +1,264 @@
+{
+ "kind": "VILLAGE_TROOPS_PRESENT",
+ "device": "DESKTOP",
+ "language": "de",
+ "village": null,
+ "topBar": null,
+ "rows": [
+  {
+   "name": "MG Ryfe",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    1403,
+    0,
+    22,
+    0,
+    0,
+    36,
+    0,
+    0,
+    0,
+    0,
+    1
+   ],
+   "texts": [
+    "g1"
+   ]
+  },
+  {
+   "name": "MG Ryfe",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    0,
+    310,
+    0,
+    0,
+    115,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "texts": [
+    "g2"
+   ]
+  },
+  {
+   "name": "MG Ryfe",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    100,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "texts": [
+    "g3"
+   ]
+  },
+  {
+   "name": "summary:MG Ryfe",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    2201,
+    39510,
+    84570,
+    104510
+   ],
+   "texts": []
+  },
+  {
+   "name": "OG Ryfe",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    0,
+    110,
+    0,
+    0,
+    115,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "texts": [
+    "g1"
+   ]
+  },
+  {
+   "name": "OG Ryfe",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    1159,
+    0,
+    5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "texts": [
+    "g2"
+   ]
+  },
+  {
+   "name": "summary:OG Ryfe",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    1509,
+    24810,
+    61810,
+    69200
+   ],
+   "texts": []
+  },
+  {
+   "name": "MG",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    1867,
+    0,
+    1,
+    0,
+    370,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "texts": [
+    "g1"
+   ]
+  },
+  {
+   "name": "MG",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    200,
+    200,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "texts": [
+    "g2"
+   ]
+  },
+  {
+   "name": "summary:MG",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    3009,
+    58655,
+    137250,
+    130710
+   ],
+   "texts": []
+  },
+  {
+   "name": "OG",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "texts": [
+    "g1"
+   ]
+  },
+  {
+   "name": "OG",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "texts": [
+    "g2"
+   ]
+  },
+  {
+   "name": "summary:OG",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    2,
+    0,
+    20,
+    10
+   ],
+   "texts": []
+  }
+ ],
+ "totals": null,
+ "fields": [],
+ "buildings": [],
+ "selfRating": 0.95,
+ "uncertain": []
+}

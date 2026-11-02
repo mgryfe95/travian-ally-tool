@@ -2,3 +2,12 @@ node_modules
 .next
 .git
 .env
+.env.*
+!.env.example
+# Backups (DB-Dumps, .env-Kopien) und Laufzeitdaten gehören nie ins Image
+backups
+storage
+support-raw
+*.log
+test-results
+playwright-report

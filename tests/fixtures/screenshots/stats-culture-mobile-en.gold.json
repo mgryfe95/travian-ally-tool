@@ -1,0 +1,90 @@
+{
+ "kind": "VILLAGE_CULTURE",
+ "device": "MOBILE",
+ "language": "en",
+ "village": {
+  "name": "MG Ryfe",
+  "x": -3,
+  "y": -82
+ },
+ "topBar": {
+  "wood": 13990,
+  "clay": 25767,
+  "iron": 17259,
+  "crop": 2521,
+  "freeCrop": 2435,
+  "warehouse": null,
+  "granary": null
+ },
+ "rows": [
+  {
+   "name": "MG Ryfe",
+   "x": -3,
+   "y": -82,
+   "current": true,
+   "cells": [
+    488
+   ],
+   "texts": [
+    "-",
+    "-",
+    "1/1"
+   ]
+  },
+  {
+   "name": "OG Ryfe",
+   "x": -7,
+   "y": -82,
+   "current": false,
+   "cells": [
+    455
+   ],
+   "texts": [
+    "active",
+    "-",
+    "1/1"
+   ]
+  },
+  {
+   "name": "MG",
+   "x": -3,
+   "y": -83,
+   "current": false,
+   "cells": [
+    163
+   ],
+   "texts": [
+    "-",
+    "-",
+    "1/1"
+   ]
+  },
+  {
+   "name": "OG",
+   "x": -4,
+   "y": -81,
+   "current": false,
+   "cells": [
+    118
+   ],
+   "texts": [
+    "-",
+    "-",
+    "0/0"
+   ]
+  }
+ ],
+ "totals": {
+  "cells": [
+   1224
+  ],
+  "texts": [
+   "-",
+   "3/3"
+  ]
+ },
+ "fields": [],
+ "buildings": [],
+ "selfRating": 0.95,
+ "uncertain": []
+}
