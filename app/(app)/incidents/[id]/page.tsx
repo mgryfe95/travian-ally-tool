@@ -59,7 +59,8 @@ export default async function IncidentPage({ params, searchParams }: { params: P
           </tbody></table>
         </div>
         {i.troopsCorrected && <p className="sub" style={{ marginTop: 6 }}>{t("incidents.detail.corrected")}</p>}
-        <p className="sub" style={{ marginTop: 6 }}>{t("incidents.detail.answers")}: {t("incidents.q.more")} {yn(a.moreAttacks)} · {t("incidents.q.ongoing")} {yn(a.ongoing)} · {t("incidents.q.help")} {yn(a.needHelp)}</p>
+        {i.alertCallId && <p role="status" style={{ marginTop: 6, fontWeight: 600 }}>{t("incidents.alert.sent")}</p>}
+        <p className="sub" style={{ marginTop: 6 }}>{t("incidents.detail.answers")}: {t("incidents.q.more")} {yn(a.moreAttacks)} · {t("incidents.q.ongoing")} {yn(a.ongoing)} · {t("incidents.q.help")} {yn(a.needHelp)}{a.siege ? <> · {t("incidents.q.siege")} {yn(a.siege)}</> : null}</p>
         {i.notes && <p style={{ marginTop: 6, whiteSpace: "pre-wrap" }}>{i.notes}</p>}
       </section>
 

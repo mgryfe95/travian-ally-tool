@@ -30,3 +30,14 @@ describe("Incidents", () => {
     expect(threatDays({ moreAttacks: "unknown", ongoing: "no", needHelp: "no" })).toBe(3);
   });
 });
+
+describe("Angriff melden (Regel)", () => {
+  it("Belagerungs-/Eroberungseinheiten (Plätze 7–9) und Auslöser", async () => {
+    const { alertWorthy, hasSiege } = await import("./incidents");
+    expect(hasSiege([0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0])).toBe(true);
+    expect(hasSiege([100, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0])).toBe(false); // Siedler zählt nicht
+    expect(alertWorthy({ moreAttacks: "yes", ongoing: "no", needHelp: "no", siege: "yes" })).toBe(true);
+    expect(alertWorthy({ moreAttacks: "yes", ongoing: "yes", needHelp: "no" })).toBe(true);
+    expect(alertWorthy({ moreAttacks: "unknown", ongoing: "yes", needHelp: "no", siege: "yes" })).toBe(false);
+  });
+});

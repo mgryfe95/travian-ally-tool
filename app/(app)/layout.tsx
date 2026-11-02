@@ -32,10 +32,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const isAdmin = ADMIN_PERMS.some(can);
   const villages = await ownVillages(db, user.id);
   const channels = can("chat.read") ? await listChannels(db, await chatCtx(db, user)) : [];
-  const chan = (c: (typeof channels)[number]): NavItem => ({ href: `/chat?c=${c.id}`, label: c.tree === "TASKFORCE" ? c.name : `# ${c.name}`, badge: c.unread });
-  const ally = channels.filter((c) => c.tree !== "TASKFORCE").map(chan);
-  const tfs = channels.filter((c) => c.tree === "TASKFORCE").map(chan);
-  if (tfs[0]) tfs[0] = { ...tfs[0], group: t("nav.taskForces") };
+  const chatUnread = channels.reduce((n, c) => n + (c.unread ?? 0), 0);
   const extras: NavItem[] = [];
   if (can("schedule.view")) extras.push({ href: "/schedule", label: t("nav.schedule") });
   if (can("troops.view")) extras.push({ href: "/troops", label: t("nav.troops") });
@@ -43,7 +40,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const items: NavItem[] = [
     { href: "/", label: t("nav.overview"), children: villages.map((v) => ({ href: `/villages/${v.id}`, label: v.name })) },
     { href: "/inactive", label: t("nav.inactive") },
-    { href: "/chat", label: t("nav.chats"), children: channels.length ? [{ href: "/chat?c=all", label: t("chat.aside.all") }, ...ally, ...tfs] : undefined },
+    { href: "/chat", label: t("nav.chats"), badge: chatUnread }, // Kanäle stehen in der Chat-Spalte (mit Live-Zählern), nicht doppelt im Hauptmenü
   ];
   if (can("messenger.use")) items.push({ href: "/messages", label: t("nav.messages"), badge: (await unreadCounts(db, user.id)).total });
   if (!isAdmin) items.push(...extras); // ohne Admin-Bereich bleiben Schedule/Truppen Hauptpunkte

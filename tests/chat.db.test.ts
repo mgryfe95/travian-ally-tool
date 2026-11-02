@@ -107,6 +107,7 @@ describe("Bearbeiten und Löschen", () => {
     expect(await f(deleteMessage(db, await ctx(member2), m.id))).toBeInstanceOf(ForbiddenError);
     await deleteMessage(db, await ctx(mod), m.id);
     expect((await listMessages(db, await ctx(member), { channelId })).messages).toEqual([]);
+    expect((await db.message.findUniqueOrThrow({ where: { id: m.id } })).body).toBe(""); // DSGVO: Text weg
     expect(await db.auditLog.count({ where: { action: "message.moderate_delete" } })).toBe(1);
   });
   it("Löschen entfernt Anhänge samt Dateien", async () => {

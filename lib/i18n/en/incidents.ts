@@ -39,6 +39,8 @@ const en = {
   "incidents.q.more": "Do you expect more attacks?",
   "incidents.q.ongoing": "Are attacks incoming right now?",
   "incidents.q.help": "Do you need defensive support?",
+  "incidents.q.siege": "Did the last attack have rams/catapults or chiefs/senators?",
+  "incidents.alert.sent": "🚨 “Attack report” was sent to the alliance automatically.",
   "incidents.a.yes": "Yes",
   "incidents.a.no": "No",
   "incidents.a.unknown": "Not sure",

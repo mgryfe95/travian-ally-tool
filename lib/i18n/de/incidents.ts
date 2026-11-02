@@ -41,6 +41,8 @@ const de: Record<keyof typeof en, string> = {
   "incidents.q.more": "Erwartest du weitere Angriffe?",
   "incidents.q.ongoing": "Laufen gerade Angriffe auf dich?",
   "incidents.q.help": "Brauchst du Deff-Unterstützung?",
+  "incidents.q.siege": "Hatte der letzte Angriff Rammen/Katapulte oder Senatoren/Häuptlinge?",
+  "incidents.alert.sent": "🚨 „Angriff melden“ wurde automatisch an die Allianz gesendet.",
   "incidents.a.yes": "Ja",
   "incidents.a.no": "Nein",
   "incidents.a.unknown": "Unklar",

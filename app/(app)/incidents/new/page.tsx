@@ -2,7 +2,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import type { MessageKey } from "@/lib/i18n";
 import { getT } from "@/lib/i18n/server";
-import { INCIDENT_KINDS, namedUnits } from "@/lib/incidents";
+import { INCIDENT_KINDS, hasSiege, namedUnits } from "@/lib/incidents";
 import { draftFromScreenshot } from "@/lib/services/incidents";
 import { ownVillages } from "@/lib/services/villages";
 import { requirePermission } from "@/lib/session";
@@ -52,6 +52,7 @@ export default async function NewIncidentPage({ searchParams }: { searchParams: 
         <label className="row" style={{ gap: 8 }}><input type="checkbox" name="correctTroops" value="1" defaultChecked={!!draft} /> {t("incidents.f.correct")}</label>
         <fieldset style={{ border: 0, padding: 0, margin: 0 }}><legend className="lbl">{t("incidents.q.more")}</legend>{radio("moreAttacks", ["yes", "no", "unknown"], "unknown")}</fieldset>
         <fieldset style={{ border: 0, padding: 0, margin: 0 }}><legend className="lbl">{t("incidents.q.ongoing")}</legend>{radio("ongoing", ["yes", "no"], "no")}</fieldset>
+        <fieldset style={{ border: 0, padding: 0, margin: 0 }}><legend className="lbl">{t("incidents.q.siege")}</legend>{radio("siege", ["yes", "no", "unknown"], draft ? (hasSiege(draft.attackerUnits) ? "yes" : "no") : "unknown")}</fieldset>
         <fieldset style={{ border: 0, padding: 0, margin: 0 }}><legend className="lbl">{t("incidents.q.help")}</legend>{radio("needHelp", ["yes", "no"], "no")}</fieldset>
         <div><label className="lbl" htmlFor="i-n">{t("incidents.f.notes")}</label><textarea id="i-n" name="notes" rows={2} className="field" maxLength={2000} /></div>
         <div><button className="btn">{t("incidents.submit")}</button></div>

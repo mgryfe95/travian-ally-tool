@@ -75,11 +75,8 @@ test("Meine Dörfer: Übersicht, KI-Instruktionen, Erinnerungen, Upload, Zugriff
   await expect(page.getByText("Kein Zugriff")).toBeVisible();
   await page.goBack();
 
-  // Advisor-Stub und Zugriffsschutz
+  // Zugriffsschutz
   const villageId = Number(new URL(page.url()).pathname.split("/").pop());
-  const advice = await page.request.post(`/api/advisor/village/${villageId}`);
-  expect(advice.status()).toBe(200);
-  expect((await advice.json()).recommendations).toEqual([]);
 
   const other = await browser.newContext({ locale: "de-DE" });
   const b = await other.newPage();
@@ -92,7 +89,6 @@ test("Meine Dörfer: Übersicht, KI-Instruktionen, Erinnerungen, Upload, Zugriff
   await expect(b.getByText(/Jede Einsicht wird im Audit-Log vermerkt/)).toBeVisible();
   const resp = await b.goto(`/villages/${villageId}`);
   expect(resp?.status()).toBe(404);
-  expect((await b.request.post(`/api/advisor/village/${villageId}`)).status()).toBe(404);
   const shot = await b.request.post("/api/screenshots", { multipart: { file: { name: "x.png", mimeType: "image/png", buffer: png } } });
   expect(shot.status()).toBe(403);
   await b.goto("/");

@@ -3,7 +3,8 @@ import type { Reading } from "./ai/reading";
 export const INCIDENT_KINDS = ["attack", "raid", "scout", "unknown"] as const;
 export type IncidentKind = (typeof INCIDENT_KINDS)[number];
 export const YES_NO_UNKNOWN = ["yes", "no", "unknown"] as const;
-export type Answers = { moreAttacks: (typeof YES_NO_UNKNOWN)[number]; ongoing: "yes" | "no"; needHelp: "yes" | "no" };
+/** `siege`: hatte der letzte Angriff Rammen/Katapulte oder Senatoren/Häuptlinge? (ältere Incidents ohne Angabe) */
+export type Answers = { moreAttacks: (typeof YES_NO_UNKNOWN)[number]; ongoing: "yes" | "no"; needHelp: "yes" | "no"; siege?: (typeof YES_NO_UNKNOWN)[number] };
 export type UnitCount = { unit: string; count: number };
 
 export type IncidentDraft = {
@@ -62,3 +63,9 @@ export function parseCoordText(s: string): { x: number; y: number } | null {
 
 /** Bedrohungsmodus: 3 Tage, 1 Tag wenn keine weiteren Angriffe erwartet werden. */
 export const threatDays = (a: Answers) => (a.moreAttacks === "no" ? 1 : 3);
+
+/** Rammen, Katapulte, Senatoren/Häuptlinge = Plätze 7–9 bei allen Völkern. */
+export const hasSiege = (units: number[]) => [6, 7, 8].some((i) => (units[i] ?? 0) > 0);
+
+/** System-Call „Angriff melden“: weitere Angriffe erwartet und (gerade laufende Angriffe oder Belagerung/Eroberung im letzten Angriff). */
+export const alertWorthy = (a: Answers) => a.moreAttacks === "yes" && (a.ongoing === "yes" || a.siege === "yes");

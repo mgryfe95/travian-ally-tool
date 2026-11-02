@@ -4,7 +4,7 @@ import { ForbiddenError, type Role } from "@/lib/permissions";
 import { seedPermissions } from "@/lib/services/admin";
 import { ChatError, seedChat } from "@/lib/services/chat";
 import {
-  berlinToDate, cancelCall, createCall, deleteKind, listKinds, saveKind, updateCall, deleteCall, dispatchDueCalls, parseCoord, renderCall, saveTemplate, seedSchedule, sendCall,
+  berlinToDate, cancelCall, createCall, deleteKind, listKinds, saveKind, updateCall, deleteCall, dispatchDueCalls, parseCoord, renderCall, saveTemplate, seedSchedule, sendCall, sendReminders, setIncidentCallRole,
 } from "@/lib/services/schedule";
 
 const db = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL! } } });
@@ -155,5 +155,42 @@ describe("Calls", () => {
     await db.allianceCall.deleteMany();
     await deleteKind(db, admin, kind.id);
     expect(await db.callKindDef.count()).toBe(0);
+  });
+});
+
+describe("Kalender für Mitglieder, Wiederholung, Erinnerung", () => {
+  const mem = { id: "mem", role: "MEMBER" as Role };
+  it("Mitglied sendet nur freigegebene Typen; eigene Calls darf es absagen, fremde nicht", async () => {
+    await db.user.create({ data: { id: "mem", name: "Mem", email: "mem@x.de", role: "MEMBER" } });
+    expect(await f(createCall(db, mem, { kind: "DEFF", coord: "-3|-82" }))).toBeInstanceOf(ForbiddenError);
+    await setIncidentCallRole(db, admin, "DEFF", "MEMBER");
+    const c = await createCall(db, mem, { kind: "DEFF", coord: "-3|-82", eventAt: new Date(t0.getTime() + 3_600_000) });
+    expect(c.createdBy).toBe("mem");
+    expect(await f(createCall(db, mem, { kind: "ATTACK", coord: "-3|-82" }))).toBeInstanceOf(ForbiddenError);
+    const other = await createCall(db, admin, { kind: "DEFF", coord: "-3|-82" });
+    expect(await f(cancelCall(db, mem, other.id))).toBeInstanceOf(ForbiddenError);
+    await cancelCall(db, mem, c.id);
+    expect((await db.allianceCall.findUniqueOrThrow({ where: { id: c.id } })).status).toBe("cancelled");
+  });
+  it("wöchentliche Wiederholung legt nach dem Senden den nächsten Termin an (bis zum Enddatum)", async () => {
+    const at = new Date(t0.getTime() + 60_000);
+    await createCall(db, admin, { kind: "ATTACK_DAY", title: "Training", at, eventAt: new Date(at.getTime() + 3_600_000), repeat: "weekly", repeatUntil: new Date(at.getTime() + 8 * 86_400_000) });
+    expect(await f(createCall(db, admin, { kind: "ATTACK_DAY", title: "x", repeat: "daily" }))).toBeInstanceOf(ChatError); // ohne Sendezeit
+    expect(await dispatchDueCalls(db, new Date(at.getTime() + 1000))).toBe(1);
+    const next = await db.allianceCall.findFirstOrThrow({ where: { status: "scheduled" } });
+    expect(next.at?.getTime()).toBe(at.getTime() + 7 * 86_400_000);
+    expect(next.eventAt?.getTime()).toBe(at.getTime() + 3_600_000 + 7 * 86_400_000);
+    expect(await dispatchDueCalls(db, new Date(next.at!.getTime() + 1000))).toBe(1);
+    expect(await db.allianceCall.count({ where: { status: "scheduled" } })).toBe(0); // nächster Termin läge nach dem Enddatum
+  });
+  it("Erinnerung X Minuten vor dem Termin, einmal", async () => {
+    const ev = new Date(t0.getTime() + 2 * 3_600_000);
+    expect(await f(createCall(db, admin, { kind: "ATTACK_DAY", title: "x", remindMin: 30 }))).toBeInstanceOf(ChatError); // ohne Termin
+    const c = await createCall(db, admin, { kind: "ATTACK_DAY", title: "Angriffstag", eventAt: ev, remindMin: 30, sendNow: true }, t0);
+    expect(await sendReminders(db, new Date(ev.getTime() - 40 * 60_000))).toBe(0);
+    expect(await sendReminders(db, new Date(ev.getTime() - 29 * 60_000))).toBe(1);
+    expect(await sendReminders(db, new Date(ev.getTime() - 10 * 60_000))).toBe(0);
+    const last = await db.message.findFirstOrThrow({ where: { channelId: c.channelId }, orderBy: { id: "desc" } });
+    expect(last.body).toMatch(/Reminder – in 29 min/);
   });
 });

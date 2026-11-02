@@ -71,6 +71,7 @@ const de: Record<keyof typeof en, string> = {
   "overview.villages.coords": "Koordinaten",
   "overview.villages.population": "Einwohner",
   "overview.villages.production": "Produktion / h",
+  "overview.villages.productionTitle": "Produktion pro Stunde (Holz / Lehm / Eisen / Getreide, netto) aus dem letzten Screenshot",
   "overview.villages.troops": "Truppen",
   "overview.villages.resources": "Ressourcen",
   "overview.villages.buildings": "Gebäude",

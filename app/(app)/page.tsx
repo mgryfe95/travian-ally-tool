@@ -9,7 +9,7 @@ import { adviceStatus, openRecommendations } from "@/lib/services/advice";
 import { db } from "@/lib/db";
 import { fmt } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
-import type { MessageKey, T } from "@/lib/i18n";
+import type { Locale, MessageKey, T } from "@/lib/i18n";
 import { ageInDays, fieldsMaxed, staleReminders } from "@/lib/reminders";
 import { getStaleDays, ownVillages } from "@/lib/services/villages";
 import { requireUser } from "@/lib/session";
@@ -112,7 +112,7 @@ export default async function Overview({ searchParams }: { searchParams: Promise
               {villages.map((v) => (
                 <tr key={v.id}>
                   <td><Link href={`/villages/${v.id}`} style={{ fontWeight: 600 }}>{v.name}</Link></td>
-                  <td className="mono"><CoordLink x={v.x} y={v.y} /></td><td className="mono">{fmt(v.population, locale)}</td><td className="mono sub">–</td>
+                  <td className="mono"><CoordLink x={v.x} y={v.y} /></td><td className="mono">{fmt(v.population, locale)}</td><td className="mono" style={{ fontSize: 12, whiteSpace: "nowrap" }} title={t("overview.villages.productionTitle")}>{prodText(v.state?.resources, locale)}</td>
                   <td className={stale(v.state?.troopsAt ?? null) ? "stale" : ""}>{ageText(t, ageInDays(v.state?.troopsAt ?? null, now))}</td>
                   <td className={stale(v.state?.resourcesAt ?? null) && !fieldsMaxed(v.state?.fields, v.extra) ? "stale" : ""}>{ageText(t, ageInDays(v.state?.resourcesAt ?? null, now))}</td>
                   <td className={stale(v.state?.buildingsAt ?? null) ? "stale" : ""}>{ageText(t, ageInDays(v.state?.buildingsAt ?? null, now))}</td>
@@ -125,4 +125,12 @@ export default async function Overview({ searchParams }: { searchParams: Promise
       </section>
     </>
   );
+}
+
+/** Produktion pro Stunde aus dem letzten Screenshot (Holz/Lehm/Eisen/Getreide netto), sonst „–“. */
+function prodText(res: unknown, locale: Locale): string {
+  const p = (res as { production?: Record<string, number | null> } | null)?.production;
+  if (!p) return "–";
+  const v = ["wood", "clay", "iron", "crop"].map((k) => p[k]);
+  return v.every((x) => typeof x !== "number") ? "–" : v.map((x) => (typeof x === "number" ? fmt(x, locale) : "?")).join(" / ");
 }

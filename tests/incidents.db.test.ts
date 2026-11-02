@@ -14,7 +14,7 @@ let seen: { focus?: number; incidents: number }[] = [];
 const fake: Advisor = { async advise(s, o) { seen.push({ focus: o.focusIncident, incidents: s.incidents.length }); return { summary: "s", recommendations: [] }; } };
 
 beforeEach(async () => {
-  await db.$executeRaw`TRUNCATE "User","Village","Player","Alliance","Setting","VillageState","AdviceRun","Recommendation","AiUsage","RolePermission","Incident","Channel","Message","UnitName","Screenshot","MemoryDoc","AllianceCall","AuditLog" RESTART IDENTITY CASCADE`;
+  await db.$executeRaw`TRUNCATE "User","Village","Player","Alliance","Setting","VillageState","AdviceRun","Recommendation","AiUsage","RolePermission","Incident","Channel","Message","UnitName","Screenshot","MemoryDoc","AllianceCall","AuditLog","CallTemplate" RESTART IDENTITY CASCADE`;
   await db.user.createMany({ data: [{ id: "u1", name: "u1", email: "u1@x.de", role: "MEMBER" }, { id: "u2", name: "u2", email: "u2@x.de", role: "MEMBER" }] });
   await db.player.createMany({ data: [
     { id: 1, name: "Me", tribe: 2, allianceId: 0, population: 100, villageCount: 1, status: "active", noGrowthDays: 0, firstSeen: new Date() },
@@ -111,5 +111,20 @@ describe("Incidents", () => {
     expect((await db.message.findFirst({ orderBy: { id: "desc" } }))?.body).toMatch(/Defence needed/);
     await setIncidentCallRole(db, { id: "u2", role: "ADMIN" }, "DEFF", "");
     expect(await allowedIncidentKinds(db, member)).toEqual([]);
+  });
+});
+
+describe("System-Call „Angriff melden“", () => {
+  it("geht automatisch raus bei weiteren Angriffen + Belagerung/laufenden Angriffen; sonst nicht", async () => {
+    const { seedSchedule } = await import("@/lib/services/schedule");
+    await seedSchedule(db);
+    const quiet = await createIncident(db, member, { villageId: 10, kind: "attack", attacker: "Evil", answers: { ...answers, siege: "no" } }, "de");
+    expect(quiet.alertCallId ?? null).toBeNull();
+    const hot = await createIncident(db, member, { villageId: 10, kind: "attack", attacker: "Evil", answers: { ...answers, siege: "yes" } }, "de");
+    expect(hot.alertCallId).not.toBeNull();
+    const call = await db.allianceCall.findUniqueOrThrow({ where: { id: hot.alertCallId! } });
+    expect(call).toMatchObject({ kind: "ALERT", status: "sent", x: 0, y: 0, createdBy: "u1" });
+    expect((await db.channel.findUniqueOrThrow({ where: { id: call.channelId } })).name).toBe("Deff-Call");
+    expect((await db.message.findFirstOrThrow({ where: { channelId: call.channelId }, orderBy: { id: "desc" } })).body).toMatch(/Attack reported|Angriff gemeldet/);
   });
 });

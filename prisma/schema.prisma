@@ -669,6 +669,12 @@ model AllianceCall {
   sendDm       Boolean   @default(false)
   note         String    @default("")
   status       String    @default("scheduled")
+  /// Wiederholung: "" | "daily" | "weekly" – nach dem Senden wird der nächste Termin angelegt (bis `repeatUntil`)
+  repeat       String    @default("")
+  repeatUntil  DateTime?
+  /// Erinnerung im Kanal so viele Minuten vor dem Termin (`eventAt`); `remindedAt` = schon erinnert
+  remindMin    Int?
+  remindedAt   DateTime?
   createdBy    String
   createdAt    DateTime  @default(now())
   sentAt       DateTime?
@@ -870,6 +876,8 @@ model Incident {
 
   @@index([userId, status])
   @@index([status, createdAt])
+  /// automatisch gesendeter System-Call „Angriff melden“ (ALERT)
+  alertCallId Int?
 }
 
 /// Durchsuchbares Gedächtnis (Postgres-Volltextsuche) für Lagebild und Verlaufssuche. Zugriff NUR über lib/services/memory.ts:

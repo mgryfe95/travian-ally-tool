@@ -259,13 +259,13 @@ export async function editMessage(db: PrismaClient, ctx: ChatCtx, messageId: num
   return view;
 }
 
-/** Löschen (Autor oder chat.moderate): Nachricht wird markiert, Anhänge werden samt Dateien entfernt. */
+/** Löschen (Autor oder chat.moderate): Nachricht bleibt als Zeile markiert, der Text wird geleert (DSGVO), Anhänge werden samt Dateien entfernt. */
 export async function deleteMessage(db: PrismaClient, ctx: ChatCtx, messageId: number) {
   const m = await db.message.findUnique({ where: { id: messageId }, include: { channel: true, attachments: true } });
   if (!m || m.deletedAt) throw new ChatError("err.chat.messageNotFound", undefined, 404);
   if (!canReadChannel(m.channel, ctx)) throw new ForbiddenError("err.noAccess");
   if (!canDeleteMessage(m.authorId, ctx)) throw new ForbiddenError("err.perm.missing", { perm: "chat.moderate" });
-  await db.$transaction([db.message.update({ where: { id: messageId }, data: { deletedAt: new Date() } }), db.attachment.deleteMany({ where: { messageId } })]);
+  await db.$transaction([db.message.update({ where: { id: messageId }, data: { deletedAt: new Date(), body: "" } }), db.attachment.deleteMany({ where: { messageId } })]);
   await Promise.all(m.attachments.flatMap((a) => [a.storageKey, a.thumbKey, a.previewKey].filter((k): k is string => !!k).map((k) => storage().delete(k))));
   if (m.authorId !== ctx.userId) await audit(db, ctx.userId, "message.moderate_delete", `message:${messageId}`, { channelId: m.channelId, authorId: m.authorId });
   publish(m.channelId, "message:delete", { id: messageId, channelId: m.channelId });

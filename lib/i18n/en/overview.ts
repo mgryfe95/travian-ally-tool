@@ -69,6 +69,7 @@ const en = {
   "overview.villages.coords": "Coordinates",
   "overview.villages.population": "Population",
   "overview.villages.production": "Production / h",
+  "overview.villages.productionTitle": "Production per hour (wood / clay / iron / crop, net) from the latest screenshot",
   "overview.villages.troops": "Troops",
   "overview.villages.resources": "Resources",
   "overview.villages.buildings": "Buildings",

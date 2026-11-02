@@ -12,9 +12,10 @@ import { mailEnabled, sendMail } from "../mail";
 import { AppError } from "../i18n/errors";
 import { DEFAULT_LOCALE, INTL_TAG, isLocale, translate, type Locale, type MessageKey } from "../i18n";
 
-export const CALL_KINDS = ["ATTACK", "DEFF", "ATTACK_DAY", "OTHER"] as const;
+/** ALERT = System-Call „Angriff melden“: wird automatisch aus einem Incident gesendet (siehe `sendIncidentAlert`). */
+export const CALL_KINDS = ["ATTACK", "DEFF", "ATTACK_DAY", "OTHER", "ALERT"] as const;
 export type CallKind = (typeof CALL_KINDS)[number];
-export const KIND_KEY: Record<CallKind, MessageKey> = { ATTACK: "err.call.kind.ATTACK", DEFF: "err.call.kind.DEFF", ATTACK_DAY: "err.call.kind.ATTACK_DAY", OTHER: "err.call.kind.OTHER" };
+export const KIND_KEY: Record<CallKind, MessageKey> = { ATTACK: "err.call.kind.ATTACK", DEFF: "err.call.kind.DEFF", ATTACK_DAY: "err.call.kind.ATTACK_DAY", OTHER: "err.call.kind.OTHER", ALERT: "err.call.kind.ALERT" };
 
 /** Art-Schlüssel eigener Typen: `custom:<id>`. */
 export const isCustomKind = (k: string) => /^custom:\d+$/.test(k);
@@ -25,7 +26,7 @@ export type KindInfo = { key: string; label?: string; custom: boolean; needsCoor
 export async function listKinds(db: PrismaClient): Promise<KindInfo[]> {
   const custom = await db.callKindDef.findMany({ orderBy: [{ sortOrder: "asc" }, { id: "asc" }] });
   return [
-    ...CALL_KINDS.map((k) => ({ key: k as string, custom: false, needsCoords: k === "ATTACK" || k === "DEFF" })),
+    ...CALL_KINDS.map((k) => ({ key: k as string, custom: false, needsCoords: k === "ATTACK" || k === "DEFF" || k === "ALERT" })),
     ...custom.map((c) => ({ key: `custom:${c.id}`, label: c.name, custom: true, needsCoords: c.needsCoords })),
   ];
 }
@@ -64,6 +65,7 @@ export const DEFAULT_TEMPLATES: { kind: CallKind; name: string; body: string; bo
   { kind: "DEFF", name: "Deff-Unterstützung", body: "🛡️ **Deff-Call** für **{spieler}** – {dorf} {koordinaten}\nBis: {zeit}\nBitte Truppen schicken: {link}\n{notiz}", bodyEn: "🛡️ **Defence call** for **{player}** – {village} {coords}\nUntil: {time}\nPlease send troops: {link}\n{note}" },
   { kind: "ATTACK_DAY", name: "Angriffstag", body: "⚔️ **Angriffstag** {zeit}\n{titel}\n{notiz}", bodyEn: "⚔️ **Attack day** {time}\n{title}\n{note}" },
   { kind: "OTHER", name: "Sonstiges", body: "📣 **{titel}**\n{zeit}\n{dorf} {koordinaten}\n{notiz}", bodyEn: "📣 **{title}**\n{time}\n{village} {coords}\n{note}" },
+  { kind: "ALERT", name: "Angriff melden", body: "🚨 **Angriff gemeldet** auf **{spieler}** – {dorf} {koordinaten}\n{notiz}", bodyEn: "🚨 **Attack reported** on **{player}** – {village} {coords}\n{note}" },
 ];
 
 async function requirePerm(db: PrismaClient, actor: Actor, perm: Permission) {
@@ -75,7 +77,7 @@ export async function seedSchedule(db: PrismaClient) {
   const ch = await db.channel.findFirst({ where: { tree: "ALLY", archivedAt: null }, orderBy: { sortOrder: "asc" } });
   const byName = async (n: string) => (await db.channel.findFirst({ where: { tree: "ALLY", name: n, archivedAt: null } }))?.id ?? ch?.id ?? null;
   await db.callTemplate.createMany({
-    data: await Promise.all(DEFAULT_TEMPLATES.map(async (t, i) => ({ ...t, sortOrder: i, channelId: await byName(t.kind === "DEFF" ? "Deff-Call" : t.kind === "ATTACK" ? "Off-Call" : "Off-Call") }))),
+    data: await Promise.all(DEFAULT_TEMPLATES.map(async (t, i) => ({ ...t, sortOrder: i, channelId: await byName(t.kind === "DEFF" || t.kind === "ALERT" ? "Deff-Call" : t.kind === "ATTACK" ? "Off-Call" : "Off-Call") }))),
   });
 }
 
@@ -149,11 +151,33 @@ export function dateToBerlinLocal(d: Date | null): string {
 }
 
 /** `at` = Sendezeitpunkt, `eventAt` = Termin des Angriffs/Ereignisses. */
-export type CallInput = { kind: string; title?: string; coord?: string; at?: Date | null; eventAt?: Date | null; channelId?: number; templateId?: number; note?: string; sendNow?: boolean };
+export type CallInput = {
+  kind: string; title?: string; coord?: string; at?: Date | null; eventAt?: Date | null; channelId?: number; templateId?: number; note?: string; sendNow?: boolean;
+  /** "" | "daily" | "weekly" (nur mit Sendezeitpunkt) */ repeat?: string; repeatUntil?: Date | null;
+  /** Erinnerung so viele Minuten vor dem Termin */ remindMin?: number | null;
+};
+const REPEAT = ["", "daily", "weekly"] as const;
+const REPEAT_MS: Record<string, number> = { daily: 86_400_000, weekly: 7 * 86_400_000 };
 
+/**
+ * Anlegen: mit `schedule.manage` jeder Typ; sonst nur Typen, die für die eigene Rolle freigegeben sind (Setting `incidentCall:<typ>`,
+ * gilt für Kalender und Incidents). Ohne Verwaltungsrecht gilt der Kanal der Vorlage.
+ */
 export async function createCall(db: PrismaClient, actor: Actor, input: CallInput, now = new Date()) {
-  await requirePerm(db, actor, "schedule.manage");
+  if (!(await canManage(db, actor))) {
+    if (!(await allowedIncidentKinds(db, actor)).some((k) => k.key === input.kind)) throw new ForbiddenError("err.call.kindNotAllowed");
+    input = { ...input, channelId: undefined };
+  }
   return createCallUnchecked(db, actor, input, now);
+}
+
+const canManage = async (db: PrismaClient, actor: Actor) => hasPermission(actor.role, "schedule.manage", await loadMatrix(db));
+
+/** Bearbeiten/Absagen/Senden/Löschen: Verwalter (`schedule.manage`) oder wer den Call angelegt hat. */
+async function requireControl(db: PrismaClient, actor: Actor, id: number) {
+  if (await canManage(db, actor)) return;
+  const c = await db.allianceCall.findUnique({ where: { id }, select: { createdBy: true } });
+  if (!c || c.createdBy !== actor.id) throw new ForbiddenError("err.perm.missing", { perm: "schedule.manage" });
 }
 
 /** Anlegen ohne Rechteprüfung – nur für Aufrufer, die selbst prüfen (createCall, Incident-Call). */
@@ -179,10 +203,15 @@ async function createCallUnchecked(db: PrismaClient, actor: Actor, input: CallIn
   const eventAt = input.eventAt ?? null;
   if (at && eventAt && at > eventAt) throw new ChatError("err.call.sendAfterEvent");
   const note = (input.note ?? "").trim().slice(0, 500);
+  const repeat = (REPEAT as readonly string[]).includes(input.repeat ?? "") ? (input.repeat ?? "") : "";
+  if (repeat && !at) throw new ChatError("err.call.repeatNeedsSendAt");
+  const remindMin = input.remindMin && input.remindMin > 0 ? Math.min(Math.round(input.remindMin), 7 * 24 * 60) : null;
+  if (remindMin && !eventAt) throw new ChatError("err.call.remindNeedsEvent");
   const call = await db.allianceCall.create({
     data: {
       kind, title: (input.title ?? "").trim().slice(0, 80), x: xy?.[0] ?? null, y: xy?.[1] ?? null, villageId: target?.villageId, villageName: target?.villageName, playerId: target?.playerId,
       playerName: target?.playerName, at, eventAt, channelId: ch.id, template: tpl.body, templateEn: tpl.bodyEn ?? "", sendDm: tpl.sendDm, note, status: at ? "scheduled" : "draft", createdBy: actor.id,
+      repeat, repeatUntil: repeat ? (input.repeatUntil ?? null) : null, remindMin,
     },
   });
   await audit(db, actor.id, "call.create", `call:${call.id}`, undefined, { kind, at, eventAt, coord: xy, ...(source ? { source } : {}) });
@@ -231,6 +260,11 @@ export async function createIncidentCall(db: PrismaClient, actor: Actor, input: 
   return createCallUnchecked(db, actor, { kind: input.kind, coord: `${input.x}|${input.y}`, note: input.note, eventAt: input.eventAt ?? null, sendNow: true }, now, "incident");
 }
 
+/** System-Call „Angriff melden“ aus einem Incident: unabhängig von Freigaben, sofort gesendet, Ziel = angegriffenes Dorf. */
+export async function sendIncidentAlert(db: PrismaClient, actor: Actor, input: { x: number; y: number; note: string }, now = new Date()) {
+  return createCallUnchecked(db, actor, { kind: "ALERT", coord: `${input.x}|${input.y}`, note: input.note, sendNow: true }, now, "incident-alert");
+}
+
 /** Postet den Call in den Zielkanal (Autor = Ersteller). Nur aus scheduled/draft. */
 async function dispatch(db: PrismaClient, id: number, now: Date, actorId?: string) {
   const claimed = await db.allianceCall.updateMany({ where: { id, status: { in: ["scheduled", "draft"] } }, data: { status: "sending" } });
@@ -246,12 +280,24 @@ async function dispatch(db: PrismaClient, id: number, now: Date, actorId?: strin
       body: m.body, createdAt: m.createdAt.toISOString(), editedAt: null, tags: [], attachments: [],
     });
     const done = await db.allianceCall.update({ where: { id }, data: { status: "sent", sentAt: now, messageId: m.id } });
+    await scheduleNext(db, call);
     if (call.sendDm) await sendCallDms(db, { ...call, kindName: names.get(call.kind) }).catch((e) => console.error("[schedule] Direktnachrichten fehlgeschlagen", e));
     return done;
   } catch (e) {
     await db.allianceCall.update({ where: { id }, data: { status: call.at ? "scheduled" : "draft" } });
     throw e;
   }
+}
+
+/** Wiederholung: nächsten Termin als geplanten Call anlegen (gleiche Daten, Zeiten um das Intervall verschoben), bis `repeatUntil`. */
+async function scheduleNext(db: PrismaClient, c: Awaited<ReturnType<PrismaClient["allianceCall"]["findUniqueOrThrow"]>>) {
+  const step = REPEAT_MS[c.repeat];
+  if (!step || !c.at) return;
+  const at = new Date(c.at.getTime() + step);
+  if (c.repeatUntil && at > c.repeatUntil) return;
+  const { id: _id, sentAt: _s, messageId: _m, remindedAt: _r, createdAt: _c, ...rest } = c;
+  void _id; void _s; void _m; void _r; void _c;
+  await db.allianceCall.create({ data: { ...rest, at, eventAt: c.eventAt ? new Date(c.eventAt.getTime() + step) : null, status: "scheduled" } });
 }
 
 /** Direktnachricht an die Betroffenen: verifizierte Nutzer des Zielspielers, sonst alle aktiven Nicht-Gäste mit Leserecht im Kanal. Absender = Ersteller. */
@@ -273,7 +319,7 @@ async function sendCallDms(db: PrismaClient, call: CallLike & { channelId: numbe
 }
 
 export async function sendCall(db: PrismaClient, actor: Actor, id: number, now = new Date()) {
-  await requirePerm(db, actor, "schedule.manage");
+  await requireControl(db, actor, id);
   const sent = await dispatch(db, id, now, actor.id);
   if (!sent) throw new ChatError("err.call.alreadySent");
   await audit(db, actor.id, "call.send", `call:${id}`);
@@ -290,6 +336,29 @@ export async function dispatchDueCalls(db: PrismaClient, now = new Date()): Prom
     } catch (e) {
       console.error("[schedule] Call konnte nicht gesendet werden", c.id, e);
     }
+  }
+  await sendReminders(db, now);
+  return n;
+}
+
+/** Erinnerung „in X Minuten“ für gesendete Calls mit `remindMin`, einmal je Call, nur solange der Termin bevorsteht. */
+export async function sendReminders(db: PrismaClient, now = new Date()): Promise<number> {
+  const due = await db.allianceCall.findMany({ where: { status: "sent", remindMin: { not: null }, remindedAt: null, eventAt: { gt: now } } });
+  let n = 0;
+  for (const c of due) {
+    if (c.eventAt!.getTime() - c.remindMin! * 60_000 > now.getTime()) continue;
+    const claimed = await db.allianceCall.updateMany({ where: { id: c.id, remindedAt: null }, data: { remindedAt: now } });
+    if (!claimed.count) continue;
+    const locale = await userLocale(db, c.createdBy);
+    const mins = Math.max(1, Math.round((c.eventAt!.getTime() - now.getTime()) / 60_000));
+    const body = translate(locale, "err.call.msg.reminder", { min: mins, text: renderCall({ ...c, kindName: (await kindNames(db)).get(c.kind) }, undefined, locale) });
+    const m = await db.message.create({ data: { channelId: c.channelId, authorId: c.createdBy, body }, include: { channel: { select: { name: true } } } });
+    const author = await db.user.findUnique({ where: { id: c.createdBy }, select: { name: true, role: true } });
+    publish(c.channelId, "message:new", {
+      id: m.id, channelId: m.channelId, channelName: m.channel.name, author: { id: c.createdBy, name: author?.name ?? translate(DEFAULT_LOCALE, "err.deletedUser"), role: author?.role ?? "MEMBER" },
+      body: m.body, createdAt: m.createdAt.toISOString(), editedAt: null, tags: [], attachments: [],
+    });
+    n++;
   }
   return n;
 }
@@ -324,7 +393,7 @@ function assertMail(mail: boolean) {
 
 /** Bricht ab. War der Call schon gesendet, geht automatisch eine Absage in den Kanal (und optional per Mail). */
 export async function cancelCall(db: PrismaClient, actor: Actor, id: number, opts: { mail?: boolean } = {}) {
-  await requirePerm(db, actor, "schedule.manage");
+  await requireControl(db, actor, id);
   assertMail(!!opts.mail);
   const before = await db.allianceCall.findUnique({ where: { id } });
   const r = await db.allianceCall.updateMany({ where: { id, status: { in: ["scheduled", "draft", "sent"] } }, data: { status: "cancelled" } });
@@ -334,7 +403,7 @@ export async function cancelCall(db: PrismaClient, actor: Actor, id: number, opt
 }
 
 export async function deleteCall(db: PrismaClient, actor: Actor, id: number) {
-  await requirePerm(db, actor, "schedule.manage");
+  await requireControl(db, actor, id);
   await db.allianceCall.deleteMany({ where: { id, status: { in: ["cancelled", "sent"] } } });
 }
 
@@ -342,7 +411,7 @@ export type CallEdit = { title?: string; coord?: string; at?: Date | null; event
 
 /** Ändert Ziel, Termin, Sendezeit, Titel oder Notiz. Ein bereits gesendeter Call meldet die Änderung automatisch im Kanal (optional zusätzlich per Rundmail). */
 export async function updateCall(db: PrismaClient, actor: Actor, id: number, input: CallEdit) {
-  await requirePerm(db, actor, "schedule.manage");
+  await requireControl(db, actor, id);
   assertMail(!!input.mail);
   const cur = await db.allianceCall.findUnique({ where: { id } });
   if (!cur || cur.status === "cancelled" || cur.status === "sending") throw new ChatError("err.call.cannotEdit");

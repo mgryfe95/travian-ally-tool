@@ -6,7 +6,7 @@ import type { MessageKey } from "@/lib/i18n";
 import { getT } from "@/lib/i18n/server";
 import { hasPermission } from "@/lib/permissions";
 import { loadMatrix } from "@/lib/services/context";
-import { CALL_KINDS, PLACEHOLDERS, dateToBerlinLocal, incidentCallRoles, listKinds, renderCall } from "@/lib/services/schedule";
+import { CALL_KINDS, PLACEHOLDERS, allowedIncidentKinds, dateToBerlinLocal, incidentCallRoles, listKinds, renderCall } from "@/lib/services/schedule";
 import { requirePermission } from "@/lib/session";
 import { AdminTabs } from "@/components/AdminTabs";
 import { ADMIN_PERMS, adminNav } from "@/lib/adminTabs";
@@ -15,7 +15,7 @@ import { cancelCallAction, createCallAction, deleteCallAction, deleteKindAction,
 export const dynamic = "force-dynamic";
 
 const STATUS: Record<string, MessageKey> = { scheduled: "schedule.status.scheduled", draft: "schedule.status.draft", sent: "schedule.status.sent", cancelled: "schedule.status.cancelled", sending: "schedule.status.sending" };
-const KIND: Record<(typeof CALL_KINDS)[number], MessageKey> = { ATTACK: "schedule.kind.ATTACK", DEFF: "schedule.kind.DEFF", ATTACK_DAY: "schedule.kind.ATTACK_DAY", OTHER: "schedule.kind.OTHER" };
+const KIND: Record<(typeof CALL_KINDS)[number], MessageKey> = { ATTACK: "schedule.kind.ATTACK", DEFF: "schedule.kind.DEFF", ATTACK_DAY: "schedule.kind.ATTACK_DAY", OTHER: "schedule.kind.OTHER", ALERT: "schedule.kind.ALERT" };
 
 export default async function SchedulePage({ searchParams }: { searchParams: Promise<{ error?: string; ok?: string }> }) {
   const { t, locale } = await getT();
@@ -30,6 +30,9 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
   const matrix = await loadMatrix(db);
   const can = (p: Parameters<typeof hasPermission>[1]) => hasPermission(user.role, p, matrix);
   const manage = can("schedule.manage");
+  // Ohne Verwaltungsrecht: nur die für die eigene Rolle freigegebenen Call-Typen (System-Call „Angriff melden“ nie von Hand)
+  const sendKinds = manage ? kinds : (await allowedIncidentKinds(db, user)).filter((k) => k.key !== "ALERT");
+  const mine = (c: { createdBy: string }) => manage || c.createdBy === user.id;
   const [calls, templates, channels] = await Promise.all([
     db.allianceCall.findMany({ orderBy: [{ at: "asc" }, { id: "desc" }], take: 80 }),
     db.callTemplate.findMany({ orderBy: [{ sortOrder: "asc" }, { id: "asc" }] }),
@@ -53,20 +56,26 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
       {error && <p className="errtext" role="alert" style={{ border: "1px solid var(--bad, #a33a2b)", borderRadius: 10, padding: "10px 14px", fontWeight: 700 }}>⚠ {error}</p>}
       {ok && !error && <p role="status" style={{ border: "1px solid #5e7f3a", background: "#dde8c9", color: "#3c5a1e", borderRadius: 10, padding: "10px 14px", fontWeight: 700 }}>✔ {t(`schedule.ok.${ok}` as MessageKey)}</p>}
 
-      {manage && (
+      {sendKinds.length > 0 && (
         <section className="card" aria-labelledby="new">
           <h2 id="new">{t("schedule.new.title")}</h2>
           <form action={createCallAction} className="row" style={{ flexWrap: "wrap", gap: 10, alignItems: "flex-end", marginTop: 8 }}>
             <div><label className="lbl" htmlFor="kind">{t("schedule.new.kind")}</label>
-              <select id="kind" name="kind" className="field" style={{ width: "auto" }}>{kindOptions}</select></div>
+              <select id="kind" name="kind" className="field" style={{ width: "auto" }}>{sendKinds.map((k) => <option key={k.key} value={k.key}>{kindLabel(k.key)}</option>)}</select></div>
             <div><label className="lbl" htmlFor="coord-x">{t("schedule.new.coords")}</label>
               <CoordInput name="coord" idPrefix="coord" /></div>
             <div><label className="lbl" htmlFor="eventAt">{t("schedule.new.eventAt")}</label>
               <input id="eventAt" name="eventAt" type="datetime-local" className="field" style={{ width: "auto" }} /></div>
             <div><label className="lbl" htmlFor="at">{t("schedule.new.sendAt")}</label>
               <input id="at" name="at" type="datetime-local" className="field" style={{ width: "auto" }} /></div>
-            <div><label className="lbl" htmlFor="chn">{t("schedule.new.channel")}</label>
-              <select id="chn" name="channelId" className="field" style={{ width: "auto" }}><option value="">{t("schedule.new.byTemplate")}</option>{channels.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+            {manage && <div><label className="lbl" htmlFor="chn">{t("schedule.new.channel")}</label>
+              <select id="chn" name="channelId" className="field" style={{ width: "auto" }}><option value="">{t("schedule.new.byTemplate")}</option>{channels.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>}
+            <div><label className="lbl" htmlFor="repeat">{t("schedule.new.repeat")}</label>
+              <select id="repeat" name="repeat" className="field" style={{ width: "auto" }}><option value="">{t("schedule.repeat.none")}</option><option value="daily">{t("schedule.repeat.daily")}</option><option value="weekly">{t("schedule.repeat.weekly")}</option></select></div>
+            <div><label className="lbl" htmlFor="repeatUntil">{t("schedule.new.repeatUntil")}</label>
+              <input id="repeatUntil" name="repeatUntil" type="date" className="field" style={{ width: "auto" }} /></div>
+            <div><label className="lbl" htmlFor="remind">{t("schedule.new.remind")}</label>
+              <select id="remind" name="remindMin" className="field" style={{ width: "auto" }}><option value="">{t("schedule.remind.none")}</option>{[15, 30, 60, 120].map((m) => <option key={m} value={m}>{t("schedule.remind.min", { n: m })}</option>)}</select></div>
             <div style={{ flex: "1 1 180px" }}><label className="lbl" htmlFor="title">{t("schedule.new.titleOpt")}</label>
               <input id="title" name="title" className="field" maxLength={80} /></div>
             <div style={{ flex: "1 1 220px" }}><label className="lbl" htmlFor="note">{t("schedule.new.note")}</label>
@@ -85,11 +94,11 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
             <thead><tr><th>{t("schedule.col.eventAt")}</th><th>{t("schedule.col.sendAt")}</th><th>{t("schedule.col.kind")}</th><th>{t("schedule.col.target")}</th><th>{t("schedule.col.channel")}</th><th>{t("schedule.col.status")}</th><th>{t("schedule.col.preview")}</th><th /></tr></thead>
             <tbody>{open.map((c) => (
               <tr key={c.id}>
-                <td>{when(c.eventAt)}</td><td>{c.status === "sent" ? <span className="sub">{when(c.sentAt)}</span> : when(c.at)}</td><td>{kindLabel(c.kind)}</td>
+                <td>{when(c.eventAt)}</td><td>{c.status === "sent" ? <span className="sub">{when(c.sentAt)}</span> : when(c.at)}</td><td>{kindLabel(c.kind)}{c.repeat && <span className="sub" style={{ fontSize: 12 }}> · {t(c.repeat === "daily" ? "schedule.repeat.daily" : "schedule.repeat.weekly")}</span>}{c.remindMin && <span className="sub" style={{ fontSize: 12 }}> · ⏰ {t("schedule.remind.min", { n: c.remindMin })}</span>}</td>
                 <td>{c.playerName ? <>{c.playerName} <span className="mono sub"><CoordLink x={c.x!} y={c.y!} className="mono sub" /></span></> : c.title || "–"}</td>
                 <td>{chName.get(c.channelId) ?? "?"}</td><td><span className={`pill ${c.status === "sent" ? "p-ok" : "p-wait"}`}>{statusLabel(c.status)}</span></td>
                 <td className="sub" style={{ maxWidth: 280, whiteSpace: "pre-wrap", fontSize: 12 }}>{renderCall({ ...c, kindName: kinds.find((k) => k.key === c.kind)?.label }, undefined, locale)}</td>
-                <td className="r">{manage && (
+                <td className="r">{mine(c) && (
                   <details>
                     <summary className="btn ghost sm" style={{ display: "inline-flex" }}>{t("schedule.edit")}</summary>
                     <form action={updateCallAction} className="col" style={{ gap: 6, marginTop: 8, textAlign: "left", minWidth: 250 }}>
@@ -120,7 +129,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
           <div className="scroll"><table style={{ minWidth: 560 }}>
             <tbody>{done.map((c) => (
               <tr key={c.id}><td>{when(c.eventAt ?? c.sentAt ?? c.at)}</td><td>{kindLabel(c.kind)}</td><td>{c.playerName ?? c.title ?? "–"}</td><td>{chName.get(c.channelId) ?? "?"}</td><td>{statusLabel(c.status)}</td>
-                <td className="r">{manage && <form action={deleteCallAction}><input type="hidden" name="callId" value={c.id} /><button className="btn ghost sm">{t("schedule.delete")}</button></form>}</td></tr>))}</tbody>
+                <td className="r">{mine(c) && <form action={deleteCallAction}><input type="hidden" name="callId" value={c.id} /><button className="btn ghost sm">{t("schedule.delete")}</button></form>}</td></tr>))}</tbody>
           </table></div>
         </section>
       )}

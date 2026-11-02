@@ -3,12 +3,12 @@ import { loadRelations, type Relation } from "../alliance-group";
 import { readingSchema } from "../ai/reading";
 import { distance, roundFields } from "../geo";
 import { AppError } from "../i18n/errors";
-import { draftFromReading, INCIDENT_KINDS, namedUnits, parseCoordText, threatDays, YES_NO_UNKNOWN, type Answers, type IncidentDraft, type IncidentKind, type UnitCount } from "../incidents";
+import { draftFromReading, INCIDENT_KINDS, namedUnits, parseCoordText, threatDays, YES_NO_UNKNOWN, type Answers, type IncidentDraft, type IncidentKind, type UnitCount, alertWorthy } from "../incidents";
 import { ForbiddenError, hasPermission } from "../permissions";
 import { readTroops } from "../troops";
 import { chatCtx, postMessage } from "./chat";
 import { loadMatrix, type Actor } from "./context";
-import { allowedIncidentKinds, createIncidentCall } from "./schedule";
+import { allowedIncidentKinds, createIncidentCall, sendIncidentAlert } from "./schedule";
 import { saveTroops } from "./troops";
 import { upsertMemory } from "./memory";
 import { getOwnVillage, ownVillages } from "./villages";
@@ -54,7 +54,11 @@ export type IncidentInput = {
 
 export function parseAnswers(f: (k: string) => string): Answers {
   const m = f("moreAttacks");
-  return { moreAttacks: (YES_NO_UNKNOWN as readonly string[]).includes(m) ? (m as Answers["moreAttacks"]) : "unknown", ongoing: f("ongoing") === "yes" ? "yes" : "no", needHelp: f("needHelp") === "yes" ? "yes" : "no" };
+  const sg = f("siege");
+  return {
+    moreAttacks: (YES_NO_UNKNOWN as readonly string[]).includes(m) ? (m as Answers["moreAttacks"]) : "unknown", ongoing: f("ongoing") === "yes" ? "yes" : "no", needHelp: f("needHelp") === "yes" ? "yes" : "no",
+    siege: (YES_NO_UNKNOWN as readonly string[]).includes(sg) ? (sg as Answers["moreAttacks"]) : "unknown",
+  };
 }
 
 /** Incident anlegen (nur eigenes Ziel-Dorf). Optional eigene Truppen im Dorf um die Verluste verringern. */
@@ -94,6 +98,17 @@ export async function createIncident(db: PrismaClient, actor: Actor, input: Inci
       const next = troops.map((t) => { const key = mine.slotOf(t.unit) ?? t.unit.toLowerCase(); const l = loss.get(key); return l ? { ...t, inVillage: Math.max(0, t.inVillage - l) } : t; });
       await saveTroops(db, actor.id, village.id, next, now);
       await db.incident.update({ where: { id: incident.id }, data: { troopsCorrected: true } });
+    }
+  }
+  if (alertWorthy(input.answers)) {
+    // Folge-Call „Angriff melden“ (System): Fehler hier dürfen das Melden nicht verhindern
+    try {
+      const who = attacker?.name ?? (attackerName || (coords ? `(${coords.x}|${coords.y})` : "unknown"));
+      const call = await sendIncidentAlert(db, actor, { x: village.x, y: village.y, note: `${kind} by ${who}${input.answers.siege === "yes" ? " · siege/conquest units" : ""}${input.answers.ongoing === "yes" ? " · attacks incoming now" : ""} · more attacks expected` }, now);
+      await db.incident.update({ where: { id: incident.id }, data: { alertCallId: call.id } });
+      return { ...incident, alertCallId: call.id };
+    } catch (e) {
+      console.error("[incidents] Angriff melden fehlgeschlagen", e);
     }
   }
   return incident;

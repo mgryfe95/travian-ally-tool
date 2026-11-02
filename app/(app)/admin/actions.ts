@@ -170,6 +170,10 @@ async function runSchedule(fn: () => Promise<void>, ok?: string): Promise<never>
   }
   redirect(`/schedule${error ? `?error=${encodeURIComponent(error)}` : ok ? `?ok=${ok}` : ""}`);
 }
+/** "YYYY-MM-DD" → Ende dieses Tages (Berliner Zeit); leer = null. */
+function dayEnd(v: string): Date | null {
+  return /^\d{4}-\d{2}-\d{2}$/.test(v) ? berlinToDate(`${v}T23:59`) : null;
+}
 function timeField(f: FormData, name: string): Date | null {
   const raw = str(f, name).trim();
   if (!raw) return null;
@@ -183,6 +187,7 @@ export async function createCallAction(f: FormData) {
     await createCall(db, await requireUser(), {
       kind: str(f, "kind"), title: str(f, "title"), coord: str(f, "coord"), at: timeField(f, "at"), eventAt: timeField(f, "eventAt"), note: str(f, "note"),
       channelId: f.get("channelId") ? int(f, "channelId") : undefined, templateId: f.get("templateId") ? int(f, "templateId") : undefined, sendNow: now,
+      repeat: str(f, "repeat"), repeatUntil: dayEnd(str(f, "repeatUntil")), remindMin: f.get("remindMin") ? int(f, "remindMin") : null,
     });
   }, now ? "sent" : "created");
 }
