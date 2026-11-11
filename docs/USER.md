@@ -129,3 +129,6 @@ Der Kalender ist für alle sichtbar. Unter „Wer darf welchen Call-Typ senden?�
 
 ## Spieldaten-Abgleich
 Optional halbjährlich (`GAMEDATA_REFRESH_CRON`, standardmäßig aus – erst nach Erlaubnis von Travian Games). Ergebnis steht auf der Spieldaten-Seite (nur für Spieldaten-Verwalter); übernommen wird erst nach Prüfung mit dem dort angezeigten Befehl.
+
+## Beta-Test: Kommentare zu Elementen
+Admin → Konten → „Zum Beta-Tester machen“. Tester (und Admins) sehen rechts am Rand den Reiter „Beta-Feedback“. Rechtsklick auf ein beliebiges Element (Knopf, Tabelle, Überschrift …) zeigt alle Kommentare dazu; dort antworten, Thread schließen/wieder öffnen oder neu kommentieren. Umschalt+Rechtsklick öffnet das normale Browsermenü. Im Reiter: alle Kommentare mit Filter (offen/geschlossen/alle, diese Seite/alle Seiten), „JSON kopieren“ und „JSON exportieren“. Der Video-Rundgang steht oben auf der Hilfeseite.

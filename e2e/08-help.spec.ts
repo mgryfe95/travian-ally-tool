@@ -59,3 +59,12 @@ test("PDF-Übersicht ohne Login unter /help/pdf (Sprache per ?lang oder Browsers
   expect(de.headers()["content-disposition"]).toContain("overview.de.pdf");
   await ctx.close();
 });
+
+test("Video-Rundgang auf der Hilfeseite", async ({ page, request }) => {
+  await page.goto("/help");
+  await expect(page.getByRole("heading", { name: /Video-Rundgang/ })).toBeVisible();
+  await expect(page.locator("#walkthrough video source")).toHaveAttribute("src", "/help/walkthrough.en.mp4");
+  const r = await request.head("/help/walkthrough.en.mp4");
+  expect(r.status()).toBe(200);
+  expect(r.headers()["content-type"]).toContain("video/mp4");
+});

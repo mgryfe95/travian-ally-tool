@@ -41,6 +41,13 @@ export default async function HelpPage() {
       <main className="helpmain">
         <p style={{ fontSize: 17, margin: "0 0 12px" }}>{t("help.intro")}</p>
         {!signedIn && <p className="card soft" role="note" style={{ margin: "0 0 16px" }}>{t("help.loginHint")}</p>}
+        <section className="card" aria-labelledby="h-walk" id="walkthrough" style={{ margin: "0 0 16px" }}>
+          <h2 id="h-walk" style={{ marginBottom: 6 }}>{t("help.walk.title")}</h2>
+          <p className="sub" style={{ margin: "0 0 10px" }}>{t("help.walk.intro")}</p>
+          <video controls preload="none" poster="/help/walkthrough.jpg" style={{ width: "100%", maxWidth: 960, borderRadius: 10, background: "#000" }}>
+            <source src="/help/walkthrough.en.mp4" type="video/mp4" />
+          </video>
+        </section>
         <HelpBrowser sections={sections} signedIn={signedIn} flow={Object.fromEntries(FLOW_KEYS.map((k) => [k, t(`help.flow.${k}` as MessageKey)])) as FlowLabels} />
       </main>
     </div>

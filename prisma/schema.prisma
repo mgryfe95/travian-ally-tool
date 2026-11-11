@@ -152,6 +152,8 @@ model User {
   locale         String?
   /// Mail-Hinweis bei neuen Direktnachrichten (nur mit SMTP; ohne Inhalt)
   dmMail         Boolean      @default(false)
+  /// Beta-Tester: darf Elemente im Frontend kommentieren (Admins immer)
+  betaTester     Boolean      @default(false)
   sessions       Session[]
   accounts       Account[]
   links          PlayerLink[]
@@ -931,4 +933,36 @@ model DmBlock {
   createdAt DateTime @default(now())
 
   @@id([userId, blockedId])
+}
+
+/// Beta-Feedback: Kommentar-Thread zu einem HTML-Element einer Seite.
+model FeedbackThread {
+  id        Int       @id @default(autoincrement())
+  /// Seite (Pfad + relevante Parameter wie ?tab=)
+  path      String
+  /// CSS-Pfad des Elements
+  selector  String
+  /// Kurzbeschreibung des Elements (Tag + Text/Label) zur Orientierung, falls sich die Seite ändert
+  label     String    @default("")
+  /// open | closed
+  status    String    @default("open")
+  createdBy String
+  createdAt DateTime  @default(now())
+  closedAt  DateTime?
+  closedBy  String?
+  comments  FeedbackComment[]
+
+  @@index([path, selector])
+  @@index([status])
+}
+
+model FeedbackComment {
+  id        Int            @id @default(autoincrement())
+  threadId  Int
+  thread    FeedbackThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  authorId  String
+  body      String
+  createdAt DateTime       @default(now())
+
+  @@index([threadId, id])
 }

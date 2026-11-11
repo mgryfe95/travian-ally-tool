@@ -14,6 +14,8 @@ import { getT } from "@/lib/i18n/server";
 import { hasPermission, type Permission } from "@/lib/permissions";
 import { serverLabel, ownAllianceTag } from "@/lib/serverinfo";
 import { ADMIN_PERMS, adminNav } from "@/lib/adminTabs";
+import { BetaFeedback } from "@/components/BetaFeedback";
+import { canFeedback } from "@/lib/services/feedback";
 import { chatCtx, listChannels } from "@/lib/services/chat";
 import { loadMatrix } from "@/lib/services/context";
 import { unreadCounts } from "@/lib/services/messenger";
@@ -82,6 +84,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         )}
         {children}
       </main>
+      {(await canFeedback(db, user)) && <BetaFeedback me={user.id} />}
     </div>
   );
 }

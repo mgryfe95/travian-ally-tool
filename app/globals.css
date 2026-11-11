@@ -200,3 +200,12 @@ a.mono { text-decoration: underline dotted; text-underline-offset: 3px; }
   .flow-main { flex-direction: column; }
   .flow-main > .flow-arrow { transform: rotate(90deg); }
 }
+
+/* Beta-Feedback (Kommentare zu Elementen) */
+.beta-fab { position: fixed; right: 0; top: 50%; transform: translateY(-50%); writing-mode: vertical-rl; z-index: 9000; background: var(--navy, #14253e); color: #f4ebd6; border: 2px solid #d9a441; border-right: 0; border-radius: 10px 0 0 10px; padding: 14px 6px; font-weight: 600; font-size: 13px; cursor: pointer; box-shadow: -2px 4px 14px rgba(0,0,0,.3); }
+.beta-panel { position: fixed; right: 44px; top: 50%; transform: translateY(-50%); z-index: 9000; width: min(420px, calc(100vw - 32px)); max-height: 70vh; overflow: auto; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+.beta-pop { position: fixed; z-index: 9001; max-height: min(520px, calc(100vh - 16px)); overflow: auto; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+.beta-pin { position: fixed; z-index: 8999; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; border: 2px solid #14253e; background: #d9a441; color: #14253e; font: 700 11px/16px system-ui, sans-serif; cursor: pointer; }
+.beta-item { display: block; width: 100%; text-align: left; background: var(--soft, #f4ebd6); border: 1px solid var(--line2, #e3d6b6); border-radius: 8px; padding: 8px 10px; cursor: pointer; color: inherit; }
+.beta-item:hover { border-color: #d9a441; }
+.beta-thread { border-top: 1px solid var(--line2, #e3d6b6); padding-top: 8px; margin-top: 8px; }

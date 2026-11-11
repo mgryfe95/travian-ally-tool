@@ -154,3 +154,6 @@ Jede Einheit zählt nur in ihrem Heimatdorf (`VillageState.troops`: inVillage/aw
 - Messenger: `DmBlock` (Empfänger blockiert Absender), `User.dmMail` + `DmRead.mailedAt` (Mail-Hinweis ≤ 1×/h je Thread, ohne Inhalt), `pruneOldDirectMessages` (Worker 03:35, `DM_RETENTION_DAYS`).
 - `lib/gamedata/refresh.ts`: robots.txt → Startseite → main.js; Hash gleich = „unchanged“, sonst Datei nach `storage/gamedata/kb-<hash>.js`, Diff gegen `kb-latest.json`, Bericht im Setting `gamedata:refresh`. Kein Import.
 - Chat-Löschen leert `Message.body`.
+
+## Beta-Feedback
+`FeedbackThread` (path, selector, label, status) + `FeedbackComment`; Service `lib/services/feedback.ts` (`canFeedback` = `User.betaTester` oder `roles.assign`), API `app/api/feedback` (GET Liste/Export, POST neu) und `app/api/feedback/[id]` (POST Antwort, PATCH Status). Client `components/BetaFeedback.tsx` (im App-Layout nur für Berechtigte), Ziel-Berechnung `lib/feedback-target.ts`: Seite = Pfad + seitenbestimmende Parameter (`tab`, `c`, `t` …), Element = CSS-Pfad bis zur nächsten stabilen, eindeutigen id (React-ids mit `:` werden übersprungen). Ändert sich das Layout, findet der Pfad das Element evtl. nicht mehr – das `label` (Tag + Text) bleibt zur Orientierung im Export.

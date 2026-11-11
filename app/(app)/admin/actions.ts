@@ -13,6 +13,7 @@ import { approveLink, assignPlayer, createInvite, inviteMessage, rejectLink, rev
 import { ChatError, chatCtx, createChannel, deleteTag, deleteTagType, moveChannel, saveTag, saveTagType, updateChannel } from "@/lib/services/chat";
 import { berlinToDate, cancelCall, createCall, deleteCall, deleteTemplate, saveTemplate, sendCall, updateCall, saveKind, deleteKind, setIncidentCallRole } from "@/lib/services/schedule";
 import { requirePermission as requirePermissionIn, requireUser } from "@/lib/session";
+import { setBetaTester } from "@/lib/services/feedback";
 import { CostSettingsError, saveCostSettings } from "@/lib/ai/usage";
 import { loadMemberRows } from "./tabs/data";
 
@@ -57,6 +58,11 @@ export async function setPlayerRoleAction(f: FormData) {
 
 export async function banAction(f: FormData) {
   return run("users", async () => setUserBanned(db, await requireUser(), str(f, "userId"), str(f, "banned") === "1"));
+}
+
+/** Beta-Tester an/aus (Kommentarfunktion im Frontend). */
+export async function betaTesterAction(f: FormData) {
+  return run("users", async () => setBetaTester(db, await requireUser(), str(f, "userId"), str(f, "on") === "1"));
 }
 
 export async function deleteUserAction(f: FormData) {

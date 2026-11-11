@@ -7,13 +7,15 @@ import type { Actor } from "@/lib/services/context";
 import { hasPermission } from "@/lib/permissions";
 import { loadGroupPlayers } from "@/lib/alliance-group";
 import { loadMatrix } from "@/lib/services/context";
-import { assignPlayerAction, banAction, deleteUserAction } from "../actions";
+import { assignPlayerAction, banAction, betaTesterAction, deleteUserAction } from "../actions";
 
 export async function UsersTab({ actor }: { actor: Actor }) {
   const { t } = await getT();
   const users = await db.user.findMany({ orderBy: { createdAt: "asc" }, include: { links: { where: { status: "verified" } } } });
   const sys = env().SYSTEMADMIN_EMAILS;
-  const canAssign = hasPermission(actor.role, "members.approve", await loadMatrix(db));
+  const matrix = await loadMatrix(db);
+  const canAssign = hasPermission(actor.role, "members.approve", matrix);
+  const canBeta = hasPermission(actor.role, "roles.assign", matrix);
   const players = canAssign ? await loadGroupPlayers(db) : [];
   const playerName = new Map((await db.player.findMany({ where: { id: { in: users.flatMap((u) => u.links.map((l) => l.travianPlayerId)) } }, select: { id: true, name: true } })).map((p) => [p.id, p.name]));
   const assignable = STORED_ROLES.filter((r) => actor.role === "ADMIN" || rank(r) < rank(actor.role)).reverse() as string[];
@@ -23,8 +25,8 @@ export async function UsersTab({ actor }: { actor: Actor }) {
         <h2>{t("admin.users.title")}</h2>
       </div>
       <div className="scroll">
-        <table style={{ minWidth: 980 }}>
-          <thead><tr><th>{t("admin.users.colName")}</th><th>{t("admin.users.colRole")}</th><th>{t("admin.users.colStatus")}</th><th>{t("admin.users.colPlayer")}</th><th /></tr></thead>
+        <table style={{ minWidth: 1100 }}>
+          <thead><tr><th>{t("admin.users.colName")}</th><th>{t("admin.users.colRole")}</th><th>{t("admin.users.colStatus")}</th><th>{t("admin.users.colPlayer")}</th><th>{t("beta.col")}</th><th /></tr></thead>
           <tbody>
             {users.map((u) => {
               const role = effectiveRole(u, sys);
@@ -47,6 +49,15 @@ export async function UsersTab({ actor }: { actor: Actor }) {
                         <button className="btn ghost sm">{t("admin.users.assign")}</button>
                       </form>
                     )}
+                  </td>
+                  <td>
+                    {canBeta ? (
+                      <form action={betaTesterAction} className="row" style={{ gap: 6, flexWrap: "nowrap" }}>
+                        <input type="hidden" name="userId" value={u.id} /><input type="hidden" name="on" value={u.betaTester ? "0" : "1"} />
+                        {u.betaTester && <span className="pill p-ok">{t("beta.on")}</span>}
+                        <button className="btn ghost sm">{u.betaTester ? t("beta.remove") : t("beta.make")}</button>
+                      </form>
+                    ) : <span className="sub">{u.betaTester ? t("beta.on") : t("beta.off")}</span>}
                   </td>
                   <td className="r" style={{ whiteSpace: "nowrap" }}>
                     {editable && (

@@ -2,6 +2,8 @@ const en = {
   "help.title": "Help",
   "help.eyebrow": "Humans Ally Tool",
   "help.intro": "Short, practical answers on how to use the tool. Open an item to read the explanation. The links jump straight to the right place in the tool – you need to be signed in for that.",
+  "help.walk.title": "Video walkthrough (8 min, English)",
+  "help.walk.intro": "Every page and block of the tool explained with a voice-over – from the overview and villages to OCR scans, incidents, chat and the admin area.",
   "help.filter": "Search help",
   "help.filter.ph": "e.g. tag, invite, coordinate …",
   "help.openAll": "Expand all",
