@@ -63,7 +63,10 @@ test("PDF-Übersicht ohne Login unter /help/pdf (Sprache per ?lang oder Browsers
 test("Video-Rundgang auf der Hilfeseite", async ({ page, request }) => {
   await page.goto("/help");
   await expect(page.getByRole("heading", { name: /Video-Rundgang/ })).toBeVisible();
-  await expect(page.locator("#walkthrough video source")).toHaveAttribute("src", "/help/walkthrough.en.mp4");
+  await expect(page.locator("#walkthrough video source").first()).toHaveAttribute("src", "/help/walkthrough.en.mp4");
+  await expect(page.getByRole("heading", { name: /Beta-Feedback: Elemente kommentieren/ })).toBeVisible();
+  await expect(page.locator("#beta-video source")).toHaveAttribute("src", "/help/beta-feedback.en.mp4");
+  expect((await request.head("/help/beta-feedback.en.mp4")).status()).toBe(200);
   const r = await request.head("/help/walkthrough.en.mp4");
   expect(r.status()).toBe(200);
   expect(r.headers()["content-type"]).toContain("video/mp4");

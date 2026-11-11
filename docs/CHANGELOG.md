@@ -255,3 +255,7 @@ Commits: siehe PR.
 ## 2026-11-11 · travian-ally-tool/help/walkthrough + beta/feedback
 Was & Warum: (1) Video-Rundgang (Englisch, KI-Stimme, 8:29 Min., 6,9 MB) oben auf der Hilfeseite. (2) Beta-Feedback für 5–10 Testmitglieder: Admins setzen unter Admin → Konten das Beta-Kennzeichen (`User.betaTester`; Admins mit `roles.assign` immer). Rechtsklick auf ein beliebiges Element zeigt alle Kommentare dazu (Seite + CSS-Pfad + Kurzbeschreibung), mit Unterhaltung, schließen/wieder öffnen und neuem Kommentar; Elemente mit offenen Kommentaren tragen eine Zahl. Panel (Reiter am rechten Rand): Filter offen/geschlossen/alle, diese Seite/alle Seiten, JSON kopieren und exportieren (`/api/feedback?…&download=1`). Umschalt+Rechtsklick öffnet das normale Browsermenü; Rechtsklick-Modus abschaltbar. Tests: DB (Rechte, Threads, Filter), Unit (Seitenpfad), e2e (Freischalten, Rechtsklick, Antwort, Schließen, Export). Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.
 Commits: siehe PR.
+
+## 2026-11-11 · travian-ally-tool/help/beta-video
+Was & Warum: Kurzvideo „Beta feedback“ (Englisch, KI-Stimme, 1:14 Min., 0,9 MB) auf der Hilfeseite unter dem Rundgang: Freischalten unter Admin → Konten, Rechtsklick-Kommentar, Zähl-Marke, Antworten, Schließen/Wieder öffnen, Panel mit Filtern, JSON kopieren/exportieren, Rechtsklick-Schalter. Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.
+Commits: siehe PR.

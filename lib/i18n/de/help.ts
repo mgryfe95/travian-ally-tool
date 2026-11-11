@@ -6,6 +6,8 @@ const de: Record<keyof typeof en, string> = {
   "help.intro": "Hier steht kurz und praktisch, wie du das Tool benutzt. Klapp einen Punkt auf, um die Erklärung zu sehen. Die Links springen direkt an die passende Stelle im Tool – dafür musst du angemeldet sein.",
   "help.walk.title": "Video-Rundgang (8 Min., Englisch)",
   "help.walk.intro": "Jede Seite und jeder Block des Tools mit Sprecherstimme erklärt – von Übersicht und Dörfern über OCR-Scans, Incidents und Chat bis zum Admin-Bereich.",
+  "help.betaVid.title": "Beta-Feedback: Elemente kommentieren (1 Min., Englisch)",
+  "help.betaVid.intro": "Für Beta-Tester: Rechtsklick auf ein Element zum Kommentieren, Diskutieren und Schließen; alles filtern, kopieren und als JSON exportieren.",
   "help.filter": "Hilfe durchsuchen",
   "help.filter.ph": "z. B. Tag, Einladung, Koordinate …",
   "help.openAll": "Alle aufklappen",
