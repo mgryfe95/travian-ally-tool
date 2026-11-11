@@ -67,6 +67,9 @@ test("Video-Rundgang auf der Hilfeseite", async ({ page, request }) => {
   await expect(page.getByRole("heading", { name: /Beta-Feedback: Elemente kommentieren/ })).toBeVisible();
   await expect(page.locator("#beta-video source")).toHaveAttribute("src", "/help/beta-feedback.en.mp4");
   expect((await request.head("/help/beta-feedback.en.mp4")).status()).toBe(200);
+  await expect(page.getByRole("heading", { name: /Admins: Mitglieder einladen/ })).toBeVisible();
+  await expect(page.locator("#invite-video source")).toHaveAttribute("src", "/help/invite-members.en.mp4");
+  expect((await request.head("/help/invite-members.en.mp4")).status()).toBe(200);
   const r = await request.head("/help/walkthrough.en.mp4");
   expect(r.status()).toBe(200);
   expect(r.headers()["content-type"]).toContain("video/mp4");

@@ -259,3 +259,7 @@ Commits: siehe PR.
 ## 2026-11-11 · travian-ally-tool/help/beta-video
 Was & Warum: Kurzvideo „Beta feedback“ (Englisch, KI-Stimme, 1:14 Min., 0,9 MB) auf der Hilfeseite unter dem Rundgang: Freischalten unter Admin → Konten, Rechtsklick-Kommentar, Zähl-Marke, Antworten, Schließen/Wieder öffnen, Panel mit Filtern, JSON kopieren/exportieren, Rechtsklick-Schalter. Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.
 Commits: siehe PR.
+
+## 2026-11-11 · travian-ally-tool/help/invite-video
+Was & Warum: Kurzvideo „Admins: inviting members“ (Englisch, KI-Stimme, 1:26 Min., 1 MB) auf der Hilfeseite: Mitglieder-Tabelle, Hinweis „vorher im selben Desktop-Browser in der Spielwelt anmelden, dann öffnet sich das Nachrichtenfenster direkt“, Einladung erstellen (Link 7 Tage, einmalig, Text in der Zwischenablage), Ausweichknöpfe, Sammel-Einladung, Status/Rolle, Selbstregistrierung mit Dorfnamen-Code. Außerdem Beta-Video neu geschnitten (Admin-Teil stand versehentlich am Ende). Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.
+Commits: siehe PR.

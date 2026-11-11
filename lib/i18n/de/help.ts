@@ -8,6 +8,8 @@ const de: Record<keyof typeof en, string> = {
   "help.walk.intro": "Jede Seite und jeder Block des Tools mit Sprecherstimme erklärt – von Übersicht und Dörfern über OCR-Scans, Incidents und Chat bis zum Admin-Bereich.",
   "help.betaVid.title": "Beta-Feedback: Elemente kommentieren (1 Min., Englisch)",
   "help.betaVid.intro": "Für Beta-Tester: Rechtsklick auf ein Element zum Kommentieren, Diskutieren und Schließen; alles filtern, kopieren und als JSON exportieren.",
+  "help.inviteVid.title": "Admins: Mitglieder einladen (1,5 Min., Englisch)",
+  "help.inviteVid.intro": "Persönliche Einladungslinks erstellen, per Ingame-Nachricht verschicken oder alle auf einmal einladen. Tipp: vorher im selben Desktop-Browser in der Spielwelt anmelden, dann öffnet sich das Nachrichtenfenster direkt.",
   "help.filter": "Hilfe durchsuchen",
   "help.filter.ph": "z. B. Tag, Einladung, Koordinate …",
   "help.openAll": "Alle aufklappen",

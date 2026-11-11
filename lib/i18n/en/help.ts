@@ -6,6 +6,8 @@ const en = {
   "help.walk.intro": "Every page and block of the tool explained with a voice-over – from the overview and villages to OCR scans, incidents, chat and the admin area.",
   "help.betaVid.title": "Beta feedback: commenting on elements (1 min, English)",
   "help.betaVid.intro": "For beta testers: right-click any element to comment, discuss and close threads; filter, copy and export everything as JSON.",
+  "help.inviteVid.title": "Admins: inviting members (1.5 min, English)",
+  "help.inviteVid.intro": "Create personal invite links, send them by in-game message, or invite everyone at once. Tip: log in to the game world in the same desktop browser first, so the message window opens directly.",
   "help.filter": "Search help",
   "help.filter.ph": "e.g. tag, invite, coordinate …",
   "help.openAll": "Expand all",

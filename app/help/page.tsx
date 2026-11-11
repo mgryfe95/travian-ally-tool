@@ -52,6 +52,11 @@ export default async function HelpPage() {
           <video id="beta-video" controls preload="none" poster="/help/beta-feedback.jpg" style={{ width: "100%", maxWidth: 960, borderRadius: 10, background: "#000" }}>
             <source src="/help/beta-feedback.en.mp4" type="video/mp4" />
           </video>
+          <h3 id="h-invite" style={{ margin: "16px 0 6px" }}>{t("help.inviteVid.title")}</h3>
+          <p className="sub" style={{ margin: "0 0 10px" }}>{t("help.inviteVid.intro")}</p>
+          <video id="invite-video" controls preload="none" poster="/help/invite-members.jpg" style={{ width: "100%", maxWidth: 960, borderRadius: 10, background: "#000" }}>
+            <source src="/help/invite-members.en.mp4" type="video/mp4" />
+          </video>
         </section>
         <HelpBrowser sections={sections} signedIn={signedIn} flow={Object.fromEntries(FLOW_KEYS.map((k) => [k, t(`help.flow.${k}` as MessageKey)])) as FlowLabels} />
       </main>
