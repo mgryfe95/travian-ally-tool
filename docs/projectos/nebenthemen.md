@@ -118,3 +118,4 @@ Offen:
 - Offen zur Entscheidung (Vorlage `entscheidungsvorlage-2026-11-03.md`): Backups nach S3, PTR, Call-Typ-Freigaben, Videos/PDF mit Echtdaten, Hetzner-Preise, Session-Report, Discord-Push, DM-Aufbewahrungsfrist.
 - Upload-Warteschlange (Erkennung asynchron) weiter offen; Kampfberichte werden nur für Incidents genutzt (gewollt).
 - Beta-Feedback: Kommentare hängen am CSS-Pfad; nach größeren Layout-Änderungen evtl. nicht mehr am Element sichtbar (im Panel/Export bleiben sie). Nach der Beta: Kennzeichen zurücksetzen oder Funktion abschalten.
+- Französisch: Call-Standardvorlagen nur DE/EN (Franzosen sehen EN); Kurzclips je Hilfebereich (webm) nur DE/EN; Spieldaten-Namen (Gebäude/Einheiten) ohne französische Quelle → Englisch; Einladungstext bewusst Englisch. Deutsche Erklärvideos (KI-Stimme) bei Bedarf nachziehen.

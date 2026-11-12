@@ -26,7 +26,8 @@ describe("AppError", () => {
   it("Mails und Einladungstext folgen der Nutzersprache, Standard Englisch", () => {
     expect(resetMail("a@x.de", "Ann", "https://u", "de").subject).toBe("Ally Tool: Passwort zurücksetzen");
     expect(resetMail("a@x.de", "Ann", "https://u").text).toContain("Hello Ann");
-    expect(resetMail("a@x.de", "Ann", "https://u", "fr").subject).toBe("Ally Tool: reset your password");
+    expect(resetMail("a@x.de", "Ann", "https://u", "fr").subject).toMatch(/^Ally Tool ?: réinitialiser/);
+    expect(resetMail("a@x.de", "Ann", "https://u", "es").subject).toBe("Ally Tool: reset your password");
     expect(inviteMessage({ playerName: "Alpha", token: "t", appUrl: "https://a/", locale: "de" })).toContain("Hallo Alpha");
     expect(inviteMessage({ playerName: "Alpha", token: "t", appUrl: "https://a/" })).toContain("Hello Alpha");
   });

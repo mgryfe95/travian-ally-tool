@@ -1,19 +1,20 @@
 import { de } from "./de";
 import { en } from "./en";
+import { fr } from "./fr";
 
-export const LOCALES = ["en", "de"] as const;
+export const LOCALES = ["en", "de", "fr"] as const;
 export type Locale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = "en";
 export const LOCALE_COOKIE = "lang";
 /** Sprachnamen immer in der eigenen Sprache. */
-export const LOCALE_NAMES: Record<Locale, string> = { en: "English", de: "Deutsch" };
+export const LOCALE_NAMES: Record<Locale, string> = { en: "English", de: "Deutsch", fr: "Français" };
 /** Intl-Tag je Sprache (Zahlen/Datum). */
-export const INTL_TAG: Record<Locale, string> = { en: "en-GB", de: "de-DE" };
+export const INTL_TAG: Record<Locale, string> = { en: "en-GB", de: "de-DE", fr: "fr-FR" };
 
 export type MessageKey = keyof typeof en;
 export type Params = Record<string, string | number>;
 
-const DICTS: Record<Locale, Record<string, string>> = { en, de };
+const DICTS: Record<Locale, Record<string, string>> = { en, de, fr };
 
 export const isLocale = (v: unknown): v is Locale => typeof v === "string" && (LOCALES as readonly string[]).includes(v);
 

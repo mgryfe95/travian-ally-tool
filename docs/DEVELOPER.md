@@ -157,3 +157,6 @@ Jede Einheit zählt nur in ihrem Heimatdorf (`VillageState.troops`: inVillage/aw
 
 ## Beta-Feedback
 `FeedbackThread` (path, selector, label, status) + `FeedbackComment`; Service `lib/services/feedback.ts` (`canFeedback` = `User.betaTester` oder `roles.assign`), API `app/api/feedback` (GET Liste/Export, POST neu) und `app/api/feedback/[id]` (POST Antwort, PATCH Status). Client `components/BetaFeedback.tsx` (im App-Layout nur für Berechtigte), Ziel-Berechnung `lib/feedback-target.ts`: Seite = Pfad + seitenbestimmende Parameter (`tab`, `c`, `t` …), Element = CSS-Pfad bis zur nächsten stabilen, eindeutigen id (React-ids mit `:` werden übersprungen). Ändert sich das Layout, findet der Pfad das Element evtl. nicht mehr – das `label` (Tag + Text) bleibt zur Orientierung im Export.
+
+## Sprachen (en/de/fr)
+Neue Sprache: Ordner `lib/i18n/<code>/` mit denselben Dateien wie `en` (`Record<keyof typeof en, string>`), in `lib/i18n/index.ts` (`LOCALES`, `LOCALE_NAMES`, `INTL_TAG`, `DICTS`) eintragen; `i18n.test.ts` prüft Schlüssel und Platzhalter. Stellen mit Sonderlogik: Spieldaten-Namen (`lib/gamedata/names.ts`, `unit-labels.ts`: alles außer `de` → englische Namen), KI-Ausgabesprache (`lib/ai/advice.ts`), Call-Vorlagen (`renderCall`: außer `de` → `templateEn`). Hilfe-Videos: `public/help/<name>.<code>.mp4`, Fallback Englisch.

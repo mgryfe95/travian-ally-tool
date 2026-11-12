@@ -3,7 +3,7 @@ import { ForbiddenError, hasPermission, rank, type Permission } from "../permiss
 import { publishUser } from "../realtime";
 import { audit, loadMatrix, userLocale, verifiedUserWhere, type Actor } from "./context";
 import { ChatError } from "./chat";
-import { DEFAULT_LOCALE, translate, type Locale } from "../i18n";
+import { DEFAULT_LOCALE, isLocale, translate, type Locale } from "../i18n";
 import { env } from "../env";
 import { storage } from "../storage";
 import { mailEnabled, sendMail } from "../mail";
@@ -73,7 +73,7 @@ async function notifyByMail(db: PrismaClient, to: { id: string; email: string; d
   if (r?.mailedAt && now.getTime() - r.mailedAt.getTime() < MAIL_GAP_MS) return;
   await db.dmRead.upsert({ where: { userId_threadId: { userId: to.id, threadId } }, create: { userId: to.id, threadId, mailedAt: now }, update: { mailedAt: now } });
   const from = (await db.user.findUnique({ where: { id: fromId }, select: { name: true } }))?.name ?? "?";
-  const l: Locale = to.locale === "de" || to.locale === "en" ? to.locale : DEFAULT_LOCALE;
+  const l: Locale = isLocale(to.locale) ? to.locale : DEFAULT_LOCALE;
   await sendMail({ to: to.email, subject: translate(l, "err.messenger.mail.subject", { name: from }), text: translate(l, "err.messenger.mail.text", { name: from, url: `${env().APP_URL.replace(/\/+$/, "")}/messages?c=${threadId}` }) });
 }
 

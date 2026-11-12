@@ -132,3 +132,6 @@ Optional halbjährlich (`GAMEDATA_REFRESH_CRON`, standardmäßig aus – erst na
 
 ## Beta-Test: Kommentare zu Elementen
 Admin → Konten → „Zum Beta-Tester machen“. Tester (und Admins) sehen rechts am Rand den Reiter „Beta-Feedback“. Rechtsklick auf ein beliebiges Element (Knopf, Tabelle, Überschrift …) zeigt alle Kommentare dazu; dort antworten, Thread schließen/wieder öffnen oder neu kommentieren. Umschalt+Rechtsklick öffnet das normale Browsermenü. Im Reiter: alle Kommentare mit Filter (offen/geschlossen/alle, diese Seite/alle Seiten), „JSON kopieren“ und „JSON exportieren“. Der Video-Rundgang steht oben auf der Hilfeseite.
+
+## Sprachen
+Das Tool gibt es auf Englisch, Deutsch und Französisch (Sprachwahl unten links bzw. auf der Hilfeseite oben: EN · DE · FR). Die Erklärvideos und die PDF-Kurzübersicht gibt es auf Englisch und Französisch; auf Deutsch werden die englischen Videos gezeigt (mit Hinweis).

@@ -23,5 +23,5 @@ export function unitLabel(labels: UnitLabels, raw: string, locale: Locale, t: T)
   const slot = /^(?:einheit|unit) (\d+)$/i.exec(s);
   if (slot) return t("common.unitN", { n: slot[1]! });
   const hit = labels.byName.get(s.toLowerCase());
-  return hit ? hit[locale] : s;
+  return hit ? hit[locale === "de" ? "de" : "en"] : s;
 }

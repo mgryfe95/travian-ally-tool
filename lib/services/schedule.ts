@@ -128,7 +128,8 @@ export function renderCall(c: CallLike, appUrl = env().APP_URL, locale: Locale =
   // Englische Aliase für dieselben Platzhalter ({type}, {title}, {player}, {village}, {coords}, {time}, {note})
   Object.assign(vars, { type: vars.art, title: vars.titel, player: vars.spieler, village: vars.dorf, coords: vars.koordinaten, time: vars.zeit, note: vars.notiz });
   const keys = (l: string) => [...l.matchAll(/\{(\w+)\}/g)].map((m) => m[1]!);
-  const template = locale === "en" && c.templateEn?.trim() ? c.templateEn : c.template;
+  // Nicht-deutsche Leser (Englisch, Französisch) bekommen die englische Fassung, sofern gesetzt
+  const template = locale !== "de" && c.templateEn?.trim() ? c.templateEn : c.template;
   return template
     .split("\n").filter((l) => { const k = keys(l); return k.length === 0 || k.some((x) => (vars[x] ?? "").trim() !== ""); })
     .map((l) => l.replace(/\{(\w+)\}/g, (_, k: string) => vars[k] ?? "")).map((l) => l.replace(/[ \t]+/g, " ").trimEnd()).filter((l, i, a) => l.trim() !== "" || (i > 0 && a[i - 1]!.trim() !== "" && i < a.length - 1))

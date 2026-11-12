@@ -72,7 +72,7 @@ export class ClaudeAdvisor implements Advisor {
   }
 
   async advise(s: Situation, opts: AdviseOpts): Promise<AdviceResult> {
-    const lang = opts.locale === "de" ? "German" : "English";
+    const lang = ({ de: "German", en: "English", fr: "French" } as const)[opts.locale] ?? "English";
     const res = await this.api.messages.create({
       model: this.model,
       max_tokens: 8000,

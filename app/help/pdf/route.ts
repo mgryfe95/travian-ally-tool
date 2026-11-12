@@ -9,7 +9,8 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const q = new URL(req.url).searchParams.get("lang");
   const locale = isLocale(q) ? q : await getLocale();
-  const file = await readFile(path.join(process.cwd(), "public", "help", `overview.${locale}.pdf`));
+  // Fehlt die Übersetzung, gilt die englische Fassung
+  const file = await readFile(path.join(process.cwd(), "public", "help", `overview.${locale}.pdf`)).catch(() => readFile(path.join(process.cwd(), "public", "help", "overview.en.pdf")));
   return new Response(new Uint8Array(file), {
     headers: { "content-type": "application/pdf", "content-disposition": `inline; filename="travian-ally-tool-overview.${locale}.pdf"`, "cache-control": "private, max-age=3600" },
   });

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { fmt, fmtDate } from "@/lib/format";
 import { getT } from "@/lib/i18n/server";
-import type { Locale, MessageKey, T } from "@/lib/i18n";
+import { INTL_TAG, type Locale, type MessageKey, type T } from "@/lib/i18n";
 import { EFFECTS, EFFECT_IDS, effectLabelKey, effectValue, formatDelta, formatEffect, presentEffects, rowsToEffects } from "@/lib/gamedata/effects";
 import { smithyValue, TRAIN_FACTOR } from "@/lib/gamedata/units";
 import { requirePermission } from "@/lib/session";
@@ -154,7 +154,7 @@ async function Units({ versionId, tribeId, unitSlot, speed, t, locale }: { versi
   const name = (n: (typeof cur.names)[number]) => (locale === "de" ? n.nameDe ?? n.nameEn : n.nameEn);
   const hasStats = cur.names.some((n) => n.attack !== null);
   const sel = cur.names.find((n) => n.slot === unitSlot && n.attack !== null);
-  const one = (v: number) => v.toLocaleString(locale === "de" ? "de-DE" : "en-GB", { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+  const one = (v: number) => v.toLocaleString(INTL_TAG[locale], { maximumFractionDigits: 1, minimumFractionDigits: 1 });
   const sp = speed > 0 ? speed : 1;
   return (
     <section className="card flush">

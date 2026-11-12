@@ -74,3 +74,22 @@ test("Video-Rundgang auf der Hilfeseite", async ({ page, request }) => {
   expect(r.status()).toBe(200);
   expect(r.headers()["content-type"]).toContain("video/mp4");
 });
+
+test("Sprachumschalter der Hilfe: FR zeigt französische Texte, Videos und PDF", async ({ browser }) => {
+  const ctx = await browser.newContext({ locale: "de-DE" });
+  const page = await ctx.newPage();
+  await page.goto("/help");
+  const langs = page.getByRole("group", { name: "Sprache" });
+  await expect(langs.getByRole("button", { name: "DE" })).toHaveAttribute("aria-pressed", "true");
+  await langs.getByRole("button", { name: "FR" }).click();
+  await expect(page.getByRole("heading", { name: /Visite guidée en vidéo/ })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Langue" }).getByRole("button", { name: "FR" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#walkthrough video source").first()).toHaveAttribute("src", "/help/walkthrough.fr.mp4");
+  await expect(page.locator("#beta-video source")).toHaveAttribute("src", "/help/beta-feedback.fr.mp4");
+  await expect(page.locator("#invite-video source")).toHaveAttribute("src", "/help/invite-members.fr.mp4");
+  const pdf = await ctx.request.get("/help/pdf");
+  expect(pdf.headers()["content-disposition"]).toContain("overview.fr.pdf");
+  await page.getByRole("group", { name: "Langue" }).getByRole("button", { name: "EN" }).click();
+  await expect(page.getByRole("heading", { name: /Video walkthrough/ })).toBeVisible();
+  await ctx.close();
+});

@@ -7,7 +7,7 @@ import type { ParsedShot } from "@/lib/ai/pipeline";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { getT } from "@/lib/i18n/server";
-import { translate, type MessageKey } from "@/lib/i18n";
+import { INTL_TAG, translate, type MessageKey } from "@/lib/i18n";
 import { loadBuildingNameSets } from "@/lib/gamedata/names";
 import { ownVillages } from "@/lib/services/villages";
 import { requireUser } from "@/lib/session";
@@ -86,7 +86,7 @@ export default async function ScreenshotsPage() {
                 <summary style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}>
                   {sh?.thumbKey ? <Thumb src={`/api/screenshots/${sh.id}/file?v=thumb`} size={40} /> : null}
                   <strong>{kindLabel(e.kind)}</strong>
-                  <span className="sub" style={{ fontSize: 12 }}>{e.createdAt.toLocaleDateString(locale === "en" ? "en-GB" : "de-DE")}{e.createdBy !== user.id ? ` · ${t("screenshots.examples.of", { user: exampleAuthors.get(e.createdBy) ?? "?" })}` : ""}</span>
+                  <span className="sub" style={{ fontSize: 12 }}>{e.createdAt.toLocaleDateString(INTL_TAG[locale])}{e.createdBy !== user.id ? ` · ${t("screenshots.examples.of", { user: exampleAuthors.get(e.createdBy) ?? "?" })}` : ""}</span>
                 </summary>
                 <div style={{ marginTop: 8 }}>
                   <ScreenshotReview id={sh?.id ?? 0} exampleId={e.id} imageUrl={sh ? `/api/screenshots/${sh.id}/file` : undefined} reading={e.gold} issues={[]} villages={[]} nameSets={nameSets} kindLabels={kindLabels} />
