@@ -12,5 +12,6 @@ import incidents from "./incidents";
 import help from "./help";
 import errors from "./errors";
 import beta from "./beta";
+import push from "./push";
 
-export const de = { ...common, ...nav, ...auth, ...admin, ...chat, ...messenger, ...schedule, ...villages, ...screenshots, ...overview, ...incidents, ...help, ...beta, ...errors, };
+export const de = { ...common, ...nav, ...auth, ...admin, ...chat, ...messenger, ...schedule, ...villages, ...screenshots, ...overview, ...incidents, ...help, ...beta, ...push, ...errors, };

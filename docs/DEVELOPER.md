@@ -160,3 +160,8 @@ Jede Einheit zählt nur in ihrem Heimatdorf (`VillageState.troops`: inVillage/aw
 
 ## Sprachen (en/de/fr)
 Neue Sprache: Ordner `lib/i18n/<code>/` mit denselben Dateien wie `en` (`Record<keyof typeof en, string>`), in `lib/i18n/index.ts` (`LOCALES`, `LOCALE_NAMES`, `INTL_TAG`, `DICTS`) eintragen; `i18n.test.ts` prüft Schlüssel und Platzhalter. Stellen mit Sonderlogik: Spieldaten-Namen (`lib/gamedata/names.ts`, `unit-labels.ts`: alles außer `de` → englische Namen), KI-Ausgabesprache (`lib/ai/advice.ts`), Call-Vorlagen (`renderCall`: außer `de` → `templateEn`). Hilfe-Videos: `public/help/<name>.<code>.mp4`, Fallback Englisch.
+
+## Push-Benachrichtigungen, PWA, Android-App
+- Versand: `lib/notify/push.ts` (`pushToUsers`, VAPID aus ENV; Tests setzen mit `setPushSender` einen eigenen Versand). Einstellungen/Standards: `lib/notify/prefs.ts` (Schlüssel `dm`, `mention`, `broadcast`, `alert`, `ch:<channelId>`). Empfänger-Logik: `lib/services/notify.ts` – `notifyChannelMessage` prüft Leserecht (`canReadChannel`), Reihenfolge Alarm > Erwähnung > Kanal; `notifyUsers` für Persönliches. Aufrufe immer per `fireAndForget` – Push darf Senden nie blockieren oder scheitern lassen.
+- Service Worker `public/sw.js` wird im Root-Layout registriert (`SwRegister`, nur https). Kein Caching von Inhalten (personenbezogen, live).
+- Android: Trusted Web Activity (Bubblewrap). Kein Play Store (Entscheidung 13.11.): APK liegt im Storage-Volume `app/travian-ally-tool.apk`, Download `/app/download`. Der Signaturschlüssel (`twa/keystore/`, nicht im Git) muss für alle Updates gleich bleiben. `assetlinks.json` muss den SHA-256 dieses Schlüssels tragen, sonst zeigt die App eine Browser-Adressleiste.

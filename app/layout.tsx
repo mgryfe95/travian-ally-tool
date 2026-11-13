@@ -4,15 +4,18 @@ import { env } from "@/lib/env";
 import { I18nProvider } from "@/lib/i18n/client";
 import { messagesFor } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
+import { SwRegister } from "@/components/SwRegister";
 import "./globals.css";
 
-export const metadata = { title: "Humans Ally Tool" };
+export const metadata = { title: "Humans Ally Tool", appleWebApp: { capable: true, title: "Ally Tool", statusBarStyle: "default" as const }, icons: { apple: "/icons/icon-192.png" } };
+export const viewport = { themeColor: "#14253e" };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const locale = await getLocale();
   return (
     <html lang={locale}>
       <body>
+        <SwRegister />
         <I18nProvider locale={locale} messages={messagesFor(locale)}><MapBaseProvider serverUrl={env().TRAVIAN_SERVER_URL}>{children}</MapBaseProvider></I18nProvider>
       </body>
     </html>

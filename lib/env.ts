@@ -58,6 +58,14 @@ const schema = z.object({
   GAME_VERSION: z.string().min(2).default("legends"),
   /** Server-Geschwindigkeit; Standard: aus dem Host der TRAVIAN_SERVER_URL (x1, x2 …). */
   GAME_SPEED: z.preprocess(emptyToUndefined, z.coerce.number().int().positive().optional()),
+  /** Web-Push (VAPID). Ohne beide Schlüssel ist Push aus. Erzeugen: `npx web-push generate-vapid-keys`. */
+  VAPID_PUBLIC_KEY: z.preprocess(emptyToUndefined, z.string().optional()),
+  VAPID_PRIVATE_KEY: z.preprocess(emptyToUndefined, z.string().optional()),
+  /** Kontakt für Push-Dienste (mailto: oder https:) */
+  VAPID_SUBJECT: z.string().default("mailto:admin@localhost"),
+  /** Android-App (TWA): Paketname und SHA-256-Fingerabdrücke des Signaturschlüssels (kommagetrennt) für /.well-known/assetlinks.json */
+  TWA_PACKAGE: z.string().default("de.ryfe.allytool"),
+  TWA_SHA256: z.string().default(""),
   ANTHROPIC_API_KEY: z.string().optional(),
   ANTHROPIC_MODEL: z.string().optional(),
   /** Bilderkennung: Anzahl unabhängiger Lesedurchläufe je Screenshot (≥2 = Konsens-Prüfung, höhere Konfidenz, höhere Kosten). */

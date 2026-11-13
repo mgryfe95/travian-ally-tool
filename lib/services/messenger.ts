@@ -7,6 +7,8 @@ import { DEFAULT_LOCALE, isLocale, translate, type Locale } from "../i18n";
 import { env } from "../env";
 import { storage } from "../storage";
 import { mailEnabled, sendMail } from "../mail";
+import { fireAndForget, notifyUsers } from "./notify";
+import { preview } from "../notify/prefs";
 
 export const MAX_DM = 4000;
 export const MAX_SUBJECT = 100;
@@ -61,6 +63,8 @@ export async function sendDm(db: PrismaClient, actor: Actor, threadId: number, b
   publishUser(otherId, "messenger:new", { threadId });
   publishUser(actor.id, "messenger:new", { threadId });
   await notifyByMail(db, other, actor.id, threadId).catch((e) => console.error("[messenger] Mail-Hinweis fehlgeschlagen", e));
+  const sender = (await db.user.findUnique({ where: { id: actor.id }, select: { name: true } }))?.name ?? "?";
+  fireAndForget(notifyUsers(db, [otherId], "dm", (l) => ({ title: translate(l, "push.dm.title", { name: sender }), body: preview(body || "📎"), url: `/messages?c=${threadId}`, tag: `dm-${threadId}` })), "Direktnachricht");
   return m;
 }
 
@@ -184,6 +188,7 @@ export async function sendBroadcast(db: PrismaClient, actor: Actor, input: { sub
   const b = await db.broadcast.create({ data: { senderId: actor.id, subject, body, audience: label, recipients: { create: ids.map((userId) => ({ userId })) } } });
   await audit(db, actor.id, "broadcast.send", `broadcast:${b.id}`, undefined, { audience: label, recipients: ids.length });
   for (const id of ids) publishUser(id, "messenger:new", { broadcastId: b.id });
+  fireAndForget(notifyUsers(db, ids, "broadcast", (l) => ({ title: translate(l, "push.broadcast.title", { subject }), body: preview(body), url: `/messages?t=bc&b=${b.id}`, tag: `bc-${b.id}` })), "Rundnachricht");
   return { id: b.id, recipients: ids.length };
 }
 

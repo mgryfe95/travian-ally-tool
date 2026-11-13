@@ -135,3 +135,7 @@ Admin → Konten → „Zum Beta-Tester machen“. Tester (und Admins) sehen rec
 
 ## Sprachen
 Das Tool gibt es auf Englisch, Deutsch und Französisch (Sprachwahl unten links bzw. auf der Hilfeseite oben: EN · DE · FR). Die Erklärvideos und die PDF-Kurzübersicht gibt es auf Englisch und Französisch; auf Deutsch werden die englischen Videos gezeigt (mit Hinweis).
+
+## Benachrichtigungen und Android-App
+Unter **Mein Konto → Benachrichtigungen** (`/account/notifications`): „Auf diesem Gerät einschalten“ (Browser fragt nach Erlaubnis), „Test senden“. Darunter für alle Geräte auswählen: Direktnachrichten, @-Erwähnungen, Rundnachrichten, „Angriff melden“-Alarme, einzelne Allianz-Kanäle (Standard aus) und Task-Forces (Standard an), dann „Speichern“.
+**Admin, einmalig:** `npx web-push generate-vapid-keys` → `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` (+ `VAPID_SUBJECT=mailto:…`) in `.env`, deployen. Android-App bauen: `./scripts/build-apk.sh` (Docker nötig, dauert beim ersten Mal ~10 Min.). Danach den ausgegebenen SHA-256 als `TWA_SHA256` in `.env` eintragen und erneut deployen. **`twa/keystore/` sichern** – ohne diesen Schlüssel lassen sich installierte Apps nicht mehr aktualisieren. Neue App-Version: Skript erneut ausführen. Mitglieder laden die APK auf derselben Seite herunter; ohne APK geht auch Chrome → „App installieren“ (iPhone: Safari → „Zum Home-Bildschirm“).

@@ -119,3 +119,9 @@ Offen:
 - Upload-Warteschlange (Erkennung asynchron) weiter offen; Kampfberichte werden nur für Incidents genutzt (gewollt).
 - Beta-Feedback: Kommentare hängen am CSS-Pfad; nach größeren Layout-Änderungen evtl. nicht mehr am Element sichtbar (im Panel/Export bleiben sie). Nach der Beta: Kennzeichen zurücksetzen oder Funktion abschalten.
 - Französisch: Call-Standardvorlagen nur DE/EN (Franzosen sehen EN); Kurzclips je Hilfebereich (webm) nur DE/EN; Spieldaten-Namen (Gebäude/Einheiten) ohne französische Quelle → Englisch; Einladungstext bewusst Englisch. Deutsche Erklärvideos (KI-Stimme) bei Bedarf nachziehen.
+
+## 2026-11-13 · App & Push
+- APK konnte in der Cloud-Session nicht gebaut werden (Android-SDK-Download gesperrt); `scripts/build-apk.sh` ist daher auf dem Server noch ungetestet. Bei Problemen Ausgabe schicken.
+- Push-Texte enthalten eine Vorschau der Nachricht (Ende-zu-Ende verschlüsselt über Web Push, auf dem Sperrbildschirm aber sichtbar). Bei Bedarf Option „ohne Inhalt“ ergänzen.
+- iPhone: Push nur, wenn das Tool zum Home-Bildschirm hinzugefügt wurde (iOS 16.4+). Eine iOS-App (App Store) ist nicht geplant.
+- Play Store wäre später möglich (gleiche TWA, dann aber App-Signing-Schlüssel von Google in `TWA_SHA256` ergänzen).

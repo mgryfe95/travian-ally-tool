@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getT } from "@/lib/i18n/server";
 import { mailEnabled } from "@/lib/mail";
 import { requireUser } from "@/lib/session";
@@ -47,6 +48,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           </form>
         ) : <p className="sub" style={{ marginTop: 6 }}>{t("account.notify.noMail")}</p>}
         <p className="sub" style={{ fontSize: 12, marginTop: 6 }}>{t("account.notify.hint")}</p>
+        <p style={{ marginTop: 10 }}><Link className="btn ghost sm" href="/account/notifications">{t("notify.title")} · {t("notify.app.title")} →</Link></p>
       </section>
     </>
   );

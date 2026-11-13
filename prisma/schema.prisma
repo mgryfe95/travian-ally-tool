@@ -966,3 +966,26 @@ model FeedbackComment {
 
   @@index([threadId, id])
 }
+
+/// Web-Push-Abo eines Geräts (Browser/PWA/APK). Ein Nutzer kann mehrere Geräte haben.
+model PushSubscription {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String   @default("")
+  createdAt DateTime @default(now())
+  lastOkAt  DateTime?
+
+  @@index([userId])
+}
+
+/// Benachrichtigungs-Einstellung je Nutzer und Schlüssel: `dm`, `mention`, `broadcast`, `alert`, `ch:<channelId>` (auch Task-Force-Kanäle). Fehlt der Eintrag, gilt der Standard aus lib/notify-prefs.ts.
+model NotifyPref {
+  userId String
+  key    String
+  on     Boolean
+
+  @@id([userId, key])
+}

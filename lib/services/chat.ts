@@ -3,6 +3,7 @@ import { canDeleteMessage, canEditMessage, canManageTaskforce, canReadChannel, c
 import { env } from "../env";
 import { effectiveRole, ForbiddenError, hasPermission, rank, ROLES, type Role } from "../permissions";
 import { publish } from "../realtime";
+import { fireAndForget, notifyChannelMessage } from "./notify";
 import { storage } from "../storage";
 import { extractMentions, mentionHandle } from "../chat/mentions";
 import { audit, loadMatrix, verifiedUserWhere, type Actor } from "./context";
@@ -205,6 +206,7 @@ export async function postMessage(
   await syncMentions(db, ch, id, body);
   const view = (await loadView(db, id))!;
   publish(ch.id, "message:new", view);
+  fireAndForget(notifyChannelMessage(db, { channelId: ch.id, messageId: id, authorId: ctx.userId, body }), "Kanalnachricht");
   return view;
 }
 

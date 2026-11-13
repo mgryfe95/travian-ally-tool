@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { env } from "../env";
 import { ForbiddenError, hasPermission, type Permission } from "../permissions";
+import { fireAndForget, notifyChannelMessage } from "./notify";
 import { publish } from "../realtime";
 import { audit, loadMatrix, userLocale, type Actor } from "./context";
 import { ChatError, chatCtx } from "./chat";
@@ -280,6 +281,7 @@ async function dispatch(db: PrismaClient, id: number, now: Date, actorId?: strin
       id: m.id, channelId: m.channelId, channelName: m.channel.name, author: { id: call.createdBy, name: author?.name ?? translate(DEFAULT_LOCALE, "err.deletedUser"), role: author?.role ?? "MEMBER" },
       body: m.body, createdAt: m.createdAt.toISOString(), editedAt: null, tags: [], attachments: [],
     });
+    fireAndForget(notifyChannelMessage(db, { channelId: call.channelId, messageId: m.id, authorId: call.createdBy, body, alert: call.kind === "ALERT" }), "Call");
     const done = await db.allianceCall.update({ where: { id }, data: { status: "sent", sentAt: now, messageId: m.id } });
     await scheduleNext(db, call);
     if (call.sendDm) await sendCallDms(db, { ...call, kindName: names.get(call.kind) }).catch((e) => console.error("[schedule] Direktnachrichten fehlgeschlagen", e));
@@ -359,6 +361,7 @@ export async function sendReminders(db: PrismaClient, now = new Date()): Promise
       id: m.id, channelId: m.channelId, channelName: m.channel.name, author: { id: c.createdBy, name: author?.name ?? translate(DEFAULT_LOCALE, "err.deletedUser"), role: author?.role ?? "MEMBER" },
       body: m.body, createdAt: m.createdAt.toISOString(), editedAt: null, tags: [], attachments: [],
     });
+    fireAndForget(notifyChannelMessage(db, { channelId: c.channelId, messageId: m.id, authorId: c.createdBy, body }), "Call-Erinnerung");
     n++;
   }
   return n;
@@ -376,6 +379,7 @@ async function notifyChange(db: PrismaClient, actor: Actor, call: CallLike & { c
     id: m.id, channelId: m.channelId, channelName: m.channel.name, author: { id: actor.id, name: author?.name ?? translate(DEFAULT_LOCALE, "err.deletedUser"), role: author?.role ?? "MEMBER" },
     body: m.body, createdAt: m.createdAt.toISOString(), editedAt: null, tags: [], attachments: [],
   });
+  fireAndForget(notifyChannelMessage(db, { channelId: call.channelId, messageId: m.id, authorId: actor.id, body: text }), "Call-Änderung");
   if (!mail) return;
   const users = await db.user.findMany({ where: { role: { not: "GUEST" }, banned: false }, select: { email: true, locale: true } });
   for (const u of users) {

@@ -12,3 +12,7 @@ deploy.result
 .deploy-run.sh
 backups/
 test-results-help
+twa/keystore/
+twa/twa-manifest.json
+twa/version-code
+twa/*.apk
