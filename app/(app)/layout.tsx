@@ -68,6 +68,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           <div style={{ marginTop: 6, fontSize: 12 }}>
             <a href="/account" style={{ display: "block", marginBottom: 4 }}>{t("account.link")}</a>
             <a href="/account/notifications" style={{ display: "block", marginBottom: 4 }}>{t("notify.nav")}</a>
+            <a href="/install" style={{ display: "block", marginBottom: 4 }}>{t("install.nav")}</a>
             <a href="/mentions" style={{ display: "block", marginBottom: 4 }}>{t("chat.mentions.link")}</a>
             <a href="/files" style={{ display: "block", marginBottom: 4 }}>{t("nav.myFiles")}</a>
             <a href="/privacy" style={{ display: "block", marginBottom: 4 }}>{t("privacy.link")}</a>

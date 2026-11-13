@@ -29,10 +29,7 @@ const push = {
   "notify.none": "None.",
   "notify.save": "Save",
   "notify.saved": "Saved.",
-  "notify.app.title": "Android app",
-  "notify.app.text": "The app contains the complete web tool plus push notifications. Install: download the APK, open it and allow installation from this source.",
-  "notify.app.download": "Download APK",
-  "notify.app.missing": "No APK has been built on this server yet. Alternative: open the tool in Chrome on Android → menu → \"Install app\" (same features).",
-  "notify.app.pwa": "On iPhone: Safari → Share → \"Add to Home Screen\".",
+  "notify.app.link": "Install the app (Android, iPhone, APK) →",
+  "notify.app.title": "App on your phone",
 } as const;
 export default push;

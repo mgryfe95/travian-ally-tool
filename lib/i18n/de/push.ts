@@ -30,10 +30,7 @@ const push: Record<keyof typeof en, string> = {
   "notify.none": "Keine.",
   "notify.save": "Speichern",
   "notify.saved": "Gespeichert.",
-  "notify.app.title": "Android-App",
-  "notify.app.text": "Die App enthält das komplette Web-Tool plus Push-Benachrichtigungen. Installation: APK herunterladen, öffnen und die Installation aus dieser Quelle erlauben.",
-  "notify.app.download": "APK herunterladen",
-  "notify.app.missing": "Auf diesem Server wurde noch keine APK gebaut. Alternative: Tool in Chrome auf Android öffnen → Menü → „App installieren“ (gleicher Funktionsumfang).",
-  "notify.app.pwa": "Auf dem iPhone: Safari → Teilen → „Zum Home-Bildschirm“.",
+  "notify.app.link": "App installieren (Android, iPhone, APK) →",
+  "notify.app.title": "App aufs Handy",
 };
 export default push;

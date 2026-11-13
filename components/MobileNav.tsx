@@ -39,6 +39,7 @@ export function MobileNav({ items, name, role }: { items: NavItem[]; name: strin
           <div className="sep" />
           <Link href="/account" className="nav">{t("account.link")}</Link>
           <Link href="/account/notifications" className="nav">{t("notify.nav")}</Link>
+          <Link href="/install" className="nav">{t("install.nav")}</Link>
           <Link href="/mentions" className="nav">{t("chat.mentions.link")}</Link>
           <Link href="/files" className="nav">{t("nav.myFiles")}</Link>
           <Link href="/privacy" className="nav">{t("privacy.link")}</Link>

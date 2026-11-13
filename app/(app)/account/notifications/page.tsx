@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { PushDevice } from "@/components/PushDevice";
-import { apkInfo } from "@/lib/app-apk";
 import { db } from "@/lib/db";
 import type { MessageKey } from "@/lib/i18n";
 import { getT } from "@/lib/i18n/server";
@@ -15,7 +14,6 @@ export default async function NotificationsPage({ searchParams }: { searchParams
   const { t } = await getT();
   const { saved } = await searchParams;
   const s = await getNotifySettings(db, user);
-  const apk = await apkInfo();
   const list = (rows: PrefRow[], label: (r: PrefRow) => string) =>
     rows.length === 0 ? <p className="sub">{t("notify.none")}</p> : (
       <ul style={{ listStyle: "none", padding: 0, margin: "6px 0 0", display: "grid", gap: 6 }}>
@@ -55,11 +53,7 @@ export default async function NotificationsPage({ searchParams }: { searchParams
       </form>
       <section className="card" aria-labelledby="nf-app" id="app">
         <h2 id="nf-app">{t("notify.app.title")}</h2>
-        <p className="sub" style={{ margin: "6px 0 10px" }}>{t("notify.app.text")}</p>
-        {apk
-          ? <a className="btn" href="/app/download" download>{t("notify.app.download")} ({(apk.size / 1048576).toFixed(1)} MB)</a>
-          : <p className="sub">{t("notify.app.missing")}</p>}
-        <p className="sub" style={{ fontSize: 12, marginTop: 8 }}>{t("notify.app.pwa")}</p>
+        <p style={{ marginTop: 6 }}><Link href="/install">{t("notify.app.link")}</Link></p>
       </section>
     </>
   );

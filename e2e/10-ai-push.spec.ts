@@ -48,3 +48,16 @@ test("KI-Bereich: Reiter Systemprompt und Wissen (RAG), /-Befehle im Chat", asyn
   await page.getByRole("button", { name: "Senden" }).click();
   await expect(page.locator("li.card", { hasText: "/search <Wörter>" })).toBeVisible();
 });
+
+test("App installieren: eigene Seite mit Web-App-Anleitung (Android, iOS) und APK-Hinweis, nur angemeldet", async ({ page }) => {
+  await page.goto("/install");
+  await expect(page).toHaveURL(/\/login/);
+  await login(page, "member@example.com");
+  await page.goto("/account/notifications");
+  await page.getByRole("link", { name: /App installieren \(Android, iPhone, APK\)/ }).click();
+  await expect(page.getByRole("heading", { name: "App installieren", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Warum die Web-App empfohlen ist" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Android (Chrome)" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /iPhone \/ iPad/ })).toBeVisible();
+  await expect(page.getByText("Noch keine APK verfügbar – bitte die Web-App nutzen.")).toBeVisible();
+});
