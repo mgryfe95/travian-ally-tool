@@ -111,5 +111,5 @@ export async function deleteSubscription(db: PrismaClient, userId: string, endpo
 }
 
 export async function sendTestPush(db: PrismaClient, userId: string, locale: Locale) {
-  return pushToUsers(db, [userId], { title: translate(locale, "push.test.title"), body: translate(locale, "push.test.body"), url: "/account/notifications", tag: "test" });
+  return pushToUsers(db, [userId], { title: translate(locale, "push.test.title"), body: translate(locale, "push.test.body"), url: "/app", tag: "test" });
 }

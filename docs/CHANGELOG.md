@@ -279,3 +279,7 @@ Commits: siehe PR.
 ## 2026-11-13 · travian-ally-tool/app/install-page
 Was & Warum: Eigene Seite **App installieren** (`/install`, nur angemeldet, Wunsch Nutzer): Web-App als empfohlener Weg mit Schritt-für-Schritt für Android (Chrome) und iPhone/iPad (Safari, ab iOS 16.4, Push nur über das Home-Bildschirm-Symbol), Vertrauens-Hinweis (keine fremde Quelle, Browser-Sandbox, nur Benachrichtigungs-Recht, immer aktuell), „Jetzt installieren“-Knopf wenn der Browser es anbietet (`beforeinstallprompt`), APK als Alternative mit Download. Links in Kontomenü (Seitenleiste + mobil) und auf der Benachrichtigungsseite. Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.
 Commits: siehe PR.
+
+## 2026-11-13 · travian-ally-tool/app/app-page
+Was & Warum: Entscheidung Nutzer: APK vorerst weglassen, Web-App (PWA) genügt. Seite `/install` und APK-Download (`/app/download`) entfernt. Neue Seite **App** (`/app`, nur angemeldet, Kontomenü): kurze Einrichtung der Web-App auf Android (Chrome) und iPhone/iPad (Safari, ab iOS 16.4, Push nur über das Home-Bildschirm-Symbol), Push auf diesem Gerät ein/aus + Test, eigene Auswahl je Kanal, Task-Force und Direktnachrichten/Erwähnungen/Rundnachrichten/Alarm. `/account/notifications` leitet auf `/app` weiter. `scripts/build-apk.sh` und `twa/` bleiben für später im Repo (ruhend). Anker: `travian-ally-tool` · `3f912988-7097-813a-be0b-e9ee8831f987`.
+Commits: siehe PR.

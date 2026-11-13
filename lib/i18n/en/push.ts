@@ -6,9 +6,8 @@ const push = {
   "push.alert.title": "⚠ Attack reported",
   "push.test.title": "Test notification",
   "push.test.body": "Notifications work on this device.",
-  "notify.nav": "Notifications",
   "notify.title": "Notifications",
-  "notify.intro": "Choose what you get push notifications for – on your phone (app) or in the browser. Settings apply to all your devices.",
+  "notify.intro": "Choose what you get push notifications for. Settings apply to all your devices.",
   "notify.device": "This device",
   "notify.unsupported": "This browser does not support push notifications. On iPhone: add the page to the home screen first.",
   "notify.serverOff": "Push is not set up on the server yet (VAPID keys missing). Ask the admin.",
@@ -29,7 +28,5 @@ const push = {
   "notify.none": "None.",
   "notify.save": "Save",
   "notify.saved": "Saved.",
-  "notify.app.link": "Install the app (Android, iPhone, APK) →",
-  "notify.app.title": "App on your phone",
 } as const;
 export default push;

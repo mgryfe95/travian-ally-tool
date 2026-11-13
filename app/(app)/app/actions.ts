@@ -11,5 +11,5 @@ export async function saveNotifyAction(f: FormData) {
   const keys = f.getAll("keys").map(String);
   const on = new Set(f.getAll("on").map(String));
   await saveNotifySettings(db, user.id, keys, on);
-  redirect("/account/notifications?saved=1");
+  redirect("/app?saved=1#prefs");
 }

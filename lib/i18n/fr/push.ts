@@ -7,9 +7,8 @@ const push: Record<keyof typeof en, string> = {
   "push.alert.title": "⚠ Attaque signalée",
   "push.test.title": "Notification de test",
   "push.test.body": "Les notifications fonctionnent sur cet appareil.",
-  "notify.nav": "Notifications",
   "notify.title": "Notifications",
-  "notify.intro": "Choisissez pour quoi vous recevez des notifications push – sur le téléphone (application) ou dans le navigateur. Les réglages valent pour tous vos appareils.",
+  "notify.intro": "Choisissez pour quoi vous recevez des notifications push. Les réglages valent pour tous vos appareils.",
   "notify.device": "Cet appareil",
   "notify.unsupported": "Ce navigateur ne prend pas en charge les notifications push. Sur iPhone : ajoutez d'abord la page à l'écran d'accueil.",
   "notify.serverOff": "Le push n'est pas encore configuré sur le serveur (clés VAPID manquantes). Demandez à l'admin.",
@@ -30,7 +29,5 @@ const push: Record<keyof typeof en, string> = {
   "notify.none": "Aucun.",
   "notify.save": "Enregistrer",
   "notify.saved": "Enregistré.",
-  "notify.app.link": "Installer l'application (Android, iPhone, APK) →",
-  "notify.app.title": "Application sur le téléphone",
 };
 export default push;

@@ -133,3 +133,4 @@ Offen:
 - KI-Chat antwortet ohne Streaming (Server-Action, wenige Sekunden). Streaming später möglich.
 - MCP-Server: weiterhin keiner (nicht beauftragt).
 - Vektor-Suche in Node (ohne pgvector) reicht für einige Tausend Einträge je Nutzer.
+- 13.11.: APK vorerst weggelassen (Web-App genügt). Build-Skript ruht im Repo; Download-Route und Seite `/install` entfernt.

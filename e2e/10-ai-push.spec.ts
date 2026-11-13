@@ -8,10 +8,13 @@ async function login(page: Page, email: string) {
   await page.waitForURL((u) => u.pathname === "/");
 }
 
-test("Benachrichtigungen: Auswahl speichern, Manifest und Service Worker erreichbar", async ({ page, request }) => {
+test("App-Seite: Anleitung Android/iOS, Auswahl speichern, Manifest und Service Worker erreichbar", async ({ page, request }) => {
   await login(page, "member@example.com");
-  await page.goto("/account/notifications");
-  await expect(page.getByRole("heading", { name: "Benachrichtigungen", level: 1 })).toBeVisible();
+  await page.goto("/account/notifications"); // alte Adresse leitet weiter
+  await expect(page).toHaveURL(/\/app$/);
+  await expect(page.getByRole("heading", { name: "App & Benachrichtigungen", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Android (Chrome)" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /iPhone \/ iPad/ })).toBeVisible();
   await expect(page.getByText(/VAPID-Schlüssel fehlen|unterstützt keine/)).toBeVisible();
   const deff = page.getByLabel("#Deff-Call");
   await expect(deff).not.toBeChecked();
@@ -47,17 +50,4 @@ test("KI-Bereich: Reiter Systemprompt und Wissen (RAG), /-Befehle im Chat", asyn
   await page.getByRole("button", { name: /\/help/ }).click();
   await page.getByRole("button", { name: "Senden" }).click();
   await expect(page.locator("li.card", { hasText: "/search <Wörter>" })).toBeVisible();
-});
-
-test("App installieren: eigene Seite mit Web-App-Anleitung (Android, iOS) und APK-Hinweis, nur angemeldet", async ({ page }) => {
-  await page.goto("/install");
-  await expect(page).toHaveURL(/\/login/);
-  await login(page, "member@example.com");
-  await page.goto("/account/notifications");
-  await page.getByRole("link", { name: /App installieren \(Android, iPhone, APK\)/ }).click();
-  await expect(page.getByRole("heading", { name: "App installieren", level: 1 })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Warum die Web-App empfohlen ist" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Android (Chrome)" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /iPhone \/ iPad/ })).toBeVisible();
-  await expect(page.getByText("Noch keine APK verfügbar – bitte die Web-App nutzen.")).toBeVisible();
 });
