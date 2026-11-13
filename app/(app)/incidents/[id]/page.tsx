@@ -34,16 +34,29 @@ export default async function IncidentPage({ params, searchParams }: { params: P
   const run = await db.adviceRun.findFirst({ where: { incidentId: i.id, status: "ok" }, orderBy: { id: "desc" }, include: { recommendations: true } });
   const list = (l: UnitCount[]) => (l.length ? l.map((u) => `${fmt(u.count, locale)} ${u.unit}`).join(", ") : "–");
   const yn = (v: string) => t(`incidents.a.${v}` as MessageKey);
+  const details = (i.params ?? {}) as Record<string, string>;
 
   return (
     <>
       <header>
         <Link href="/incidents" style={{ fontSize: 13 }}>{t("incidents.back")}</Link>
         <h1>{t("incidents.detail.title", { village: ctx.village ? `${ctx.village.name} (${ctx.village.x}|${ctx.village.y})` : "?" })}</h1>
-        <div className="sub">{t(`incidents.kind.${i.kind}` as MessageKey)} · {fmtDate(i.occurredAt ?? i.createdAt, locale)} · {t(`incidents.status.${i.status}` as MessageKey)}{i.status === "open" ? ` · ${t("incidents.threat", { date: fmtDate(i.threatUntil, locale, { dateStyle: "short" }) })}` : ""}</div>
+        <div className="sub">{t(`incidents.type.${i.type}` as MessageKey)}{i.kind !== "unknown" && (i.type === "defense" || i.type === "scouted") ? ` (${t(`incidents.kind.${i.kind}` as MessageKey)})` : ""} · {fmtDate(i.occurredAt ?? i.createdAt, locale)} · {t(`incidents.status.${i.status}` as MessageKey)}{i.status === "open" ? ` · ${t("incidents.threat", { date: fmtDate(i.threatUntil, locale, { dateStyle: "short" }) })}` : ""}</div>
       </header>
       {saved && <p className="sub" role="status">{t("incidents.saved")}</p>}
       {error && <p className="errtext" role="alert">{error}</p>}
+
+      {i.status === "clarifying" && own && i.chatId && <p className="card warn" role="status"><Link className="btn sm" href={`/ai?c=${i.chatId}`}>{t("incidents.clarify.continue")}</Link></p>}
+      <section className="card" aria-labelledby="desc">
+        <h2 id="desc">{t("incidents.detail.description")}</h2>
+        {i.description ? <p style={{ marginTop: 6, whiteSpace: "pre-wrap" }}>{i.description}</p> : <p className="sub">–</p>}
+        {Object.keys(details).length > 0 && (
+          <div className="scroll" style={{ marginTop: 8 }}><table><tbody>
+            {Object.entries(details).map(([k, v]) => <tr key={k}><td>{t(`aichat.q.${k}` as MessageKey).replace(/\s*\(.*\)\s*$/, "")}</td><td>{v === "yes" || v === "no" || v === "unknown" ? yn(v) : v}</td></tr>)}
+          </tbody></table></div>
+        )}
+        {own && i.chatId && <p style={{ marginTop: 8 }}><Link href={`/ai?c=${i.chatId}`}>{t("incidents.detail.chat")} →</Link></p>}
+      </section>
 
       <section className="card" aria-labelledby="att">
         <h2 id="att">{t("incidents.detail.attacker")}</h2>
@@ -60,8 +73,7 @@ export default async function IncidentPage({ params, searchParams }: { params: P
         </div>
         {i.troopsCorrected && <p className="sub" style={{ marginTop: 6 }}>{t("incidents.detail.corrected")}</p>}
         {i.alertCallId && <p role="status" style={{ marginTop: 6, fontWeight: 600 }}>{t("incidents.alert.sent")}</p>}
-        <p className="sub" style={{ marginTop: 6 }}>{t("incidents.detail.answers")}: {t("incidents.q.more")} {yn(a.moreAttacks)} · {t("incidents.q.ongoing")} {yn(a.ongoing)} · {t("incidents.q.help")} {yn(a.needHelp)}{a.siege ? <> · {t("incidents.q.siege")} {yn(a.siege)}</> : null}</p>
-        {i.notes && <p style={{ marginTop: 6, whiteSpace: "pre-wrap" }}>{i.notes}</p>}
+        {a.moreAttacks && <p className="sub" style={{ marginTop: 6 }}>{t("incidents.detail.answers")}: {t("incidents.q.more")} {yn(a.moreAttacks)} · {t("incidents.q.ongoing")} {yn(a.ongoing)} · {t("incidents.q.help")} {yn(a.needHelp)}{a.siege ? <> · {t("incidents.q.siege")} {yn(a.siege)}</> : null}</p>}
       </section>
 
       {own && i.status === "open" && (

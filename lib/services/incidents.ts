@@ -3,7 +3,7 @@ import { loadRelations, type Relation } from "../alliance-group";
 import { readingSchema } from "../ai/reading";
 import { distance, roundFields } from "../geo";
 import { AppError } from "../i18n/errors";
-import { draftFromReading, INCIDENT_KINDS, namedUnits, parseCoordText, threatDays, YES_NO_UNKNOWN, type Answers, type IncidentDraft, type IncidentKind, type UnitCount, alertWorthy } from "../incidents";
+import { answersFromParams, typeFromKind, draftFromReading, INCIDENT_KINDS, type Params, namedUnits, parseCoordText, threatDays, YES_NO_UNKNOWN, type Answers, type IncidentDraft, type IncidentKind, type UnitCount, alertWorthy } from "../incidents";
 import { ForbiddenError, hasPermission } from "../permissions";
 import { readTroops } from "../troops";
 import { chatCtx, postMessage } from "./chat";
@@ -25,7 +25,7 @@ async function slotNames(db: PrismaClient, tribe: number | null | undefined, loc
   return { nameOf: (slot: number) => (slot === 11 ? (locale === "de" ? HERO.de : HERO.en) : by.get(slot) ?? `#${slot}`), slotOf: (name: string) => all.get(name.trim().toLowerCase()) ?? (/^(hero|held)$/i.test(name.trim()) ? 11 : null) };
 }
 
-async function resolveAttacker(db: PrismaClient, name: string, x: number | null, y: number | null) {
+export async function resolveAttacker(db: PrismaClient, name: string, x: number | null, y: number | null) {
   if (x !== null && y !== null) {
     const v = await db.village.findFirst({ where: { x, y }, select: { playerId: true } });
     if (v) return db.player.findUnique({ where: { id: v.playerId } });
@@ -85,6 +85,8 @@ export async function createIncident(db: PrismaClient, actor: Actor, input: Inci
       attackerLosses: input.attackerLosses?.length ? (namedUnits(input.attackerLosses, theirs.nameOf) as object) : undefined,
       defenderLosses: defenderLosses.length ? (defenderLosses as object) : undefined,
       answers: input.answers as object, notes: (input.notes ?? "").trim().slice(0, 2000), screenshotId: input.screenshotId ?? null,
+      type: typeFromKind(kind), description: (input.notes ?? "").trim().slice(0, 2000), clarifiedAt: now,
+      params: { ...(attacker?.name || attackerName || coords ? { attacker: attacker?.name ?? (attackerName || `${coords!.x}|${coords!.y}`) } : {}), moreAttacks: input.answers.moreAttacks, ongoing: input.answers.ongoing, needHelp: input.answers.needHelp, ...(input.answers.siege ? { siege: input.answers.siege } : {}) },
       threatUntil: new Date(now.getTime() + threatDays(input.answers) * 86_400_000),
     },
   });
@@ -147,18 +149,59 @@ export async function resolveIncident(db: PrismaClient, actor: Actor, id: number
   await indexIncident(db, id);
 }
 
-/** Incident ins Gedächtnis des Besitzers schreiben (durchsuchbar für Lagebild und Verlaufssuche). */
-async function indexIncident(db: PrismaClient, id: number) {
+/** Incident ins Gedächtnis des Besitzers schreiben (durchsuchbar und eingebettet für Lagebild, Chat und Verlaufssuche). */
+export async function indexIncident(db: PrismaClient, id: number) {
   const i = await db.incident.findUnique({ where: { id } });
-  if (!i) return;
+  if (!i || i.status === "clarifying") return;
   const v = await db.village.findUnique({ where: { id: i.villageId }, select: { name: true, x: true, y: true } });
   const list = (x: unknown) => (Array.isArray(x) ? (x as UnitCount[]).map((u) => `${u.count} ${u.unit}`).join(", ") : "");
   const a = i.answers as Answers;
+  const params = Object.entries((i.params ?? {}) as Params).map(([k, val]) => `${k} ${val}`).join(", ");
+  const threat = i.type === "defense" || i.type === "scouted";
   await upsertMemory(db, i.userId, {
     sourceType: "incident", sourceId: i.id,
-    title: `${i.kind} on ${v?.name ?? "?"} by ${i.attackerName || (i.attackerX !== null ? `(${i.attackerX}|${i.attackerY})` : "unknown")}${i.attackerAlliance ? ` [${i.attackerAlliance}]` : ""}`,
-    body: [`date ${(i.occurredAt ?? i.createdAt).toISOString().slice(0, 10)}`, `status ${i.status}`, v ? `village ${v.x}|${v.y}` : "", i.defenderLosses ? `own losses ${list(i.defenderLosses)}` : "", i.attackerLosses ? `attacker losses ${list(i.attackerLosses)}` : "", `more attacks expected ${a.moreAttacks}`, i.notes].filter(Boolean).join("; "),
+    title: `${i.type}${threat && i.kind !== "unknown" ? `/${i.kind}` : ""} on ${v?.name ?? "?"}${i.attackerName || i.attackerX !== null ? ` by ${i.attackerName || `(${i.attackerX}|${i.attackerY})`}` : ""}${i.attackerAlliance ? ` [${i.attackerAlliance}]` : ""}`,
+    body: [`date ${(i.occurredAt ?? i.createdAt).toISOString().slice(0, 10)}`, `status ${i.status}`, v ? `village ${v.x}|${v.y}` : "", params ? `details ${params}` : "", i.defenderLosses ? `own losses ${list(i.defenderLosses)}` : "", i.attackerLosses ? `attacker losses ${list(i.attackerLosses)}` : "", threat ? `more attacks expected ${a.moreAttacks}` : "", i.description || i.notes].filter(Boolean).join("; "),
   });
+}
+
+/**
+ * Klärung abschließen: Angreifer auflösen, Antworten aus den Parametern ableiten, Bedrohungsmodus (nur Abwehr-Typen),
+ * ins Gedächtnis schreiben (inkl. Embedding) und ggf. System-Call „Angriff melden“ senden.
+ */
+export async function finalizeIncident(db: PrismaClient, actor: Actor, id: number, now = new Date()) {
+  const i = await db.incident.findFirst({ where: { id, userId: actor.id } });
+  if (!i) throw new IncidentError("err.notFound");
+  if (i.status !== "clarifying") return i;
+  const p = (i.params ?? {}) as Params;
+  const coords = p.attacker ? parseCoordText(p.attacker) : null;
+  const name = coords ? "" : (p.attacker ?? "").slice(0, 60);
+  const attacker = p.attacker ? await resolveAttacker(db, name, coords?.x ?? i.attackerX, coords?.y ?? i.attackerY) : null;
+  const alliance = attacker?.allianceId ? (await db.alliance.findUnique({ where: { id: attacker.allianceId }, select: { name: true } }))?.name ?? "" : "";
+  const answers = answersFromParams(i.type, p);
+  const threat = ["defense", "scouted", "village_lost", "oasis"].includes(i.type);
+  const done = await db.incident.update({
+    where: { id },
+    data: {
+      status: "open", clarifiedAt: now, answers: answers as object, notes: i.description.slice(0, 2000),
+      attackerName: attacker?.name ?? (name || i.attackerName), attackerPlayerId: attacker?.id ?? i.attackerPlayerId,
+      attackerAlliance: alliance || i.attackerAlliance || (p.otherAlliance ?? "").slice(0, 40),
+      attackerX: coords?.x ?? i.attackerX, attackerY: coords?.y ?? i.attackerY,
+      threatUntil: new Date(now.getTime() + (threat ? threatDays(answers) * 86_400_000 : 0)),
+    },
+  });
+  await indexIncident(db, id);
+  if (i.type === "defense" && alertWorthy(answers)) {
+    try {
+      const village = await db.village.findUniqueOrThrow({ where: { id: i.villageId } });
+      const who = done.attackerName || (done.attackerX !== null ? `(${done.attackerX}|${done.attackerY})` : "unknown");
+      const call = await sendIncidentAlert(db, actor, { x: village.x, y: village.y, note: `${i.kind === "unknown" ? "attack" : i.kind} by ${who}${answers.siege === "yes" ? " · siege/conquest units" : ""}${answers.ongoing === "yes" ? " · attacks incoming now" : ""} · more attacks expected` }, now);
+      return db.incident.update({ where: { id }, data: { alertCallId: call.id } });
+    } catch (e) {
+      console.error("[incidents] Angriff melden fehlgeschlagen", e);
+    }
+  }
+  return done;
 }
 
 /**

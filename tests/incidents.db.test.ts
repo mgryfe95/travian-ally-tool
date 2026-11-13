@@ -83,7 +83,7 @@ describe("Incidents", () => {
     await createIncident(db, member, { villageId: 10, kind: "attack", attacker: "Evil", answers }, "de");
     const s = await buildSituation(db, "u1");
     expect(s.incidents).toHaveLength(1);
-    expect(s.memory.map((m) => m.title)).toEqual(["raid on Home by Evil [BAD]"]);
+    expect(s.memory.map((m) => m.title)).toEqual(["defense/raid on Home by Evil [BAD]"]);
     expect((await buildSituation(db, "u2")).memory).toEqual([]);
   });
 

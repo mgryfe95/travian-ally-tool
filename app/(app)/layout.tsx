@@ -48,6 +48,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   if (!isAdmin) items.push(...extras); // ohne Admin-Bereich bleiben Schedule/Truppen Hauptpunkte
   items.push({ href: "/screenshots", label: t("nav.screenshots") });
   if (can("incidents.report") || can("incidents.view")) items.push({ href: "/incidents", label: t("nav.incidents") });
+  if (can("ai.advice") || can("incidents.report")) items.push({ href: "/ai", label: t("aichat.nav") });
   if (isAdmin) {
     items.push({ href: "/admin", label: t("nav.admin"), sepBefore: true, children: adminNav(can).map((x) => ({ href: x.href, label: t(x.label) })) });
   }

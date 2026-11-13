@@ -154,6 +154,8 @@ model User {
   dmMail         Boolean      @default(false)
   /// Beta-Tester: darf Elemente im Frontend kommentieren (Admins immer)
   betaTester     Boolean      @default(false)
+  /// Eigener Systemprompt für den KI-Chat (zusätzlich zur festen Anweisung; getrennt von aiInstructions des Advisors)
+  aiChatPrompt   String       @default("")
   sessions       Session[]
   accounts       Account[]
   links          PlayerLink[]
@@ -884,6 +886,15 @@ model Incident {
   @@index([status, createdAt])
   /// automatisch gesendeter System-Call „Angriff melden“ (ALERT)
   alertCallId Int?
+  /// Incident-Typ (lib/incidents.ts INCIDENT_TYPES): defense | scouted | offense | village_lost | oasis | diplomacy | other
+  type        String    @default("defense")
+  /// Beschreibung in eigenen Worten (Upload-Formular + Ergänzungen aus der Klärung)
+  description String    @default("")
+  /// Parameter je Typ (aus Kampfbericht und KI-Klärung)
+  params      Json      @default("{}")
+  /// Klärungs-Chat (AiChat kind = incident)
+  chatId      Int?
+  clarifiedAt DateTime?
 }
 
 /// Durchsuchbares Gedächtnis (Postgres-Volltextsuche) für Lagebild und Verlaufssuche. Zugriff NUR über lib/services/memory.ts:
@@ -902,6 +913,10 @@ model MemoryDoc {
   updatedAt  DateTime @updatedAt
   /// generiert: to_tsvector('simple', title || ' ' || body) – GIN-indiziert
   tsv        Unsupported("tsvector")?
+  /// Embedding (Vektor) für die semantische Suche; null = noch nicht eingebettet (dann nur Volltext)
+  embedding  Float[]
+  embedModel String?
+  embeddedAt DateTime?
 
   @@unique([sourceType, sourceId])
   @@index([ownerId])
@@ -988,4 +1003,30 @@ model NotifyPref {
   on     Boolean
 
   @@id([userId, key])
+}
+
+/// KI-Chat eines Nutzers. kind = chat (frei) | incident (Incident-Klärung, verknüpft mit Incident).
+model AiChat {
+  id         Int             @id @default(autoincrement())
+  userId     String
+  kind       String          @default("chat")
+  title      String          @default("")
+  incidentId Int?            @unique
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  messages   AiChatMessage[]
+
+  @@index([userId, updatedAt])
+}
+
+model AiChatMessage {
+  id        Int      @id @default(autoincrement())
+  chatId    Int
+  chat      AiChat   @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  /// user | assistant
+  role      String
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([chatId, id])
 }

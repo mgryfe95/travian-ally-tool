@@ -13,5 +13,6 @@ import help from "./help";
 import errors from "./errors";
 import beta from "./beta";
 import push from "./push";
+import aichat from "./aichat";
 
-export const fr = { ...common, ...nav, ...auth, ...admin, ...chat, ...messenger, ...schedule, ...villages, ...screenshots, ...overview, ...incidents, ...help, ...beta, ...push, ...errors, };
+export const fr = { ...common, ...nav, ...auth, ...admin, ...chat, ...messenger, ...schedule, ...villages, ...screenshots, ...overview, ...incidents, ...help, ...beta, ...push, ...aichat, ...errors, };

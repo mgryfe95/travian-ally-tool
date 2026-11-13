@@ -6,7 +6,7 @@ const fr: Record<keyof typeof en, string> = {
   "incidents.title": "Incidents",
   "incidents.what.h": "Qu’est-ce qu’un incident ?",
   "incidents.what.p": "Travian ne connaît pas les « incidents » – c’est une fonction de l’outil : vous signalez une attaque, un pillage ou un espionnage sur l’un de vos villages. L’outil passe alors votre compte en mode menace pendant quelques jours : les suggestions de l’IA donnent la priorité à la défense (mur, troupes, cacher les ressources) et tiennent compte de vos troupes restantes. Vous pouvez demander de l’aide défensive à l’alliance dans le canal Deff-Call en un clic. Les admins voient tous les incidents ouverts.",
-  "incidents.how": "Téléversez le rapport de combat (capture d’écran) – il est lu automatiquement et remplit le formulaire. Sans capture d’écran, vous pouvez saisir l’incident manuellement.",
+  "incidents.how": "Téléversez le rapport de combat (ou signalez sans capture), choisissez le type et décrivez brièvement ce qui s’est passé. L’IA demande ensuite les détails manquants dans un court chat (section « IA », marqué comme clarification d’incident).",
   "incidents.upload.label": "Téléverser le rapport de combat",
   "incidents.manual": "Signaler sans capture d’écran",
   "incidents.fromShot": "Signaler comme incident",

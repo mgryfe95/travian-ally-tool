@@ -8,6 +8,7 @@ import { parseUnitLines } from "@/lib/incidents";
 import { ForbiddenError } from "@/lib/permissions";
 import { runAdvice } from "@/lib/services/advice";
 import { createIncident, parseAnswers, requestHelp, resolveIncident } from "@/lib/services/incidents";
+import { startIncident } from "@/lib/services/aichat";
 import { berlinToDate } from "@/lib/services/schedule";
 import { requirePermission } from "@/lib/session";
 
@@ -61,3 +62,18 @@ async function onIncident(f: FormData, fn: (id: number, user: Awaited<ReturnType
 export const requestHelpAction = async (f: FormData) => onIncident(f, (id, u) => requestHelp(db, u, id, str(f, "kind") || undefined));
 export const resolveIncidentAction = async (f: FormData) => onIncident(f, (id, u) => resolveIncident(db, u, id));
 export const assessIncidentAction = async (f: FormData) => onIncident(f, async (id, u) => runAdvice(db, await requirePermission("ai.advice"), await getLocale(), new Date(), id).then(() => u));
+
+/** Neuer Ablauf: Upload/Beschreibung → Klärungs-Chat im KI-Bereich. */
+export async function startIncidentAction(f: FormData) {
+  const user = await requirePermission("incidents.report");
+  let chatId: number | undefined;
+  let error: string | undefined;
+  try {
+    const shot = Number(str(f, "screenshotId"));
+    const r = await startIncident(db, user, { type: str(f, "type"), villageId: Number(str(f, "villageId")), description: str(f, "description"), screenshotId: Number.isInteger(shot) && shot > 0 ? shot : null }, await getLocale());
+    chatId = r.chatId;
+  } catch (e) {
+    error = await errorText(e);
+  }
+  redirect(chatId ? `/ai?c=${chatId}` : `/incidents/new?error=${encodeURIComponent(error ?? "")}${str(f, "screenshotId") ? `&shot=${str(f, "screenshotId")}` : ""}`);
+}

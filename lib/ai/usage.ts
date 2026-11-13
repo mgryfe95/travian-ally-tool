@@ -12,6 +12,9 @@ export const RATES: Record<string, Rate[]> = {
   ],
   "claude-sonnet-5-5": [{ maxPrompt: Infinity, input: 2, cacheWrite: 2.5, cacheRead: 0.1, output: 10 }],
   "claude-opus-5-5": [{ maxPrompt: Infinity, input: 4, cacheWrite: 5, cacheRead: 0.2, output: 20 }],
+  /** Voyage AI (Embeddings, nur Eingabe-Token; voyageai.com/pricing, Stand 2026-11) */
+  "voyage-3.5-lite": [{ maxPrompt: Infinity, input: 0.02, cacheWrite: 0, cacheRead: 0, output: 0 }],
+  "voyage-3.5": [{ maxPrompt: Infinity, input: 0.06, cacheWrite: 0, cacheRead: 0, output: 0 }],
 };
 /** Unbekanntes Modell: vorsichtig mit den Opus-Preisen rechnen, damit das Budget nicht unterschätzt wird. */
 const FALLBACK = RATES["claude-opus-5-5"]!;
@@ -27,7 +30,7 @@ export function costUsd(model: string, u: TokenUsage): number {
   return (u.input_tokens * r.input + write * r.cacheWrite + read * r.cacheRead + u.output_tokens * r.output) / 1_000_000;
 }
 
-export type Feature = "vision" | "advice" | "incident";
+export type Feature = "vision" | "advice" | "incident" | "chat" | "embed";
 
 export async function recordUsage(db: Pick<PrismaClient, "aiUsage">, e: { userId?: string | null; feature: Feature; model: string; usage: TokenUsage }) {
   await db.aiUsage.create({

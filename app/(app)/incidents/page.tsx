@@ -36,9 +36,9 @@ export default async function IncidentsPage({ searchParams }: { searchParams: Pr
             <td><Link href={`/incidents/${i.id}`}>{fmtDate(i.createdAt, locale)}</Link></td>
             {withPlayer && <td>{users.get(i.userId) ?? "?"}</td>}
             <td>{v ? `${v.name} (${v.x}|${v.y})` : "?"}</td>
-            <td>{t(`incidents.kind.${i.kind}` as MessageKey)}</td>
+            <td>{t(`incidents.type.${i.type}` as MessageKey)}{i.kind !== "unknown" && (i.type === "defense" || i.type === "scouted") ? <span className="sub"> · {t(`incidents.kind.${i.kind}` as MessageKey)}</span> : null}</td>
             <td>{i.attackerName || (i.attackerX !== null ? `(${i.attackerX}|${i.attackerY})` : "–")}{i.attackerAlliance ? ` [${i.attackerAlliance}]` : ""}</td>
-            <td>{t(`incidents.status.${i.status}` as MessageKey)}{i.status === "open" && i.threatUntil > now ? <span className="sub"> · {t("incidents.threat", { date: fmtDate(i.threatUntil, locale, { dateStyle: "short" }) })}</span> : null}</td>
+            <td>{i.status === "clarifying" && i.chatId && i.userId === user.id ? <Link href={`/ai?c=${i.chatId}`}>{t("incidents.clarify.continue")}</Link> : t(`incidents.status.${i.status}` as MessageKey)}{i.status === "open" && i.threatUntil > now ? <span className="sub"> · {t("incidents.threat", { date: fmtDate(i.threatUntil, locale, { dateStyle: "short" }) })}</span> : null}</td>
           </tr>); })}</tbody>
       </table>
     </div>

@@ -125,3 +125,11 @@ Offen:
 - Push-Texte enthalten eine Vorschau der Nachricht (Ende-zu-Ende verschlüsselt über Web Push, auf dem Sperrbildschirm aber sichtbar). Bei Bedarf Option „ohne Inhalt“ ergänzen.
 - iPhone: Push nur, wenn das Tool zum Home-Bildschirm hinzugefügt wurde (iOS 16.4+). Eine iOS-App (App Store) ist nicht geplant.
 - Play Store wäre später möglich (gleiche TWA, dann aber App-Signing-Schlüssel von Google in `TWA_SHA256` ergänzen).
+
+## 2026-11-13 · KI-Umbau
+- Incident-Typen sind im Code festgelegt (`INCIDENT_TYPES`); Admin-Pflege im UI wäre ein Folgeschritt.
+- Truppenkorrektur um Verluste (alte Checkbox) entfällt im neuen Ablauf – Truppen-Screenshot neu hochladen. Bei Bedarf als Frage in der Klärung ergänzen.
+- „Neu einbetten (alle)“ wirkt je Nutzer (RLS); ein Admin-Knopf für alle Nutzer fehlt (Worker-Job möglich).
+- KI-Chat antwortet ohne Streaming (Server-Action, wenige Sekunden). Streaming später möglich.
+- MCP-Server: weiterhin keiner (nicht beauftragt).
+- Vektor-Suche in Node (ohne pgvector) reicht für einige Tausend Einträge je Nutzer.

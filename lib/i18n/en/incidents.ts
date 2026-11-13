@@ -4,7 +4,7 @@ const en = {
   "incidents.title": "Incidents",
   "incidents.what.h": "What is an incident?",
   "incidents.what.p": "Travian has no “incidents” – this is a tool feature: you record an attack, raid or scouting on one of your villages. The tool then switches your account into threat mode for a few days: AI suggestions put defence first (wall, troops, hiding resources) and take your remaining troops into account. You can ask the alliance for defence in the Deff-Call channel with one click. Admins see all open incidents.",
-  "incidents.how": "Upload the battle report (screenshot) – it is read automatically and fills in the form. Without a screenshot you can enter the incident manually.",
+  "incidents.how": "Upload the battle report as a screenshot (or report without one), pick the type and describe briefly what happened. The AI then asks for the missing details in a short chat (section \"AI\", marked as incident clarification).",
   "incidents.upload.label": "Upload battle report",
   "incidents.manual": "Report without screenshot",
   "incidents.fromShot": "Report as incident",

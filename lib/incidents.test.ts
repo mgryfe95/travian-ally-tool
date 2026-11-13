@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Reading } from "./ai/reading";
-import { draftFromReading, namedUnits, parseCoordText, parseUnitLines, threatDays } from "./incidents";
+import { answersFromParams, draftFromReading, mergeParams, missingParams, namedUnits, normalizeParam, parseCoordText, parseUnitLines, threatDays } from "./incidents";
 
 const row = (name: string, cells: number[], texts: string[] = [], x: number | null = null, y: number | null = null) => ({ name, x, y, current: false, cells, texts });
 const reading: Reading = {
@@ -39,5 +39,26 @@ describe("Angriff melden (Regel)", () => {
     expect(alertWorthy({ moreAttacks: "yes", ongoing: "no", needHelp: "no", siege: "yes" })).toBe(true);
     expect(alertWorthy({ moreAttacks: "yes", ongoing: "yes", needHelp: "no" })).toBe(true);
     expect(alertWorthy({ moreAttacks: "unknown", ongoing: "yes", needHelp: "no", siege: "yes" })).toBe(false);
+  });
+});
+
+
+describe("Incident-Parameter", () => {
+  it("normalisiert ja/nein/unbekannt mehrsprachig und Koordinaten", () => {
+    expect(normalizeParam({ key: "a", type: "yn", required: true }, "Ja!")).toBe("yes");
+    expect(normalizeParam({ key: "a", type: "yn", required: true }, "non")).toBe("no");
+    expect(normalizeParam({ key: "a", type: "yn", required: true }, "weiß nicht")).toBeNull();
+    expect(normalizeParam({ key: "a", type: "ynu", required: true }, "weiß nicht")).toBe("unknown");
+    expect(normalizeParam({ key: "a", type: "coord", required: true }, "Oase bei (12|-3)")).toBe("12|-3");
+    expect(normalizeParam({ key: "a", type: "text", required: true }, "  ")).toBeNull();
+  });
+  it("übernimmt nur bekannte Schlüssel des Typs und ermittelt Fehlendes", () => {
+    const p = mergeParams("scouted", {}, { attacker: "Evil", target: "x", moreAttacks: "vielleicht" });
+    expect(p).toEqual({ attacker: "Evil", moreAttacks: "unknown" });
+    expect(missingParams("defense", p).map((s) => s.key)).toEqual(["moreAttacks", "ongoing", "siege", "needHelp"].filter((k) => k !== "moreAttacks"));
+  });
+  it("Antworten für Bedrohungsmodus", () => {
+    expect(answersFromParams("defense", { moreAttacks: "yes", ongoing: "yes", siege: "no", needHelp: "no" })).toEqual({ moreAttacks: "yes", ongoing: "yes", needHelp: "no", siege: "no" });
+    expect(answersFromParams("offense", {}).moreAttacks).toBe("no");
   });
 });

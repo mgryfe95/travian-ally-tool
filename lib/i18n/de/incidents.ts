@@ -6,7 +6,7 @@ const de: Record<keyof typeof en, string> = {
   "incidents.title": "Incidents",
   "incidents.what.h": "Was ist ein Incident?",
   "incidents.what.p": "Im Spiel gibt es keine „Incidents“ – das ist eine Funktion dieses Tools: Du hältst einen Angriff, Raubzug oder eine Spähung auf eines deiner Dörfer fest. Das Tool schaltet deinen Account dann für einige Tage in den Bedrohungsmodus: KI-Vorschläge ziehen Verteidigung vor (Mauer, Truppen, Rohstoffe verstecken) und berücksichtigen deine Rest-Truppen. Mit einem Klick bittest du die Allianz im Deff-Call um Unterstützung. Admins sehen alle offenen Incidents.",
-  "incidents.how": "Lade den Kampfbericht als Screenshot hoch – er wird automatisch gelesen und füllt das Formular vor. Ohne Screenshot kannst du den Incident auch von Hand eintragen.",
+  "incidents.how": "Lade den Kampfbericht als Screenshot hoch (oder melde ohne Screenshot), wähle den Typ und beschreibe kurz, was passiert ist. Danach fragt dich die KI in einem kurzen Chat nach den fehlenden Angaben (Bereich „KI“, markiert als Incident-Klärung).",
   "incidents.upload.label": "Kampfbericht hochladen",
   "incidents.manual": "Ohne Screenshot melden",
   "incidents.fromShot": "Als Incident melden",

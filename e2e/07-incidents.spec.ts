@@ -13,20 +13,33 @@ test("Incidents: Erklärung, manuell melden, Hilfe im Deff-Call, Admin sieht off
   await page.getByRole("navigation", { name: "Hauptnavigation" }).getByRole("link", { name: "Incidents" }).click();
   await expect(page.getByRole("heading", { name: "Was ist ein Incident?" })).toBeVisible();
   await page.getByRole("link", { name: "Ohne Screenshot melden" }).click();
-  await page.getByLabel("Art").selectOption("raid");
-  await page.getByLabel(/Angreifer: Spielername/).fill("Raider42");
-  await page.getByLabel(/Deine Verluste/).fill("Keulenschwinger; 10");
-  await page.getByRole("group", { name: "Erwartest du weitere Angriffe?" }).getByLabel("Ja").check();
-  await page.getByRole("button", { name: "Incident speichern" }).click();
+  await page.getByLabel("Was ist passiert?").selectOption("defense");
+  await page.getByLabel("Beschreibe es in eigenen Worten").fill("Raubzug heute Nacht, 10 Keulenschwinger verloren");
+  await page.getByRole("button", { name: "Weiter zur Klärung" }).click();
+  // Klärungs-Chat (ohne KI: regelbasiert)
+  await expect(page).toHaveURL(/\/ai\?c=\d+/);
+  await expect(page.getByText("Incident-Klärung").first()).toBeVisible();
+  await expect(page.getByText(/Wer war der Angreifer/)).toBeVisible();
+  const box = page.getByRole("textbox", { name: "Senden" });
+  const items = page.locator("main ol > li");
+  for (const answer of ["Raider42", "ja", "nein", "nein", "nein"]) {
+    const n = await items.count();
+    await box.fill(answer);
+    await page.getByRole("button", { name: "Senden" }).click();
+    await expect(items).toHaveCount(n + 2);
+    await expect(page.getByRole("button", { name: "Senden" })).toBeEnabled();
+  }
+  await expect(page.getByText(/Incident gespeichert/)).toBeVisible();
+  await page.getByRole("link", { name: "Incident öffnen" }).click();
   await expect(page.getByRole("heading", { name: /Incident auf/ })).toBeVisible();
-  await expect(page.getByText("Raider42")).toBeVisible();
-  await expect(page.getByText(/10 Keulenschwinger/)).toBeVisible();
+  await expect(page.getByText("Raider42").first()).toBeVisible();
+  await expect(page.getByText(/10 Keulenschwinger verloren/)).toBeVisible();
   await page.getByRole("button", { name: "Hilfe im Deff-Call anfragen" }).click();
   await expect(page.getByText(/Hilfe angefragt am/)).toBeVisible();
   await page.goto("/incidents");
   await page.getByRole("search").getByRole("textbox").fill("Raider42");
   await page.getByRole("button", { name: "Suchen" }).click();
-  await expect(page.getByRole("link", { name: /raid on .* by Raider42/ }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: /defense\/attack on .* by Raider42/ }).first()).toBeVisible();
   await page.goto("/chat");
   await page.getByRole("complementary", { name: "Kanäle" }).getByRole("link", { name: "# Deff-Call" }).click();
   await expect(page.locator("article.msg", { hasText: "Defence needed" }).first()).toBeVisible();

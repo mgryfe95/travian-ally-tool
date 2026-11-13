@@ -66,6 +66,11 @@ const schema = z.object({
   /** Android-App (TWA): Paketname und SHA-256-Fingerabdrücke des Signaturschlüssels (kommagetrennt) für /.well-known/assetlinks.json */
   TWA_PACKAGE: z.string().default("de.ryfe.allytool"),
   TWA_SHA256: z.string().default(""),
+  /** Embeddings für die semantische Suche (RAG) über Voyage AI; ohne Schlüssel nur Volltextsuche. */
+  VOYAGE_API_KEY: z.preprocess(emptyToUndefined, z.string().optional()),
+  EMBED_MODEL: z.string().default("voyage-3.5-lite"),
+  /** KI-Chat: Nachrichten je Nutzer und Tag (Kostenbremse; Incident-Klärung zählt mit) */
+  AI_CHAT_DAILY: z.coerce.number().int().min(0).default(40),
   ANTHROPIC_API_KEY: z.string().optional(),
   ANTHROPIC_MODEL: z.string().optional(),
   /** Bilderkennung: Anzahl unabhängiger Lesedurchläufe je Screenshot (≥2 = Konsens-Prüfung, höhere Konfidenz, höhere Kosten). */

@@ -69,3 +69,101 @@ export const hasSiege = (units: number[]) => [6, 7, 8].some((i) => (units[i] ?? 
 
 /** System-Call „Angriff melden“: weitere Angriffe erwartet und (gerade laufende Angriffe oder Belagerung/Eroberung im letzten Angriff). */
 export const alertWorthy = (a: Answers) => a.moreAttacks === "yes" && (a.ongoing === "yes" || a.siege === "yes");
+
+// ───────── Incident-Typen und Parameter (Klärung per Chat) ─────────
+
+export type ParamType = "text" | "coord" | "yn" | "ynu";
+export type ParamSpec = { key: string; type: ParamType; required: boolean };
+
+/** Typen und ihre Parameter. Reihenfolge der Parameter = Reihenfolge der Fragen. */
+export const INCIDENT_TYPES = {
+  defense: [
+    { key: "attacker", type: "text", required: true },
+    { key: "moreAttacks", type: "ynu", required: true },
+    { key: "ongoing", type: "yn", required: true },
+    { key: "siege", type: "ynu", required: true },
+    { key: "needHelp", type: "yn", required: true },
+  ],
+  scouted: [
+    { key: "attacker", type: "text", required: true },
+    { key: "moreAttacks", type: "ynu", required: true },
+  ],
+  offense: [
+    { key: "target", type: "text", required: true },
+    { key: "result", type: "text", required: true },
+    { key: "losses", type: "text", required: false },
+  ],
+  village_lost: [
+    { key: "attacker", type: "text", required: true },
+    { key: "needHelp", type: "yn", required: true },
+  ],
+  oasis: [
+    { key: "oasis", type: "coord", required: true },
+    { key: "attacker", type: "text", required: false },
+  ],
+  diplomacy: [
+    { key: "otherAlliance", type: "text", required: true },
+    { key: "what", type: "text", required: true },
+  ],
+  other: [],
+} as const satisfies Record<string, readonly ParamSpec[]>;
+
+export type IncidentType = keyof typeof INCIDENT_TYPES;
+export const INCIDENT_TYPE_KEYS = Object.keys(INCIDENT_TYPES) as IncidentType[];
+export const isIncidentType = (s: string): s is IncidentType => s in INCIDENT_TYPES;
+export const paramSpecs = (type: string): readonly ParamSpec[] => (isIncidentType(type) ? INCIDENT_TYPES[type] : []);
+
+export type Params = Record<string, string>;
+
+const YES = /^(y|yes|ja|j|oui|o|true|1|si|da)\b/i;
+const NO = /^(n|no|nein|non|false|0|nope)\b/i;
+const UNKNOWN = /^(\?|unknown|unbekannt|weiß nicht|weiss nicht|keine ahnung|je ne sais pas|inconnu|vielleicht|maybe|peut-être)/i;
+
+/** Normalisiert einen Parameterwert; null = nicht verwertbar. */
+export function normalizeParam(spec: ParamSpec, raw: unknown): string | null {
+  if (raw === null || raw === undefined) return null;
+  const s = String(raw).trim();
+  if (!s) return null;
+  switch (spec.type) {
+    case "yn":
+    case "ynu": {
+      if (YES.test(s)) return "yes";
+      if (NO.test(s)) return "no";
+      if (spec.type === "ynu" && UNKNOWN.test(s)) return "unknown";
+      return null;
+    }
+    case "coord": {
+      const c = parseCoordText(s);
+      return c ? `${c.x}|${c.y}` : null;
+    }
+    default:
+      return s.slice(0, 200);
+  }
+}
+
+/** Übernimmt gültige Werte (nur bekannte Schlüssel des Typs) in `params`. */
+export function mergeParams(type: string, params: Params, incoming: Record<string, unknown>): Params {
+  const out = { ...params };
+  for (const spec of paramSpecs(type)) {
+    if (!(spec.key in incoming)) continue;
+    const v = normalizeParam(spec, incoming[spec.key]);
+    if (v !== null) out[spec.key] = v;
+  }
+  return out;
+}
+
+export const missingParams = (type: string, params: Params) => paramSpecs(type).filter((p) => p.required && !params[p.key]);
+
+/** Parameter → Antworten des Bedrohungsmodus (für Lagebild, Alarm, Bedrohungsdauer). */
+export function answersFromParams(type: string, p: Params): Answers {
+  const ynu = (v: string | undefined) => (v === "yes" || v === "no" ? v : "unknown") as Answers["moreAttacks"];
+  return {
+    moreAttacks: type === "defense" || type === "scouted" ? ynu(p.moreAttacks) : "no",
+    ongoing: p.ongoing === "yes" ? "yes" : "no",
+    needHelp: p.needHelp === "yes" ? "yes" : "no",
+    siege: type === "defense" ? ynu(p.siege) : "unknown",
+  };
+}
+
+/** Kampfbericht-Art → Incident-Typ */
+export const typeFromKind = (kind: string): IncidentType => (kind === "scout" ? "scouted" : "defense");
