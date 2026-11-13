@@ -134,3 +134,5 @@ Offen:
 - MCP-Server: weiterhin keiner (nicht beauftragt).
 - Vektor-Suche in Node (ohne pgvector) reicht für einige Tausend Einträge je Nutzer.
 - 13.11.: APK vorerst weggelassen (Web-App genügt). Build-Skript ruht im Repo; Download-Route und Seite `/install` entfernt.
+- Verlustwert nutzt nur die Summe der Ausbildungskosten (`UnitName.costTotal`); Aufteilung nach Holz/Lehm/Eisen/Getreide erst, wenn Einheitenkosten je Rohstoff importiert sind. Helden ohne Wert.
+- Kampfbericht direkt im KI-Chat hochladen: noch nicht (Weg: Incident/Screenshot-Upload, dann Frage im Chat).

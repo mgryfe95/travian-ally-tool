@@ -27,7 +27,7 @@ test("Incidents: Erklärung, manuell melden, Hilfe im Deff-Call, Admin sieht off
     await box.fill(answer);
     await page.getByRole("button", { name: "Senden" }).click();
     await expect(items).toHaveCount(n + 2);
-    await expect(page.getByRole("button", { name: "Senden" })).toBeEnabled();
+    await expect(page.getByText("KI denkt nach …")).toHaveCount(0);
   }
   await expect(page.getByText(/Incident gespeichert/)).toBeVisible();
   await page.getByRole("link", { name: "Incident öffnen" }).click();

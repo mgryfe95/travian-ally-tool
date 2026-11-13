@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { AppError, localizeError } from "@/lib/i18n/errors";
 import { getLocale } from "@/lib/i18n/server";
 import { ForbiddenError } from "@/lib/permissions";
-import { createChat, deleteChat, finishClarification, sendChatMessage, setChatPrompt } from "@/lib/services/aichat";
+import { createChat, deleteChat, finishClarification, setChatPrompt } from "@/lib/services/aichat";
 import { deleteMemory, embedMemory } from "@/lib/services/memory";
 import { requireUser } from "@/lib/session";
 
@@ -26,18 +26,6 @@ export async function newChatAction() {
     error = await errorText(e);
   }
   redirect(id ? `/ai?c=${id}` : `/ai?error=${encodeURIComponent(error ?? "")}`);
-}
-
-export async function sendAction(f: FormData) {
-  const user = await requireUser();
-  const c = Number(str(f, "chatId"));
-  let error: string | undefined;
-  try {
-    await sendChatMessage(db, user, c, str(f, "text"), await getLocale());
-  } catch (e) {
-    error = await errorText(e);
-  }
-  redirect(`/ai?c=${c}${error ? `&error=${encodeURIComponent(error)}` : ""}#end`);
 }
 
 export async function finishAction(f: FormData) {

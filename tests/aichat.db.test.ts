@@ -7,6 +7,8 @@ import { setAdvisor } from "@/lib/services/advice";
 import { chatGate, createChat, deleteChat, getChat, listChats, parseSlash, sendChatMessage, startIncident } from "@/lib/services/aichat";
 import { seedChat } from "@/lib/services/chat";
 import { deleteMemory, embedMemory, listMemory, searchMemoryHybrid, upsertMemory } from "@/lib/services/memory";
+import { runChatTool } from "@/lib/ai/tools";
+import { compareLosses } from "@/lib/gamedata/losses";
 
 const db = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL! } } });
 const me = { id: "u1", role: "MEMBER" as const };
@@ -27,7 +29,7 @@ const fakeLlm: ChatLlm = { async complete(req) { requests.push(req); return { te
 const advisor: Advisor = { async advise() { return { summary: "Alles ruhig.", recommendations: [{ villageId: 10, type: "build", priority: 1, title: "Wall 5 → 6", reason: "Angriffe erwartet" }] }; } };
 
 beforeEach(async () => {
-  await db.$executeRaw`TRUNCATE "User","Village","Player","Alliance","Setting","VillageState","AdviceRun","Recommendation","AiUsage","RolePermission","Incident","Channel","Message","UnitName","Screenshot","MemoryDoc","AllianceCall","AuditLog","AiChat","AiChatMessage" RESTART IDENTITY CASCADE`;
+  await db.$executeRaw`TRUNCATE "User","Village","Player","Alliance","Setting","VillageState","AdviceRun","Recommendation","AiUsage","RolePermission","Incident","Channel","Message","UnitName","Screenshot","MemoryDoc","AllianceCall","AuditLog","AiChat","AiChatMessage","GameDataVersion" RESTART IDENTITY CASCADE`;
   await db.user.createMany({ data: [{ id: "u1", name: "u1", email: "u1@x.de", role: "MEMBER" }, { id: "u2", name: "u2", email: "u2@x.de", role: "MEMBER" }] });
   await db.player.createMany({ data: [
     { id: 1, name: "Me", tribe: 2, allianceId: 0, population: 100, villageCount: 1, status: "active", noGrowthDays: 0, firstSeen: new Date() },
@@ -120,6 +122,7 @@ describe("Freier KI-Chat", () => {
     expect(r.answer).toBe("Baue die **Mauer** aus.");
     const req = requests[0]!;
     expect(req.system[1]).toMatch(/Ich spiele defensiv/);
+    expect(req.tools?.map((x) => x.name)).toEqual(["list_buildings", "get_building", "get_units", "compare_battle_losses", "search_memory"]);
     const last = req.messages.at(-1)!.content;
     expect(last).toMatch(/Answer in German/);
     expect(last).toMatch(/<situation>[\s\S]*"name":"Home"/);
@@ -184,5 +187,37 @@ describe("RAG: Embeddings, hybride Suche, Rechte", () => {
     setEmbedder(null);
     expect(await embedMemory(db, "u1", null)).toBe(0);
     expect((await searchMemoryHybrid(db, "u1", "Evil", 5)).map((h) => h.sourceId)).toEqual([1]); // Volltext-Rückfall
+  });
+});
+
+describe("Werkzeuge des Chats: Spieldaten und Verlustvergleich", () => {
+  it("Gebäudetabelle, Einheiten, Verluste in Rohstoffen (wer hat mehr geopfert)", async () => {
+    const v = await db.gameDataVersion.create({ data: { source: "t", serverSpeed: 2 } });
+    const b = await db.building.create({ data: { versionId: v.id, key: "granary", gid: 11, name: "Kornspeicher", nameEn: "Granary", category: "infrastructure", maxLevel: 20 } });
+    for (const [level, cap] of [[1, 1200], [2, 1700], [3, 2300]] as const)
+      await db.buildingLevel.create({ data: { buildingId: b.id, level, costWood: 80 * level, costClay: 100 * level, costIron: 70 * level, costCrop: 20 * level, upkeep: 1, buildTimeSec: 1600 * level, culturePoints: 1, effects: {}, effectRows: { create: [{ effect: "capacity", value: cap }] } } });
+    const bt = await runChatTool(db, "u1", "en", "get_building", { name: "kornspeicher" });
+    expect(bt.text).toMatch(/Granary \/ Kornspeicher \(max level 20, server speed x2\)/);
+    expect(bt.text).toMatch(/\| 3 \| 240 \| 300 \| 210 \| 60 \|/);
+    expect((await runChatTool(db, "u1", "en", "get_building", { name: "Castle" })).error).toBe(true);
+    expect((await runChatTool(db, "u1", "en", "get_building", {})).error).toBe(true);
+    expect((await runChatTool(db, "u1", "en", "list_buildings", {})).text).toMatch(/Granary \/ Kornspeicher \(max 20/);
+
+    await db.unitName.createMany({ data: [
+      { tribeVid: 2, slot: 1, nameEn: "Clubswinger", nameDe: "Keulenschwinger", costTotal: 250, upkeep: 1, attack: 40, gameVersion: "t", source: "t" },
+      { tribeVid: 1, slot: 1, nameEn: "Legionnaire", nameDe: "Legionär", costTotal: 440, upkeep: 1, attack: 40, gameVersion: "t", source: "t" },
+    ] });
+    expect((await runChatTool(db, "u1", "en", "get_units", { tribe: "Römer" })).text).toMatch(/\| 1 \| 1 \| Legionnaire \/ Legionär \| 40 .*\| 440 \|/);
+    expect((await runChatTool(db, "u1", "en", "get_units", { tribe: "elves" })).error).toBe(true);
+
+    const inc = await db.incident.create({ data: { userId: "u1", villageId: 10, kind: "attack", attackerName: "Evil", attackerPlayerId: 9, answers: {}, threatUntil: new Date(), attackerLosses: [{ unit: "Legionnaire", count: 10 }], defenderLosses: [{ unit: "Keulenschwinger", count: 20 }, { unit: "Hero", count: 1 }] } });
+    const c = await compareLosses(db, inc);
+    expect(c.attacker).toMatchObject({ tribe: 1, total: 4400, upkeep: 10 });
+    expect(c.defender).toMatchObject({ tribe: 2, total: 5000, upkeep: 20, unknown: ["Hero"] });
+    expect(c.moreLost).toBe("unknown");
+    await db.incident.update({ where: { id: inc.id }, data: { defenderLosses: [{ unit: "Keulenschwinger", count: 20 }] } });
+    const r = JSON.parse((await runChatTool(db, "u1", "en", "compare_battle_losses", {})).text);
+    expect(r).toMatchObject({ incident: { id: inc.id }, moreLost: "defender", ownLosses: { total: 5000 } });
+    expect((await runChatTool(db, "u2", "en", "compare_battle_losses", { incident_id: inc.id })).error).toBe(true); // fremder Incident
   });
 });

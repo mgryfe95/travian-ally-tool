@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { AiChatForm } from "@/components/AiChatForm";
-import { Md } from "@/components/Md";
+import { AiChat } from "@/components/AiChat";
 import { getEmbedder } from "@/lib/ai/embed";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
@@ -12,7 +11,7 @@ import { canUseChat, chatGate, getChat, listChats } from "@/lib/services/aichat"
 import { loadMatrix } from "@/lib/services/context";
 import { listMemory } from "@/lib/services/memory";
 import { requireUser } from "@/lib/session";
-import { deleteChatAction, deleteMemoryAction, finishAction, newChatAction, reembedAction, savePromptAction, sendAction } from "./actions";
+import { deleteChatAction, deleteMemoryAction, finishAction, newChatAction, reembedAction, savePromptAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -135,16 +134,9 @@ export default async function AiPage({ searchParams }: { searchParams: Promise<{
                   {chat.kind === "chat" && <form action={deleteChatAction}><input type="hidden" name="chatId" value={chat.id} /><button className="btn ghost sm">{t("aichat.delete")}</button></form>}
                 </div>
               </div>
-              <ol style={{ listStyle: "none", padding: 0, margin: "12px 0", display: "flex", flexDirection: "column", gap: 10 }}>
-                {chat.messages.map((m) => (
-                  <li key={m.id} className={m.role === "user" ? "" : "card soft"} style={{ padding: m.role === "user" ? "0 4px" : 10, margin: 0 }}>
-                    <div className="sub" style={{ fontSize: 12, fontWeight: 700 }}>{m.role === "user" ? t("aichat.you") : t("aichat.ai")} · {fmtDate(m.createdAt, locale, { timeStyle: "short" })}</div>
-                    <div style={{ whiteSpace: "pre-wrap" }}><Md text={m.content} /></div>
-                  </li>
-                ))}
-              </ol>
-              <div id="end" />
-              {(chat.kind === "incident" || canChat) && <AiChatForm action={sendAction} chatId={chat.id} incident={chat.kind === "incident"} />}
+              {(chat.kind === "incident" || canChat)
+                ? <AiChat key={chat.id} chatId={chat.id} incident={chat.kind === "incident"} initial={chat.messages.map((m) => ({ id: m.id, role: m.role, content: m.content, createdAt: m.createdAt.toISOString() }))} />
+                : null}
               {chat.kind === "chat" && <p className="sub" style={{ fontSize: 12, marginTop: 6 }}>{t("aichat.cmd.help")}</p>}
             </>
           )}

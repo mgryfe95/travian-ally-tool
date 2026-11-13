@@ -9,6 +9,7 @@ import { hasPermission } from "@/lib/permissions";
 import { adviceStatus } from "@/lib/services/advice";
 import { loadMatrix } from "@/lib/services/context";
 import { getIncident, incidentContext } from "@/lib/services/incidents";
+import { compareLosses } from "@/lib/gamedata/losses";
 import { allowedIncidentKinds } from "@/lib/services/schedule";
 import { requirePermission } from "@/lib/session";
 import { assessIncidentAction, requestHelpAction, resolveIncidentAction } from "../actions";
@@ -35,6 +36,7 @@ export default async function IncidentPage({ params, searchParams }: { params: P
   const list = (l: UnitCount[]) => (l.length ? l.map((u) => `${fmt(u.count, locale)} ${u.unit}`).join(", ") : "–");
   const yn = (v: string) => t(`incidents.a.${v}` as MessageKey);
   const details = (i.params ?? {}) as Record<string, string>;
+  const loss = units(i.attackerLosses).length || units(i.defenderLosses).length ? await compareLosses(db, i) : null;
 
   return (
     <>
@@ -71,6 +73,15 @@ export default async function IncidentPage({ params, searchParams }: { params: P
             <tr><td>{t("incidents.detail.losses")}</td><td>{list(units(i.defenderLosses))}</td></tr>
           </tbody></table>
         </div>
+        {loss && (
+          <div className="card soft" style={{ marginTop: 10 }} aria-labelledby="loss-h">
+            <h3 id="loss-h" style={{ margin: 0 }}>{t("incidents.loss.title")}</h3>
+            <p style={{ margin: "4px 0 0" }}>{t("incidents.loss.attacker", { value: fmt(loss.attacker.total, locale), upkeep: fmt(loss.attacker.upkeep, locale) })}</p>
+            <p style={{ margin: "2px 0 0" }}>{t("incidents.loss.own", { value: fmt(loss.defender.total, locale), upkeep: fmt(loss.defender.upkeep, locale) })}</p>
+            <p style={{ margin: "4px 0 0", fontWeight: 700 }}>{t(`incidents.loss.more.${loss.moreLost}` as MessageKey, { units: [...loss.attacker.unknown, ...loss.defender.unknown].join(", ") })}</p>
+            <p className="sub" style={{ fontSize: 12, margin: "4px 0 0" }}>{t("incidents.loss.hint")}</p>
+          </div>
+        )}
         {i.troopsCorrected && <p className="sub" style={{ marginTop: 6 }}>{t("incidents.detail.corrected")}</p>}
         {i.alertCallId && <p role="status" style={{ marginTop: 6, fontWeight: 600 }}>{t("incidents.alert.sent")}</p>}
         {a.moreAttacks && <p className="sub" style={{ marginTop: 6 }}>{t("incidents.detail.answers")}: {t("incidents.q.more")} {yn(a.moreAttacks)} · {t("incidents.q.ongoing")} {yn(a.ongoing)} · {t("incidents.q.help")} {yn(a.needHelp)}{a.siege ? <> · {t("incidents.q.siege")} {yn(a.siege)}</> : null}</p>}
