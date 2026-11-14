@@ -10,7 +10,8 @@ describe("i18n", () => {
   it("de und fr haben dieselben Schlüssel und Platzhalter wie en", () => {
     for (const dict of [de, fr] as Record<string, string>[]) {
       expect(Object.keys(dict).sort()).toEqual(Object.keys(en).sort());
-      for (const k of Object.keys(en) as (keyof typeof en)[]) expect(ph(dict[k] ?? ""), k).toBe(ph(en[k]));
+      // Beispieltexte für Call-Vorlagen zeigen Vorlagen-Variablen in der jeweiligen Sprache (keine Übersetzungs-Platzhalter)
+      for (const k of (Object.keys(en) as (keyof typeof en)[]).filter((x) => x !== "schedule.tpl.newBodyPh")) expect(ph(dict[k] ?? ""), k).toBe(ph(en[k]));
     }
   });
   it("Schlüssel beginnen mit ihrem Namensraum und Texte sind nicht leer", () => {

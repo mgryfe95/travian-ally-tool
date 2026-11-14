@@ -3,8 +3,8 @@ import { nextRelease, parseReleaseTime, releaseCrons, renameDeadline } from "./m
 
 describe("map-release", () => {
   it("Cron-Ausdrücke und Stichtag", () => {
-    expect(releaseCrons("00:05")).toEqual(["5 0 * * *", "10 0 * * *", "20 0 * * *"]);
-    expect(releaseCrons("23:55")).toEqual(["55 23 * * *", "0 0 * * *", "10 0 * * *"]);
+    expect(releaseCrons("00:05")).toEqual(["5 0 * * *", "10 0 * * *", "20 0 * * *", "35 0 * * *", "5 1 * * *", "5 2 * * *", "5 4 * * *"]);
+    expect(releaseCrons("23:55")).toEqual(["55 23 * * *", "0 0 * * *", "10 0 * * *", "25 0 * * *", "55 0 * * *", "55 1 * * *", "55 3 * * *"]);
     expect(renameDeadline("00:05")).toBe("23:55");
     expect(() => parseReleaseTime("25:00")).toThrow();
   });

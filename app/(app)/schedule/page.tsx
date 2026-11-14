@@ -6,7 +6,7 @@ import type { MessageKey } from "@/lib/i18n";
 import { getT } from "@/lib/i18n/server";
 import { hasPermission } from "@/lib/permissions";
 import { loadMatrix } from "@/lib/services/context";
-import { CALL_KINDS, PLACEHOLDERS, allowedIncidentKinds, dateToBerlinLocal, incidentCallRoles, listKinds, renderCall } from "@/lib/services/schedule";
+import { CALL_KINDS, PLACEHOLDERS, PLACEHOLDERS_EN, allowedIncidentKinds, dateToBerlinLocal, incidentCallRoles, listKinds, renderCall } from "@/lib/services/schedule";
 import { requirePermission } from "@/lib/session";
 import { AdminTabs } from "@/components/AdminTabs";
 import { ADMIN_PERMS, adminNav } from "@/lib/adminTabs";
@@ -170,7 +170,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
       {manage && (
         <section className="card" aria-labelledby="tpl">
           <h2 id="tpl">{t("schedule.tpl.title")}</h2>
-          <p className="sub" style={{ fontSize: 12, margin: "4px 0 10px" }}>{t("schedule.tpl.placeholders", { placeholders: PLACEHOLDERS.join(" ") })}</p>
+          <p className="sub" style={{ fontSize: 12, margin: "4px 0 10px" }}>{t("schedule.tpl.placeholders", { placeholders: (locale === "de" ? PLACEHOLDERS : PLACEHOLDERS_EN).join(" ") })}</p>
           {templates.map((tpl) => (
             <form key={tpl.id} action={saveTemplateAction} style={{ borderTop: "1px solid var(--line2)", padding: "10px 0" }}>
               <input type="hidden" name="templateId" value={tpl.id} />

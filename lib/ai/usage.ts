@@ -77,7 +77,8 @@ export async function monthSpend(db: Pick<PrismaClient, "aiUsage" | "setting" | 
   ]);
   const aiUsd = ai._sum.costUsd ?? 0;
   const storageBytes = (shots._sum.sizeBytes ?? 0) + (files._sum.sizeBytes ?? 0);
-  const s3Eur = Math.max(0, storageBytes / 1e12 - cfg.s3IncludedTb) * cfg.s3ExtraPerTbEur;
+  // Hetzner rechnet je angefangenem TB-Monat: schon wenige MB über dem Inklusiv-Volumen kosten ein volles TB
+  const s3Eur = Math.max(0, Math.ceil(storageBytes / 1e12 - cfg.s3IncludedTb - 1e-12)) * cfg.s3ExtraPerTbEur;
   const aiEur = aiUsd * cfg.usdEur;
   const totalEur = aiEur + s3Eur;
   return { aiUsd, aiEur, storageBytes, s3Eur, totalEur, budgetEur: cfg.aiBudgetEur, exhausted: totalEur >= cfg.aiBudgetEur };

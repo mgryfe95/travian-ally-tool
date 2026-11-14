@@ -76,7 +76,7 @@ const fr: Record<keyof typeof en, string> = {
   "schedule.tpl.newName": "Nouveau modèle",
   "schedule.tpl.newKind": "Type du nouveau modèle",
   "schedule.tpl.newBody": "Texte du nouveau modèle",
-  "schedule.tpl.newBodyPh": "⚔️ {art} sur {spieler} {koordinaten} – {zeit} {link}",
+  "schedule.tpl.newBodyPh": "⚔️ {type} sur {player} {coords} – {time} {link}",
   "schedule.tpl.create": "Créer le modèle",
   "schedule.incident.title": "Qui peut envoyer quel type d’appel ?",
   "schedule.incident.intro": "S’applique dans le planning et directement depuis un incident (cible = village attaqué ; texte, canal et message privé issus du modèle). Sans autorisation, seulement avec le droit de planning ; un incident publie alors simplement un court message dans Deff-Call. Les membres peuvent aussi modifier et annuler leurs propres appels. « Alerte d’attaque » est un appel système : il est envoyé automatiquement lorsqu’un incident prévoit d’autres attaques et que des attaques arrivent, ou que la dernière attaque comportait des béliers/catapultes ou des chefs/sénateurs.",

@@ -147,3 +147,6 @@ Menüpunkt **KI**. *Chats:* „+ Neuer Chat“, Frage stellen – die KI kennt d
 
 ## KI-Chat: Streaming, Spieldaten, Verluste
 Antworten erscheinen live. Die KI schlägt bei Bedarf selbst in den Spieldaten nach (alle Gebäudestufen mit Kosten und Vorteilen, Einheitenwerte) – sichtbar als „🔧 …“. Frage z. B. „Wer hat beim letzten Angriff mehr geopfert?“ – die Verluste beider Seiten werden in Rohstoffe umgerechnet; dasselbe steht auch direkt im Incident („Wer hat mehr geopfert?“). Hinter Plesk/nginx muss Streaming nicht gepuffert werden (das Tool setzt `X-Accel-Buffering: no`); kommt die Antwort trotzdem erst am Ende, in Plesk unter „Apache & nginx“ „Proxy-Puffer“ ausschalten.
+
+## Map-Import prüfen
+Auf dem Server: `docker compose exec worker npm run map:status` – zeigt Weltstatus, Zeitplan und die letzten Importe. Mit `-- --player <Name>` die Dörfer eines Spielers im Tool, mit `-- --fetch` die aktuelle map.sql vom Spielserver (neu oder schon importiert? Dörfer des Spielers darin), mit `-- --import` sofort importieren. Logs des Workers: `docker compose logs --tail 50 worker`.

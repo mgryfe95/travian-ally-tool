@@ -59,6 +59,8 @@ export async function deleteKind(db: PrismaClient, actor: Actor, id: number) {
 }
 
 export const PLACEHOLDERS = ["{art}", "{titel}", "{spieler}", "{dorf}", "{koordinaten}", "{zeit}", "{link}", "{notiz}"] as const;
+/** Gleiche Platzhalter mit englischen Namen (funktionieren in jeder Vorlage). */
+export const PLACEHOLDERS_EN = ["{type}", "{title}", "{player}", "{village}", "{coords}", "{time}", "{link}", "{note}"] as const;
 
 /** Standardvorlagen: `body` Deutsch, `bodyEn` Englisch (je nach Sprache des Lesers). */
 export const DEFAULT_TEMPLATES: { kind: CallKind; name: string; body: string; bodyEn: string }[] = [

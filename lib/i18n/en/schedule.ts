@@ -74,7 +74,7 @@ const en = {
   "schedule.tpl.newName": "New template",
   "schedule.tpl.newKind": "Type of new template",
   "schedule.tpl.newBody": "Text of new template",
-  "schedule.tpl.newBodyPh": "⚔️ {art} on {spieler} {koordinaten} – {zeit} {link}",
+  "schedule.tpl.newBodyPh": "⚔️ {type} on {player} {coords} – {time} {link}",
   "schedule.tpl.create": "Create template",
   "schedule.incident.title": "Who may send which call type?",
   "schedule.incident.intro": "Applies in the schedule and straight from an incident (target = attacked village; text, channel and direct message from the template). Without a release only with the schedule right; an incident then just posts a short message to Deff-Call. Members can also edit and cancel their own calls. “Attack report” is a system call: it is sent automatically when an incident expects more attacks and attacks are incoming or the last attack had rams/catapults or chiefs/senators.",

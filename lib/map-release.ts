@@ -17,7 +17,8 @@ const plus = ({ h, m }: { h: number; m: number }, add: number) => {
 /** Cron-Ausdrücke: Release-Zeit sowie +5 und +15 Minuten (falls Travian spät dran ist; ein unveränderter Hash kostet nichts). */
 export const releaseCrons = (time: string): string[] => {
   const t = parseReleaseTime(time);
-  return [0, 5, 15].map((a) => { const p = plus(t, a); return `${p.m} ${p.h} * * *`; });
+  // Nachversuche: Travian veröffentlicht nicht immer pünktlich; gleiche Datei (Hash) wird übersprungen, kostet nur den Download
+  return [0, 5, 15, 30, 60, 120, 240].map((a) => { const p = plus(t, a); return `${p.m} ${p.h} * * *`; });
 };
 
 /** Abgabeschluss fürs Umbenennen: 10 Minuten vor der Release-Zeit (Standard 23:55). */

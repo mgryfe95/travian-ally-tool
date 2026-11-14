@@ -64,7 +64,7 @@ describe("KI-Vorschläge", () => {
     expect((await db.recommendation.findUnique({ where: { id: r!.id } }))?.status).toBe("done");
   });
 
-  it("Kosten: KI-Protokoll × Kurs + S3 nur über Inklusiv-Volumen; Einstellungen validiert", async () => {
+  it("Kosten: KI-Protokoll × Kurs + S3 je angefangenem TB über Inklusiv-Volumen; Einstellungen validiert", async () => {
     await saveCostSettings(db, { usdEur: "0,5", s3IncludedTb: "0", s3ExtraPerTbEur: "10" }, true);
     expect((await getCostSettings(db)).pricesCheckedAt).not.toBeNull();
     await expect(saveCostSettings(db, { aiBudgetEur: "-1" }, false)).rejects.toThrow();
@@ -72,7 +72,11 @@ describe("KI-Vorschläge", () => {
     await db.screenshot.create({ data: { userId: "u1", storageKey: "k", sizeBytes: 1_000_000_000 } }); // 0,001 TB
     const m = await monthSpend(db);
     expect(m.aiEur).toBeCloseTo(0.5);
-    expect(m.s3Eur).toBeCloseTo(0.01);
-    expect(m.totalEur).toBeCloseTo(0.51);
+    expect(m.s3Eur).toBeCloseTo(10); // angefangenes TB = volles TB
+    expect(m.totalEur).toBeCloseTo(10.5);
+    await saveCostSettings(db, { s3IncludedTb: "1" }, false);
+    expect((await monthSpend(db)).s3Eur).toBe(0); // im Inklusiv-Volumen
+    await saveCostSettings(db, { s3IncludedTb: "0.0005" }, false); // 0,5 GB inklusive, 1 GB belegt → 1 angefangenes TB
+    expect((await monthSpend(db)).s3Eur).toBeCloseTo(10);
   });
 });

@@ -20,7 +20,8 @@
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
-    "help:videos": "playwright test -c playwright.help.config.ts"
+    "help:videos": "playwright test -c playwright.help.config.ts",
+    "map:status": "tsx scripts/map-status.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

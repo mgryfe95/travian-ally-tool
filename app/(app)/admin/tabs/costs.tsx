@@ -16,7 +16,7 @@ const FIELDS: { key: keyof typeof COST_DEFAULTS; label: MessageKey; step: string
 export async function CostsTab() {
   const { t, locale } = await getT();
   const [spend, cfg, byFeature] = await Promise.all([monthSpend(db), getCostSettings(db), monthByFeature(db)]);
-  const eur = (n: number) => `${n.toFixed(2)} €`;
+  const eur = (n: number) => (n > 0 && n < 0.005 ? "< 0.01 €" : `${n.toFixed(2)} €`);
   return (
     <>
       <section className="card">
