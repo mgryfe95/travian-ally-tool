@@ -1,0 +1,90 @@
+{
+ "kind": "VILLAGE_SMITHY",
+ "device": "DESKTOP",
+ "language": "de",
+ "village": null,
+ "topBar": null,
+ "rows": [
+  {
+   "name": "MG Ryfe",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    3,
+    null,
+    1,
+    null,
+    1,
+    0,
+    null,
+    null
+   ],
+   "texts": [
+    "u1"
+   ]
+  },
+  {
+   "name": "OG Ryfe",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    1,
+    0,
+    0,
+    1,
+    1,
+    null,
+    null,
+    null
+   ],
+   "texts": [
+    "-"
+   ]
+  },
+  {
+   "name": "MG",
+   "x": null,
+   "y": null,
+   "current": true,
+   "cells": [
+    0,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "texts": [
+    "-"
+   ]
+  },
+  {
+   "name": "OG",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    0,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "texts": [
+    "-"
+   ]
+  }
+ ],
+ "totals": null,
+ "fields": [],
+ "buildings": [],
+ "selfRating": 0.95,
+ "uncertain": []
+}

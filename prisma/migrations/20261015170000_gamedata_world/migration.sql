@@ -1,0 +1,1 @@
+ALTER TABLE "GameDataVersion" ADD COLUMN "worldHost" TEXT NOT NULL DEFAULT '', ADD COLUMN "gameVersion" TEXT NOT NULL DEFAULT '';

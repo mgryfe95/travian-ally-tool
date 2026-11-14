@@ -1,0 +1,109 @@
+{
+ "kind": "VILLAGE_TROOPS",
+ "device": "DESKTOP",
+ "language": "de",
+ "village": null,
+ "topBar": null,
+ "rows": [
+  {
+   "name": "MG Ryfe",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    700,
+    0,
+    24,
+    0,
+    60,
+    36,
+    0,
+    0,
+    0,
+    0,
+    1
+   ],
+   "texts": []
+  },
+  {
+   "name": "OG Ryfe",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    4,
+    0,
+    5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "texts": []
+  },
+  {
+   "name": "MG",
+   "x": null,
+   "y": null,
+   "current": true,
+   "cells": [
+    6,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "texts": []
+  },
+  {
+   "name": "OG",
+   "x": null,
+   "y": null,
+   "current": false,
+   "cells": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "texts": []
+  }
+ ],
+ "totals": {
+  "cells": [
+   710,
+   0,
+   29,
+   0,
+   60,
+   36,
+   0,
+   0,
+   0,
+   0,
+   1
+  ],
+  "texts": []
+ },
+ "fields": [],
+ "buildings": [],
+ "selfRating": 0.95,
+ "uncertain": []
+}

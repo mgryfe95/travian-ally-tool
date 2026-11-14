@@ -1,0 +1,156 @@
+{
+ "kind": "RALLY_POINT",
+ "device": "DESKTOP",
+ "language": "de",
+ "village": {
+  "name": "MG",
+  "x": -3,
+  "y": -83
+ },
+ "topBar": null,
+ "rows": [
+  {
+   "name": "MG",
+   "x": -3,
+   "y": -83,
+   "current": false,
+   "cells": [
+    6,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "texts": [
+    "Eigene Truppen",
+    "6"
+   ]
+  },
+  {
+   "name": "Gazza",
+   "x": -39,
+   "y": -28,
+   "current": false,
+   "cells": [
+    200,
+    200,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "texts": [
+    "Truppen von Gazza",
+    "400"
+   ]
+  },
+  {
+   "name": "Hem till Midgård",
+   "x": -127,
+   "y": -37,
+   "current": false,
+   "cells": [
+    0,
+    0,
+    0,
+    0,
+    10,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "texts": [
+    "Truppen von MightyDruid",
+    "20"
+   ]
+  },
+  {
+   "name": "Hem till Midgård",
+   "x": -48,
+   "y": -60,
+   "current": false,
+   "cells": [
+    286,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "texts": [
+    "Truppen von MightyDruid",
+    "286"
+   ]
+  },
+  {
+   "name": "MG Ryfe",
+   "x": -3,
+   "y": -82,
+   "current": false,
+   "cells": [
+    575,
+    0,
+    1,
+    0,
+    60,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "texts": [
+    "Truppen von MG.RYFE",
+    "697"
+   ]
+  },
+  {
+   "name": "Sörs 00",
+   "x": -70,
+   "y": -69,
+   "current": false,
+   "cells": [
+    1000,
+    0,
+    0,
+    0,
+    300,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "texts": [
+    "Truppen von exo1337",
+    "1600"
+   ]
+  }
+ ],
+ "totals": null,
+ "fields": [],
+ "buildings": [],
+ "selfRating": 0.95,
+ "uncertain": []
+}

@@ -1,0 +1,74 @@
+{
+ "kind": "VILLAGE_TRAINING",
+ "device": "MOBILE",
+ "language": "en",
+ "village": {
+  "name": "MG Ryfe",
+  "x": -3,
+  "y": -82
+ },
+ "topBar": {
+  "wood": 13985,
+  "clay": 25761,
+  "iron": 17254,
+  "crop": 2517,
+  "freeCrop": 2435,
+  "warehouse": null,
+  "granary": null
+ },
+ "rows": [
+  {
+   "name": "MG Ryfe",
+   "x": -3,
+   "y": -82,
+   "current": true,
+   "cells": [],
+   "texts": [
+    "12:59:40",
+    "22:25:34",
+    "-"
+   ]
+  },
+  {
+   "name": "OG Ryfe",
+   "x": -7,
+   "y": -82,
+   "current": false,
+   "cells": [],
+   "texts": [
+    "idle",
+    "idle",
+    "idle"
+   ]
+  },
+  {
+   "name": "MG",
+   "x": -3,
+   "y": -83,
+   "current": false,
+   "cells": [],
+   "texts": [
+    "-",
+    "-",
+    "-"
+   ]
+  },
+  {
+   "name": "OG",
+   "x": -4,
+   "y": -81,
+   "current": false,
+   "cells": [],
+   "texts": [
+    "-",
+    "-",
+    "-"
+   ]
+  }
+ ],
+ "totals": null,
+ "fields": [],
+ "buildings": [],
+ "selfRating": 0.95,
+ "uncertain": []
+}
